@@ -204,8 +204,8 @@ int main(int argc, char *argv[])
 	int dev;
 	int error = 0;
 
-	resume_device_name = argc <= 2 ? RESUME_DEVICE : argv[2];
-	snapshot_device_name = argc <= 1 ? SNAPSHOT_DEVICE : argv[1];
+	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
+	snapshot_device_name = SNAPSHOT_DEVICE;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);

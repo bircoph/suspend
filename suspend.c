@@ -262,8 +262,8 @@ int main(int argc, char *argv[])
 	int error;
 	int in_suspend;
 
-	resume_device_name = argc <= 2 ? RESUME_DEVICE : argv[2];
-	snapshot_device_name = argc <= 1 ? SNAPSHOT_DEVICE : argv[1];
+	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
+	snapshot_device_name = SNAPSHOT_DEVICE;
 
 	stat_buf = (struct stat *)buffer;
 	if (stat(resume_device_name, stat_buf)) {

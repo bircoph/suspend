@@ -1,0 +1,8 @@
+Userland support for software suspend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Copyright (C) 2005 Rafael J. Wysocki <rjw@sisk.pl>
+Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
+
+You'll need /dev/snapshot for these to work:
+
+crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
