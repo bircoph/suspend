@@ -5,32 +5,32 @@
  * Distribute under GPLv2.
  */
 
-#define S2RAM
-#include "dmidecode.c"
 #include <getopt.h>
 
-void ram_suspend(void)
-{
-	FILE *f = fopen("/sys/power/state", "w");
-	fprintf(f, "mem");
-	fflush(f);
-	fclose(f);
-}
+#define S2RAM
+#include "dmidecode.c"
+#include "radeontool.c"
 
 int test_mode;
 
-void machine_known(void)
+static void machine_known(void)
 {
 	if (test_mode)
 		exit(0);
 }
 
-void machine_table(void)
+static void radeon_backlight_off(void)
+{
+	map_radeon_cntl_mem();
+	radeon_cmd_light("off");
+}
+
+static void machine_table(void)
 {
 	if (!strcmp(sys_vendor, "IBM")) {
 		if (!strcmp(sys_version, "ThinkPad X32")) {
 			machine_known();
-			ram_suspend();
+			radeon_backlight_off();
 			return;
 		}
 	}
@@ -43,6 +43,24 @@ void machine_table(void)
 	       "pavel@suse.cz. Good luck!\n");
 	exit(1);
 }
+
+/* Code that can only be run on non-frozen system. It does not matter now
+ * but will matter once we'll do suspend-to-both.
+ */
+void s2ram_prepare(void)
+{
+	dmi_scan();
+	machine_table();
+}
+
+/* Actually enter the suspend. May be ran on frozen system. */
+void s2ram_do(void)
+{
+	FILE *f = fopen("/sys/power/state", "w");
+	fprintf(f, "mem");
+	fflush(f);
+	fclose(f);
+} 
 
 int main(int argc, char *argv[])
 {
@@ -64,8 +82,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-
-	dmi_scan();
-	machine_table();
+	s2ram_prepare();
+	s2ram_do();
 	return 0;
 }

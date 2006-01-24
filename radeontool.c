@@ -63,6 +63,7 @@ static unsigned long radeon_get(unsigned long offset,char *name)
         printf("%08lx\n",value);
     return value;
 }
+
 static void radeon_set(unsigned long offset,char *name,unsigned long value)
 {
     if(debug) 
@@ -224,6 +225,7 @@ We need to look through it to find the smaller region base address f8fffc00.
     radeon_cntl_mem = map_devince_memory(base,0x2000);
 }
 
+#ifndef S2RAM
 int main(int argc,char *argv[]) 
 {
     if(strcmp(argv[1],"--debug") == 0) {
@@ -241,6 +243,4 @@ int main(int argc,char *argv[])
     usage();
     return 1;
 }
-
-
-
+#endif
