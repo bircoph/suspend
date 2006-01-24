@@ -6,3 +6,7 @@ Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
 You'll need /dev/snapshot for these to work:
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
+
+Suspending to RAM should be done from the C program (not a
+script). This will allow us to do suspend-to-both-RAM-and-disk in
+future.
