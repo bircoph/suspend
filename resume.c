@@ -33,14 +33,12 @@ static struct swsusp_header swsusp_header;
  *	@off:	Swap offset of the place to read from.
  */
 
-static int read_page(int fd, void *buf, unsigned long off)
+static int read_page(int fd, void *buf, loff_t offset)
 {
-	off_t offset;
 	int res = 0;
 	ssize_t cnt = 0;
 
-	if (off) {
-		offset = off * PAGE_SIZE;
+	if (offset) {
 		if (lseek(fd, offset, SEEK_SET) == offset) 
 			cnt = read(fd, buf, PAGE_SIZE);
 		if (cnt < PAGE_SIZE) {
@@ -70,7 +68,7 @@ struct swap_map_handle {
  */
 
 static inline int init_swap_reader(struct swap_map_handle *handle,
-                                      int fd, unsigned long start)
+                                      int fd, loff_t start)
 {
 	int error;
 
@@ -87,7 +85,7 @@ static inline int init_swap_reader(struct swap_map_handle *handle,
 
 static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 {
-	unsigned long offset;
+	loff_t offset;
 	int error;
 
 	offset = handle->cur.entries[handle->k++];
@@ -150,7 +148,7 @@ static int read_image(int dev, char *resume_dev_name)
 	unsigned int nr_pages;
 
 
-	fd = open(resume_dev_name, O_RDWR | O_SYNC);
+	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
 		printf("resume: Could not open resume device\n");
 		return -ENOENT;

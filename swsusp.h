@@ -13,16 +13,16 @@
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 
 #define SNAPSHOT_IOC_MAGIC	'3'
-#define SNAPSHOT_IOCFREEZE		_IO(SNAPSHOT_IOC_MAGIC, 1)
-#define SNAPSHOT_IOCUNFREEZE		_IO(SNAPSHOT_IOC_MAGIC, 2)
-#define SNAPSHOT_IOCATOMIC_SNAPSHOT	_IOW(SNAPSHOT_IOC_MAGIC, 3, void *)
-#define SNAPSHOT_IOCATOMIC_RESTORE	_IO(SNAPSHOT_IOC_MAGIC, 4)
-#define SNAPSHOT_IOCFREE		_IO(SNAPSHOT_IOC_MAGIC, 5)
-#define SNAPSHOT_IOCSET_IMAGE_SIZE	_IOW(SNAPSHOT_IOC_MAGIC, 6, unsigned long)
-#define SNAPSHOT_IOCAVAIL_SWAP		_IOR(SNAPSHOT_IOC_MAGIC, 7, void *)
-#define SNAPSHOT_IOCGET_SWAP_PAGE	_IOR(SNAPSHOT_IOC_MAGIC, 8, void *)
-#define SNAPSHOT_IOCFREE_SWAP_PAGES	_IO(SNAPSHOT_IOC_MAGIC, 9)
-#define SNAPSHOT_IOCSET_SWAP_FILE	_IOW(SNAPSHOT_IOC_MAGIC, 10, unsigned int)
+#define SNAPSHOT_FREEZE			_IO(SNAPSHOT_IOC_MAGIC, 1)
+#define SNAPSHOT_UNFREEZE		_IO(SNAPSHOT_IOC_MAGIC, 2)
+#define SNAPSHOT_ATOMIC_SNAPSHOT	_IOW(SNAPSHOT_IOC_MAGIC, 3, void *)
+#define SNAPSHOT_ATOMIC_RESTORE		_IO(SNAPSHOT_IOC_MAGIC, 4)
+#define SNAPSHOT_FREE			_IO(SNAPSHOT_IOC_MAGIC, 5)
+#define SNAPSHOT_SET_IMAGE_SIZE		_IOW(SNAPSHOT_IOC_MAGIC, 6, unsigned long)
+#define SNAPSHOT_AVAIL_SWAP		_IOR(SNAPSHOT_IOC_MAGIC, 7, void *)
+#define SNAPSHOT_GET_SWAP_PAGE		_IOR(SNAPSHOT_IOC_MAGIC, 8, void *)
+#define SNAPSHOT_FREE_SWAP_PAGES	_IO(SNAPSHOT_IOC_MAGIC, 9)
+#define SNAPSHOT_SET_SWAP_FILE		_IOW(SNAPSHOT_IOC_MAGIC, 10, unsigned int)
 #define SNAPSHOT_IOC_MAXNR	10
 
 #define	LINUX_REBOOT_MAGIC1	0xfee1dead
@@ -50,45 +50,46 @@ struct swsusp_info {
 	int			cpus;
 	unsigned long		image_pages;
 	unsigned long		pages;
+	unsigned long		size;
 } __attribute__((aligned(PAGE_SIZE)));
 
-#define SWSUSP_SIG	"S1SUSPEND"
+#define SWSUSP_SIG	"ULSUSPEND"
 
 struct swsusp_header {
-	char reserved[PAGE_SIZE - 20 - sizeof(long)];
-	unsigned long image;
+	char reserved[PAGE_SIZE - 20 - sizeof(loff_t)];
+	loff_t image;
 	char	orig_sig[10];
 	char	sig[10];
 } __attribute__((packed, aligned(PAGE_SIZE)));
 
 static inline int freeze(int dev)
 {
-	return ioctl(dev, SNAPSHOT_IOCFREEZE, 0);
+	return ioctl(dev, SNAPSHOT_FREEZE, 0);
 }
 
 static inline int unfreeze(int dev)
 {
-	return ioctl(dev, SNAPSHOT_IOCUNFREEZE, 0);
+	return ioctl(dev, SNAPSHOT_UNFREEZE, 0);
 }
 
 static inline int atomic_snapshot(int dev, int *in_suspend)
 {
-	return ioctl(dev, SNAPSHOT_IOCATOMIC_SNAPSHOT, in_suspend);
+	return ioctl(dev, SNAPSHOT_ATOMIC_SNAPSHOT, in_suspend);
 }
 
 static inline int atomic_restore(int dev)
 {
-	return ioctl(dev, SNAPSHOT_IOCATOMIC_RESTORE, 0);
+	return ioctl(dev, SNAPSHOT_ATOMIC_RESTORE, 0);
 }
 
 static inline int free_snapshot(int dev)
 {
-	return ioctl(dev, SNAPSHOT_IOCFREE, 0);
+	return ioctl(dev, SNAPSHOT_FREE, 0);
 }
 
 static inline int set_image_size(int dev, unsigned int size)
 {
-	return ioctl(dev, SNAPSHOT_IOCSET_IMAGE_SIZE, size);
+	return ioctl(dev, SNAPSHOT_SET_IMAGE_SIZE, size);
 }
 
 static inline void reboot(void)
@@ -121,12 +122,11 @@ static inline void power_off(void)
 #define MAP_PAGE_ENTRIES	(PAGE_SIZE / sizeof(long) - 1)
 
 struct swap_map_page {
-	unsigned long		entries[MAP_PAGE_ENTRIES];
-	unsigned long		next_swap;
+	loff_t	entries[MAP_PAGE_ENTRIES];
+	loff_t	next_swap;
 };
 
 #define SNAPSHOT_DEVICE	"/dev/snapshot"
 #define RESUME_DEVICE "/dev/hdc3"
 
-#define DEFAULT_IMAGE_SIZE	500
-
+#define DEFAULT_IMAGE_SIZE	(500 * 1024 * 1024)

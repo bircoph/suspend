@@ -27,12 +27,12 @@ static int dev;
 static char buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
 
-static inline unsigned int check_free_swap(void)
+static inline loff_t check_free_swap(void)
 {
 	int error;
-	unsigned int free_swap;
+	loff_t free_swap;
 
-	error = ioctl(dev, SNAPSHOT_IOCAVAIL_SWAP, &free_swap);
+	error = ioctl(dev, SNAPSHOT_AVAIL_SWAP, &free_swap);
 	if (!error)
 		return free_swap;
 	else
@@ -43,9 +43,9 @@ static inline unsigned int check_free_swap(void)
 static inline unsigned long get_swap_page(void)
 {
 	int error;
-	unsigned long offset;
+	loff_t offset;
 
-	error = ioctl(dev, SNAPSHOT_IOCGET_SWAP_PAGE, &offset);
+	error = ioctl(dev, SNAPSHOT_GET_SWAP_PAGE, &offset);
 	if (!error)
 		return offset;
 	return 0;
@@ -53,12 +53,12 @@ static inline unsigned long get_swap_page(void)
 
 static inline int free_swap_pages(void)
 {
-	return ioctl(dev, SNAPSHOT_IOCFREE_SWAP_PAGES, 0);
+	return ioctl(dev, SNAPSHOT_FREE_SWAP_PAGES, 0);
 }
 
 static inline int set_swap_file(dev_t blkdev)
 {
-	return ioctl(dev, SNAPSHOT_IOCSET_SWAP_FILE, blkdev);
+	return ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
 }
 
 /**
@@ -68,14 +68,12 @@ static inline int set_swap_file(dev_t blkdev)
  *	@swap_offset:	Offset of the swap page we're writing to.
  */
 
-static int write_page(int fd, void *buf, unsigned long swap_offset)
+static int write_page(int fd, void *buf, loff_t offset)
 {
-	off_t offset;
 	int res = -EINVAL;
 	ssize_t cnt = 0;
 
-	if (swap_offset) {
-		offset = swap_offset * PAGE_SIZE;
+	if (offset) {
 		if (lseek(fd, offset, SEEK_SET) == offset) 
 			cnt = write(fd, buf, PAGE_SIZE);
 		if (cnt == PAGE_SIZE)
@@ -93,7 +91,7 @@ static int write_page(int fd, void *buf, unsigned long swap_offset)
 
 struct swap_map_handle {
 	struct swap_map_page cur;
-	unsigned long cur_swap;
+	loff_t cur_swap;
 	unsigned int k;
 	int fd;
 };
@@ -112,7 +110,7 @@ static inline int init_swap_writer(struct swap_map_handle *handle, int fd)
 static int swap_write_page(struct swap_map_handle *handle, void *buf)
 {
 	int error;
-	unsigned long offset;
+	loff_t offset;
 
 	offset = get_swap_page();
 	error = write_page(handle->fd, buf, offset);
@@ -181,15 +179,15 @@ static int save_image(struct swap_map_handle *handle,
  *	space avaiable from the resume partition.
  */
 
-static int enough_swap(unsigned int nr_pages)
+static int enough_swap(unsigned long size)
 {
-	unsigned int free_swap = check_free_swap();
+	loff_t free_swap = check_free_swap();
 
-	printf("suspend: Free swap pages: %u\n", free_swap);
-	return free_swap > nr_pages;
+	printf("suspend: Free swap: %lu bytes\n", free_swap);
+	return free_swap > size;
 }
 
-static int mark_swap(int fd, unsigned long start)
+static int mark_swap(int fd, loff_t start)
 {
 	int error = 0;
 
@@ -219,11 +217,11 @@ int write_image(char *resume_dev_name)
 {
 	static struct swap_map_handle handle;
 	struct swsusp_info *header;
-	unsigned long start;
+	loff_t start;
 	int fd;
 	int error;
 
-	fd = open(resume_dev_name, O_RDWR | O_SYNC);
+	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
 		printf("suspend: Could not open resume device\n");
 		return error;
@@ -232,7 +230,8 @@ int write_image(char *resume_dev_name)
 	if (error < PAGE_SIZE)
 		return error < 0 ? error : -EFAULT;
 	header = (struct swsusp_info *)buffer;
-	if (!enough_swap(header->pages)) {
+	printf("suspend: Image size: %lu bytes\n", header->size);
+	if (!enough_swap(header->size)) {
 		printf("suspend: Not enough free swap\n");
 		return -ENOSPC;
 	}
@@ -258,8 +257,9 @@ int main(int argc, char *argv[])
 {
 	char *snapshot_device_name, *resume_device_name;
 	struct stat *stat_buf;
-	int image_size;
-	int error;
+	loff_t avail_swap;
+	unsigned long image_size;
+	int error, attempts;
 	int in_suspend;
 
 	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
@@ -267,11 +267,11 @@ int main(int argc, char *argv[])
 
 	stat_buf = (struct stat *)buffer;
 	if (stat(resume_device_name, stat_buf)) {
-		fprintf(stderr, "Could not stat the resume device file\n");
+		fprintf(stderr, "suspend: Could not stat the resume device file\n");
 		return -ENODEV;
 	}
 	if (!S_ISBLK(stat_buf->st_mode)) {
-		fprintf(stderr, "Invalid resume device\n");
+		fprintf(stderr, "suspend: Invalid resume device\n");
 		return -EINVAL;
 	}
 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 	setvbuf(stderr, NULL, _IONBF, 0);
 
 	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
-		fprintf(stderr, "Could not lock myself\n");
+		fprintf(stderr, "suspend: Could not lock myself\n");
 		return 1;
 	}
 
@@ -289,26 +289,28 @@ int main(int argc, char *argv[])
 	if (dev < 0)
 		return -ENOENT;
 	if (set_swap_file(stat_buf->st_rdev)) {
-		fprintf(stderr, "Could not set the resume device file\n");
+		fprintf(stderr, "suspend: Could not set the resume device file\n");
 		error = errno;
 		goto Close;
 	}
-	image_size = check_free_swap();
-	if (image_size <= 0) {
-		fprintf(stderr, "No swap space for suspend\n");
+	avail_swap = check_free_swap();
+	if (avail_swap > DEFAULT_IMAGE_SIZE)
+		image_size = DEFAULT_IMAGE_SIZE;
+	else
+		image_size = avail_swap;
+	if (!image_size) {
+		fprintf(stderr, "suspend: No swap space for suspend\n");
 		error = -ENOSPC;
 		goto Close;
 	}
-	if (image_size > DEFAULT_IMAGE_SIZE)
-		image_size = DEFAULT_IMAGE_SIZE;
 	if (freeze(dev)) {
-		fprintf(stderr, "Could not freeze processes\n");
+		fprintf(stderr, "suspend: Could not freeze processes\n");
 		error = errno;
 		goto Close;
 	}
-	while (image_size >= 0) {
+	attempts = 2;
+	do {
 		if (set_image_size(dev, image_size)) {
-			fprintf(stderr, "Could not set the image size\n");
 			error = errno;
 			goto Unfreeze;
 		}
@@ -320,10 +322,10 @@ int main(int argc, char *argv[])
 			} else {
 				free_swap_pages();
 				free_snapshot(dev);
-				image_size -= DEFAULT_IMAGE_SIZE;
+				image_size = 0;
 			}
 		}
-	}
+	} while (--attempts);
 Unfreeze:
 	unfreeze(dev);
 Close:
