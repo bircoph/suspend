@@ -25,11 +25,20 @@ static void radeon_backlight_off(void)
 	radeon_cmd_light("off");
 }
 
+static void set_acpi_video_mode(int mode)
+{
+	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
+	fprintf(f, "%d", mode);
+	fflush(f);
+	fclose(f);
+}
+
 static void machine_table(void)
 {
 	if (!strcmp(sys_vendor, "IBM")) {
 		if (!strcmp(sys_version, "ThinkPad X32")) {
 			machine_known();
+			set_acpi_video_mode(3);
 			radeon_backlight_off();
 			return;
 		}
