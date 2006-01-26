@@ -1,5 +1,8 @@
 all: suspend resume s2ram
 
+clean:
+	rm suspend resume s2ram
+
 s2ram:	s2ram.c dmidecode.c
 	gcc -Wall s2ram.c -o s2ram
 

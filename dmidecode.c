@@ -34,7 +34,7 @@ char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 static char *dmi_string(struct dmi_header *dm, u8 s)
 {
-	u8 *bp=(u8 *)dm;
+	char *bp=(char *)dm;
 	if (!s) return "";
 	
 	bp+=dm->length;
@@ -51,7 +51,7 @@ static void dmi_table(int fd, u32 base, int len, int num)
 {
 	char *buf=malloc(len);
 	struct dmi_header *dm;
-	u8 *data;
+	char *data;
 	int i=0;
 	
 	if (lseek(fd, (long)base, 0)==-1) {
@@ -162,7 +162,6 @@ void dmi_scan(void)
 		}
 	}
 	close(fd);
-	return 0;
 }
 
 #ifndef S2RAM
