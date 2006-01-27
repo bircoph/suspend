@@ -28,6 +28,10 @@ static void radeon_backlight_off(void)
 static void set_acpi_video_mode(int mode)
 {
 	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
+	if (!f) {
+		printf("/proc/sys/kernel/acpi_video_flags does not exist; perhaps you need -mm kernel?\n");
+		exit(1);
+	}
 	fprintf(f, "%d", mode);
 	fflush(f);
 	fclose(f);
@@ -66,6 +70,10 @@ void s2ram_prepare(void)
 void s2ram_do(void)
 {
 	FILE *f = fopen("/sys/power/state", "w");
+	if (!f) {
+		printf("/sys/power/state does not exist; what kind of ninja mutant machine is this?\n");
+		exit(1);
+	}
 	fprintf(f, "mem");
 	fflush(f);
 	fclose(f);
