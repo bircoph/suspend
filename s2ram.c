@@ -11,7 +11,10 @@
 #include "dmidecode.c"
 #include "radeontool.c"
 
-int test_mode;
+static int test_mode;
+static int need_vbetool;
+
+#define VBE_STATE "/var/cache/vbe.state"
 
 static void machine_known(void)
 {
@@ -37,6 +40,17 @@ static void set_acpi_video_mode(int mode)
 	fclose(f);
 }
 
+
+static void vbe_state_save(void)
+{
+	int err = system("vbetool vbestate save > " VBE_STATE );
+	if (err) {
+		printf("vbetool failed to save video state with error %d\n.", err);
+		exit(1);
+	}
+	need_vbetool = 1;
+}
+
 static void machine_table(void)
 {
 	if (!strcmp(sys_vendor, "IBM")) {
@@ -44,6 +58,13 @@ static void machine_table(void)
 			machine_known();
 			set_acpi_video_mode(3);
 			radeon_backlight_off();
+			return;
+		}
+	}
+	if (!strcmp(sys_vendor, "ASUSTEK ")) {
+		if (!strcmp(sys_product, "L3000D")) {
+			machine_known();
+			vbe_state_save();
 			return;
 		}
 	}
@@ -55,6 +76,29 @@ static void machine_table(void)
 	       "then reimplement neccessary steps here and mail patch to\n"
 	       "pavel@suse.cz. Good luck!\n");
 	exit(1);
+}
+
+/* Note: it would be nice to have vbetool integrated into s2ram; that
+   way, user would see useful output even in cases like broken disk
+   driver. OTOH vbetool is big....
+*/
+
+static int vbe_state_restore(void)
+{
+	int err;
+
+	err = system("vbetool post");
+	if (err) {
+		printf("vbetool failed to POST video board with error %d.\n", err);
+		return err;
+	}
+	
+	err = system("vbetool vbestate restore < " VBE_STATE);
+	if (err)
+		printf("vbetool failed to restore video state with error %d.\n", err);
+
+	remove(VBE_STATE);
+	return err;
 }
 
 /* Code that can only be run on non-frozen system. It does not matter now
@@ -79,6 +123,12 @@ void s2ram_do(void)
 	fclose(f);
 } 
 
+void s2ram_resume(void)
+{
+	if (need_vbetool)
+		vbe_state_restore();
+}
+
 int main(int argc, char *argv[])
 {
 	int i;
@@ -101,5 +151,6 @@ int main(int argc, char *argv[])
 	}
 	s2ram_prepare();
 	s2ram_do();
+	s2ram_resume();
 	return 0;
 }
