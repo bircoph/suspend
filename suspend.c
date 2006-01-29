@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/vt.h>
+#include <linux/kd.h>
 
 #include "swsusp.h"
 
@@ -59,6 +61,55 @@ static inline int free_swap_pages(void)
 static inline int set_swap_file(dev_t blkdev)
 {
 	return ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
+}
+
+/**
+ *	console_fd - get file descriptor for given file name and verify
+ *	if that's a console descriptor
+ */
+
+static inline int console_fd(const char *fname)
+{
+	int fd;
+	char arg;
+
+	fd = open(fname, O_RDONLY);
+	if (fd < 0 && errno == EACCES)
+		fd = open(fname, O_WRONLY);
+	if (fd >= 0 && (ioctl(fd, KDGKBTYPE, &arg) || (arg != KB_101 && arg != KB_84))) {
+		close(fd);
+		return -ENOTTY;
+	}
+	return fd;
+}
+
+/**
+ *	go_to_console - attach the standard input, output and error streams
+ *	to the active virtual terminal (based on the code of openvt)
+ */
+
+static void go_to_console(void)
+{
+	int fd, error;
+	char *vtname = buffer;
+	struct vt_stat vtstat;
+
+	fd = console_fd("/dev/tty");
+	if (fd < 0)
+		fd = console_fd("/dev/console");
+	if (fd < 0)
+		return;
+	error = ioctl(fd, VT_GETSTATE, &vtstat);
+	close(fd);
+	if (error)
+		return;
+	sprintf(vtname, "/dev/tty%d", vtstat.v_active);
+	fd = open(vtname, O_RDWR);
+	if (fd < 0)
+		return;
+	dup2(fd, 0);
+	dup2(fd, 1);
+	dup2(fd, 2);
 }
 
 /**
@@ -308,6 +359,7 @@ int main(int argc, char *argv[])
 		error = errno;
 		goto Close;
 	}
+	go_to_console();
 	attempts = 2;
 	do {
 		if (set_image_size(dev, image_size)) {
