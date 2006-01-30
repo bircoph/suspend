@@ -15,3 +15,28 @@ to use, but already secure.
 4) generate public/private key pair, protect private key with
 passphrase (aka "resume password"). Encrypt suspend image with public
 key => passphrase is neccessary for successful resume.
+
+Known problems with freezer:
+
+1) stress -d 5 --hdd-bytes 100M -i 5 -c 5 
+
+breaks it most of the time.
+
+2) mysqld breaks it.
+
+https://bugzilla.novell.com/show_bug.cgi?id=71076
+
+This simple program should demonstrate the bug
+
+#include <signal.h>
+#include <errno.h>
+#include <stdlib.h>
+
+int main(int argc,char ** argv){
+sigset_t set;
+int sig;
+sigemptyset(&set);
+sigprocmask(SIG_BLOCK,&set,NULL);
+while(sigwait(&set,&sig)==EINTR);
+return 0;
+}
