@@ -243,7 +243,7 @@ static int mark_swap(int fd, loff_t start)
 	int error = 0;
 
 	lseek(fd, 0, SEEK_SET);
-	if (read(fd, &swsusp_header, PAGE_SIZE) < PAGE_SIZE)
+	if (read(fd, &swsusp_header, PAGE_SIZE) < (ssize_t)PAGE_SIZE)
 		return -EIO;
 	if (!memcmp("SWAP-SPACE", swsusp_header.sig, 10) ||
 	    !memcmp("SWAPSPACE2", swsusp_header.sig, 10)) {
@@ -251,7 +251,7 @@ static int mark_swap(int fd, loff_t start)
 		memcpy(swsusp_header.sig, SWSUSP_SIG, 10);
 		swsusp_header.image = start;
 		lseek(fd, 0, SEEK_SET);
-		if (write(fd, &swsusp_header, PAGE_SIZE) < PAGE_SIZE)
+		if (write(fd, &swsusp_header, PAGE_SIZE) < (ssize_t)PAGE_SIZE)
 			error = -EIO;
 	} else {
 		printf("suspend: Device is not a swap space.\n");
@@ -278,7 +278,7 @@ int write_image(char *resume_dev_name)
 		return error;
 	}
 	error = read(dev, buffer, PAGE_SIZE);
-	if (error < PAGE_SIZE)
+	if (error < (int)PAGE_SIZE)
 		return error < 0 ? error : -EFAULT;
 	header = (struct swsusp_info *)buffer;
 	printf("suspend: Image size: %lu bytes\n", header->size);

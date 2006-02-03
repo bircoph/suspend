@@ -41,7 +41,7 @@ static int read_page(int fd, void *buf, loff_t offset)
 	if (offset) {
 		if (lseek(fd, offset, SEEK_SET) == offset) 
 			cnt = read(fd, buf, PAGE_SIZE);
-		if (cnt < PAGE_SIZE) {
+		if (cnt < (ssize_t)PAGE_SIZE) {
 			if (cnt < 0)
 				res = cnt;
 			else
@@ -127,7 +127,8 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 		error = swap_read_page(handle, buffer);
 		if (error)
 			break;
-		if ((ret = write(dev, buffer, PAGE_SIZE)) < PAGE_SIZE) {
+		ret = write(dev, buffer, PAGE_SIZE);
+		if (ret < (int)PAGE_SIZE) {
 			error = ret < 0 ? ret : -ENOSPC;
 			break;
 		}
@@ -161,7 +162,7 @@ static int read_image(int dev, char *resume_dev_name)
 			/* Reset swap signature now */
 			if (lseek(fd, 0, SEEK_SET) == 0) {
 				ret = write(fd, &swsusp_header, PAGE_SIZE);
-				if (ret < PAGE_SIZE)
+				if (ret < (int)PAGE_SIZE)
 					error = ret < 0 ? ret : -EIO;
 			} else {
 				error = -EIO;
@@ -181,7 +182,7 @@ static int read_image(int dev, char *resume_dev_name)
 		if (!error) {
 			nr_pages = header->pages - 1;
 			ret = write(dev, buffer, PAGE_SIZE);
-			if (ret < PAGE_SIZE)
+			if (ret < (int)PAGE_SIZE)
 				error = ret < 0 ? ret : -EIO;
 		}
 		if (!error)
@@ -190,9 +191,9 @@ static int read_image(int dev, char *resume_dev_name)
 	fsync(fd);
 	close(fd);
 	if (!error)
-		printf("resume: Reading resume file was successful\n");
+		printf("resume: Image successfully loaded\n");
 	else
-		printf("resume: Error %d resuming\n", error);
+		printf("resume: Error %d loading the image\n", error);
 	return error;
 }
 
