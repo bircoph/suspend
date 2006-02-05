@@ -14,6 +14,9 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
+#include <sys/vt.h>
+#include <sys/wait.h>
+#include <linux/kd.h>
 #include <syscall.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -21,8 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/vt.h>
-#include <linux/kd.h>
 
 #include "swsusp.h"
 
@@ -96,9 +97,6 @@ static int find_active_vt(void)
 	char *fname = buffer;
 	struct vt_stat vtstat;
 
-	close(0);
-	close(1);
-	close(2);
 	dev = 5; /* Major */
 	dev <<= 8;
 	dev += 1; /* Minor */
@@ -136,11 +134,7 @@ static void bind_to_vt(int vt)
 		return;
 	sprintf(fname, "tty%d", vt);
 	fd = open(fname, O_RDWR);
-	if (fd < 0) {
-		close(0);
-		close(1);
-		close(2);
-	} else {
+	if (fd >= 0) {
 		dup2(fd, 0);
 		dup2(fd, 1);
 		dup2(fd, 2);
@@ -341,41 +335,24 @@ int write_image(char *resume_dev_name)
 	return error;
 }
 
-int main(int argc, char *argv[])
+int suspend(char *snapshot_device_name, dev_t resume_device)
 {
-	char *snapshot_device_name, *resume_device_name;
-	struct stat *stat_buf;
 	loff_t avail_swap;
 	unsigned long image_size;
-	int error, suspend_vt, attempts, chrooted, in_suspend;
+	int suspend_vt, attempts, chrooted, in_suspend, error = 0;
 
-	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
-	snapshot_device_name = SNAPSHOT_DEVICE;
-
-	stat_buf = (struct stat *)buffer;
-	if (stat(resume_device_name, stat_buf)) {
-		fprintf(stderr, "suspend: Could not stat the resume device file\n");
-		return -ENODEV;
-	}
-	if (!S_ISBLK(stat_buf->st_mode)) {
-		fprintf(stderr, "suspend: Invalid resume device\n");
-		return -EINVAL;
-	}
-
-	sync();
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
 
 	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
 		fprintf(stderr, "suspend: Could not lock myself\n");
-		return 1;
+		return errno;
 	}
 
-	error = 0;
 	dev = open(snapshot_device_name, O_RDONLY);
 	if (dev < 0)
-		return -ENOENT;
-	if (set_swap_file(stat_buf->st_rdev)) {
+		return errno;
+	if (set_swap_file(resume_device)) {
 		fprintf(stderr, "suspend: Could not set the resume device\n");
 		error = errno;
 		goto Close;
@@ -387,22 +364,19 @@ int main(int argc, char *argv[])
 		image_size = avail_swap;
 	if (!image_size) {
 		fprintf(stderr, "suspend: No swap space for suspend\n");
-		error = -ENOSPC;
+		error = ENOSPC;
 		goto Close;
 	}
-	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, "nr_inodes=5")) {
-		fprintf(stderr, "suspend: Could not mount the tmpfs filesystem on "
-			CHROOT_DIR);
-		error = errno;
-		goto Close;
-	}
-	if (mknod(CHROOT_DIR "/resume", S_IFBLK | 0600, stat_buf->st_rdev)) {
+	if (mknod(CHROOT_DIR "/resume", S_IFBLK | 0600, resume_device)) {
 		fprintf(stderr, "suspend: Could not create the resume device file\n");
 		error = errno;
 		goto Close;
 	}
+	close(0);
+	close(1);
+	close(2);
+
 	if (freeze(dev)) {
-		fprintf(stderr, "suspend: Could not freeze processes\n");
 		error = errno;
 		goto Unfreeze;
 	}
@@ -412,7 +386,7 @@ int main(int argc, char *argv[])
 	do {
 		if (set_image_size(dev, image_size)) {
 			error = errno;
-			goto Unfreeze;
+			break;
 		}
 		if (!atomic_snapshot(dev, &in_suspend)) {
 			if (!in_suspend)
@@ -434,17 +408,61 @@ int main(int argc, char *argv[])
 				free_swap_pages();
 				free_snapshot(dev);
 				image_size = 0;
+				error = errno;
 			}
 		}
 	} while (--attempts);
 Unfreeze:
 	unfreeze(dev);
-	close(0);
-	close(1);
-	close(2);
-	umount(CHROOT_DIR);
 Close:
 	close(dev);
 
 	return error;
+}
+
+
+int main(int argc, char *argv[])
+{
+	char *resume_device_name;
+	struct stat stat_buf;
+	pid_t pid;
+	int ret = 0;
+
+	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
+	if (stat(resume_device_name, &stat_buf)) {
+		fprintf(stderr, "suspend: Could not stat the resume device file\n");
+		return ENODEV;
+	}
+	if (!S_ISBLK(stat_buf.st_mode)) {
+		fprintf(stderr, "suspend: Invalid resume device\n");
+		return EINVAL;
+	}
+
+	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, "nr_inodes=5")) {
+		fprintf(stderr, "suspend: Could not mount the tmpfs filesystem on "
+			CHROOT_DIR);
+		return errno;
+	}
+
+	sync();
+
+	pid = fork();
+	if (pid) {
+		if (pid < 0) {
+			printf("suspend: Could not fork\n");
+			ret = errno;
+		} else {
+			pid = waitpid(pid, &ret, 0);
+			if (pid < 0)
+				ret = errno;
+			else
+				ret = WEXITSTATUS(ret);
+		}
+	} else {
+		return suspend(SNAPSHOT_DEVICE, stat_buf.st_rdev);
+	}
+
+	umount(CHROOT_DIR);
+
+	return ret;
 }
