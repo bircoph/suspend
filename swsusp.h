@@ -130,3 +130,5 @@ struct swap_map_page {
 #define RESUME_DEVICE "/dev/hdc3"
 
 #define DEFAULT_IMAGE_SIZE	(500 * 1024 * 1024)
+
+#define CHROOT_DIR	"/boot/suspend"

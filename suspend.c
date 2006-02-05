@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/mount.h>
 #include <syscall.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -84,32 +85,68 @@ static inline int console_fd(const char *fname)
 }
 
 /**
- *	go_to_console - attach the standard input, output and error streams
- *	to the active virtual terminal (based on the code of openvt)
+ *	find_active_vt - find the active virtual terminal (based on the code
+ *	of openvt)
  */
 
-static void go_to_console(void)
+static int find_active_vt(void)
 {
 	int fd, error;
-	char *vtname = buffer;
+	dev_t dev;
+	char *fname = buffer;
 	struct vt_stat vtstat;
 
-	fd = console_fd("/dev/tty");
+	close(0);
+	close(1);
+	close(2);
+	dev = 5; /* Major */
+	dev <<= 8;
+	dev += 1; /* Minor */
+	sprintf(fname, CHROOT_DIR "/console");
+	if (mknod(fname, S_IFCHR | 0600, dev))
+		return -errno;
+	fd = console_fd(fname);
 	if (fd < 0)
-		fd = console_fd("/dev/console");
-	if (fd < 0)
-		return;
+		return -errno;
 	error = ioctl(fd, VT_GETSTATE, &vtstat);
 	close(fd);
 	if (error)
+		return -errno;
+	dev = 4; /* Major */
+	dev <<= 8;
+	dev += vtstat.v_active; /* Minor */
+	sprintf(fname, CHROOT_DIR "/tty%d", vtstat.v_active);
+	if (mknod(fname, S_IFCHR | 0600, dev))
+		return -errno;
+	return vtstat.v_active;
+}
+
+/**
+ *	bind_to_vt - open a virtual terminal and attach the 0, 1, 2 file
+ *	handles to it (the device file must be in the current directory)
+ *	@vt - number of the virtual terminal (may be negative, we must check)
+ */
+
+static void bind_to_vt(int vt)
+{
+	int fd;
+	char *fname = buffer;
+
+	if (vt < 0)
 		return;
-	sprintf(vtname, "/dev/tty%d", vtstat.v_active);
-	fd = open(vtname, O_RDWR);
-	if (fd < 0)
-		return;
-	dup2(fd, 0);
-	dup2(fd, 1);
-	dup2(fd, 2);
+	sprintf(fname, "tty%d", vt);
+	fd = open(fname, O_RDWR);
+	if (fd < 0) {
+		close(0);
+		close(1);
+		close(2);
+	} else {
+		dup2(fd, 0);
+		dup2(fd, 1);
+		dup2(fd, 2);
+		close(fd);
+		printf("suspend: Bound to tty%d\n", vt);
+	}
 }
 
 /**
@@ -310,8 +347,7 @@ int main(int argc, char *argv[])
 	struct stat *stat_buf;
 	loff_t avail_swap;
 	unsigned long image_size;
-	int error, attempts;
-	int in_suspend;
+	int error, suspend_vt, attempts, chrooted, in_suspend;
 
 	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
 	snapshot_device_name = SNAPSHOT_DEVICE;
@@ -340,7 +376,7 @@ int main(int argc, char *argv[])
 	if (dev < 0)
 		return -ENOENT;
 	if (set_swap_file(stat_buf->st_rdev)) {
-		fprintf(stderr, "suspend: Could not set the resume device file\n");
+		fprintf(stderr, "suspend: Could not set the resume device\n");
 		error = errno;
 		goto Close;
 	}
@@ -354,12 +390,24 @@ int main(int argc, char *argv[])
 		error = -ENOSPC;
 		goto Close;
 	}
-	if (freeze(dev)) {
-		fprintf(stderr, "suspend: Could not freeze processes\n");
+	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, "nr_inodes=5")) {
+		fprintf(stderr, "suspend: Could not mount the tmpfs filesystem on "
+			CHROOT_DIR);
 		error = errno;
 		goto Close;
 	}
-	go_to_console();
+	if (mknod(CHROOT_DIR "/resume", S_IFBLK | 0600, stat_buf->st_rdev)) {
+		fprintf(stderr, "suspend: Could not create the resume device file\n");
+		error = errno;
+		goto Close;
+	}
+	if (freeze(dev)) {
+		fprintf(stderr, "suspend: Could not freeze processes\n");
+		error = errno;
+		goto Unfreeze;
+	}
+	suspend_vt = find_active_vt();
+	chrooted = 0;
 	attempts = 2;
 	do {
 		if (set_image_size(dev, image_size)) {
@@ -369,7 +417,18 @@ int main(int argc, char *argv[])
 		if (!atomic_snapshot(dev, &in_suspend)) {
 			if (!in_suspend)
 				break;
-			if (!write_image(resume_device_name)) {
+			if (!chrooted) {
+				error = chroot(CHROOT_DIR);
+				if (!error)
+					error = chdir("/");
+				bind_to_vt(suspend_vt);
+				chrooted = 1;
+			} else {
+				error = 0;
+			}
+			if (!error)
+				error = write_image("resume");
+			if (!error) {
 				power_off();
 			} else {
 				free_swap_pages();
@@ -380,6 +439,10 @@ int main(int argc, char *argv[])
 	} while (--attempts);
 Unfreeze:
 	unfreeze(dev);
+	close(0);
+	close(1);
+	close(2);
+	umount(CHROOT_DIR);
 Close:
 	close(dev);
 
