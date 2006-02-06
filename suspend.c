@@ -66,84 +66,6 @@ static inline int set_swap_file(dev_t blkdev)
 }
 
 /**
- *	console_fd - get file descriptor for given file name and verify
- *	if that's a console descriptor
- */
-
-static inline int console_fd(const char *fname)
-{
-	int fd;
-	char arg;
-
-	fd = open(fname, O_RDONLY);
-	if (fd < 0 && errno == EACCES)
-		fd = open(fname, O_WRONLY);
-	if (fd >= 0 && (ioctl(fd, KDGKBTYPE, &arg) || (arg != KB_101 && arg != KB_84))) {
-		close(fd);
-		return -ENOTTY;
-	}
-	return fd;
-}
-
-/**
- *	find_active_vt - find the active virtual terminal (based on the code
- *	of openvt)
- */
-
-static int find_active_vt(void)
-{
-	int fd, error;
-	dev_t dev;
-	char *fname = buffer;
-	struct vt_stat vtstat;
-
-	dev = 5; /* Major */
-	dev <<= 8;
-	dev += 1; /* Minor */
-	sprintf(fname, CHROOT_DIR "/console");
-	if (mknod(fname, S_IFCHR | 0600, dev))
-		return -errno;
-	fd = console_fd(fname);
-	if (fd < 0)
-		return -errno;
-	error = ioctl(fd, VT_GETSTATE, &vtstat);
-	close(fd);
-	if (error)
-		return -errno;
-	dev = 4; /* Major */
-	dev <<= 8;
-	dev += vtstat.v_active; /* Minor */
-	sprintf(fname, CHROOT_DIR "/tty%d", vtstat.v_active);
-	if (mknod(fname, S_IFCHR | 0600, dev))
-		return -errno;
-	return vtstat.v_active;
-}
-
-/**
- *	bind_to_vt - open a virtual terminal and attach the 0, 1, 2 file
- *	handles to it (the device file must be in the current directory)
- *	@vt - number of the virtual terminal (may be negative, we must check)
- */
-
-static void bind_to_vt(int vt)
-{
-	int fd;
-	char *fname = buffer;
-
-	if (vt < 0)
-		return;
-	sprintf(fname, "tty%d", vt);
-	fd = open(fname, O_RDWR);
-	if (fd >= 0) {
-		dup2(fd, 0);
-		dup2(fd, 1);
-		dup2(fd, 2);
-		close(fd);
-		printf("suspend: Bound to tty%d\n", vt);
-	}
-}
-
-/**
  *	write_page - Write one page to given swap location.
  *	@fd:		File handle of the resume partition
  *	@buf:		Pointer to the area we're writing.
@@ -335,11 +257,75 @@ int write_image(char *resume_dev_name)
 	return error;
 }
 
-int suspend(char *snapshot_device_name, dev_t resume_device)
+/**
+ *	console_fd - get file descriptor for given file name and verify
+ *	if that's a console descriptor (based on the code of openvt)
+ */
+
+static inline int console_fd(const char *fname)
+{
+	int fd;
+	char arg;
+
+	fd = open(fname, O_RDONLY);
+	if (fd < 0 && errno == EACCES)
+		fd = open(fname, O_WRONLY);
+	if (fd >= 0 && (ioctl(fd, KDGKBTYPE, &arg) || (arg != KB_101 && arg != KB_84))) {
+		close(fd);
+		return -ENOTTY;
+	}
+	return fd;
+}
+
+/**
+ *	find_active_vt - find the active virtual terminal
+ */
+
+static void bind_to_active_vt(void)
+{
+	int fd, error;
+	dev_t dev;
+	char *fname = buffer;
+	struct vt_stat vtstat;
+
+	dev = makedev(5, 1);
+	if (mknod("console", S_IFCHR | 0600, dev))
+		return;
+	fd = console_fd("console");
+	if (fd < 0)
+		return;
+	error = ioctl(fd, VT_GETSTATE, &vtstat);
+	close(fd);
+	if (error)
+		return;
+	dev = makedev(4, vtstat.v_active);
+	sprintf(fname, "tty%d", vtstat.v_active);
+	if (mknod(fname, S_IFCHR | 0600, dev))
+		return;
+	fd = open(fname, O_RDWR);
+	if (fd >= 0) {
+		dup2(fd, 0);
+		dup2(fd, 1);
+		dup2(fd, 2);
+		close(fd);
+		printf("suspend: Bound to tty%d\n", vtstat.v_active);
+	}
+}
+
+int suspend_system(dev_t snapshot_dev, dev_t resume_dev)
 {
 	loff_t avail_swap;
 	unsigned long image_size;
-	int suspend_vt, attempts, chrooted, in_suspend, error = 0;
+	int attempts, in_suspend, error = 0;
+
+	if (mknod("snapshot", S_IFCHR | 0600, snapshot_dev)) {
+		fprintf(stderr, "suspend: Could not create the snapshot device file\n");
+		return errno;
+	}
+	if (mknod("resume", S_IFBLK | 0600, resume_dev)) {
+		fprintf(stderr, "suspend: Could not create the resume device file\n");
+		return errno;
+	}
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -349,10 +335,10 @@ int suspend(char *snapshot_device_name, dev_t resume_device)
 		return errno;
 	}
 
-	dev = open(snapshot_device_name, O_RDONLY);
+	dev = open("snapshot", O_RDONLY);
 	if (dev < 0)
 		return errno;
-	if (set_swap_file(resume_device)) {
+	if (set_swap_file(resume_dev)) {
 		fprintf(stderr, "suspend: Could not set the resume device\n");
 		error = errno;
 		goto Close;
@@ -367,11 +353,6 @@ int suspend(char *snapshot_device_name, dev_t resume_device)
 		error = ENOSPC;
 		goto Close;
 	}
-	if (mknod(CHROOT_DIR "/resume", S_IFBLK | 0600, resume_device)) {
-		fprintf(stderr, "suspend: Could not create the resume device file\n");
-		error = errno;
-		goto Close;
-	}
 	close(0);
 	close(1);
 	close(2);
@@ -380,8 +361,7 @@ int suspend(char *snapshot_device_name, dev_t resume_device)
 		error = errno;
 		goto Unfreeze;
 	}
-	suspend_vt = find_active_vt();
-	chrooted = 0;
+	bind_to_active_vt();
 	attempts = 2;
 	do {
 		if (set_image_size(dev, image_size)) {
@@ -391,17 +371,7 @@ int suspend(char *snapshot_device_name, dev_t resume_device)
 		if (!atomic_snapshot(dev, &in_suspend)) {
 			if (!in_suspend)
 				break;
-			if (!chrooted) {
-				error = chroot(CHROOT_DIR);
-				if (!error)
-					error = chdir("/");
-				bind_to_vt(suspend_vt);
-				chrooted = 1;
-			} else {
-				error = 0;
-			}
-			if (!error)
-				error = write_image("resume");
+			error = write_image("resume");
 			if (!error) {
 				power_off();
 			} else {
@@ -425,6 +395,7 @@ int main(int argc, char *argv[])
 {
 	char *resume_device_name;
 	struct stat stat_buf;
+	dev_t snapshot_dev, resume_dev;
 	pid_t pid;
 	int ret = 0;
 
@@ -437,6 +408,13 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "suspend: Invalid resume device\n");
 		return EINVAL;
 	}
+	resume_dev = stat_buf.st_rdev;
+
+	if (stat(SNAPSHOT_DEVICE, &stat_buf)) {
+		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
+		return ENODEV;
+	}
+	snapshot_dev = stat_buf.st_rdev;
 
 	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, "nr_inodes=5")) {
 		fprintf(stderr, "suspend: Could not mount the tmpfs filesystem on "
@@ -459,7 +437,13 @@ int main(int argc, char *argv[])
 				ret = WEXITSTATUS(ret);
 		}
 	} else {
-		return suspend(SNAPSHOT_DEVICE, stat_buf.st_rdev);
+		ret = chroot(CHROOT_DIR);
+		if (!ret)
+			ret = chdir("/");
+		if (ret)
+			return errno;
+		else
+			return suspend_system(snapshot_dev, resume_dev);
 	}
 
 	umount(CHROOT_DIR);
