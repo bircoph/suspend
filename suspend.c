@@ -305,7 +305,8 @@ static void bind_to_active_vt(void)
 		return;
 	fd = open(fname, O_RDWR);
 	if (fd >= 0) {
-		write(fd, "\33[H\33[J", 6);
+		char *msg = "\33[H\33[Jsuspend: Snapshoting system\n";
+		write(fd, msg, strlen(msg));
 		dup2(fd, 0);
 		dup2(fd, 1);
 		dup2(fd, 2);
