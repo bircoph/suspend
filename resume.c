@@ -148,26 +148,17 @@ static int read_image(int dev, char *resume_dev_name)
 	int fd, ret, error = 0;
 	struct swsusp_info *header;
 	unsigned int nr_pages;
-
+	char c;
 
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
-		printf("resume: Could not open resume device\n");
-		return -ENOENT;
+		printf("resume: Could not open the resume device\n");
+		return -errno;
 	}
 	memset(&swsusp_header, 0, sizeof(swsusp_header));
 	ret = read(fd, &swsusp_header, PAGE_SIZE);
 	if (ret == PAGE_SIZE) {
 		if (!memcmp(SWSUSP_SIG, swsusp_header.sig, 10)) {
-			memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
-			/* Reset swap signature now */
-			if (lseek(fd, 0, SEEK_SET) == 0) {
-				ret = write(fd, &swsusp_header, PAGE_SIZE);
-				if (ret < (int)PAGE_SIZE)
-					error = ret < 0 ? ret : -EIO;
-			} else {
-				error = -EIO;
-			}
 		} else {
 			error = -EINVAL;
 		}
@@ -188,6 +179,30 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 		if (!error)
 			error = load_image(&handle, dev, nr_pages);
+	}
+	if (error) {
+		printf("resume: The system snapshot image could not be read.\n\n"
+			"\tThis might be a result of booting a wrong kernel.\n\n"
+			"\tYou can continue to boot the system and lose the saved state\n"
+			"\tor reboot and try again.\n\n"
+			"\tDo you want to continue (y/n)? ");
+		fscanf(stdin, "%c", &c);
+		ret = (c != 'y' && c != 'Y');
+		if (ret) {
+			close(fd);
+			reboot();
+		}
+	}
+	if (!error || !ret) {
+		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
+		/* Reset swap signature now */
+		ret = lseek(fd, 0, SEEK_SET);
+		if (!ret)
+			ret = write(fd, &swsusp_header, PAGE_SIZE);
+		if (ret < (int)PAGE_SIZE) {
+			fprintf(stderr, "resume: Could not restore the partition header\n");
+			error = ret < 0 ? -errno : -EIO;
+		}
 	}
 	fsync(fd);
 	close(fd);
@@ -224,10 +239,24 @@ static void set_kernel_console_loglevel(int level)
 int main(int argc, char *argv[])
 {
 	char *resume_device_name;
+	struct stat stat_buf;
 	int dev;
-	int error = 0;
+	int n, error = 0;
 
 	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
+
+	while (stat(resume_device_name, &stat_buf)) {
+		printf("resume: Could not stat the resume device file.\n"
+			"\tPlease type in the file name to try again"
+			"\tor press ENTER to boot the system: ");
+		fgets(buffer, 256, stdin);
+		n = strlen(buffer) - 1;
+		if (!n)
+			return ENOENT;
+		if (buffer[n] == '\n')
+			buffer[n] = '\0';
+		resume_device_name = buffer;
+	}
 
 	set_kernel_console_loglevel(SUSPEND_LOGLEVEL);
 
@@ -241,10 +270,11 @@ int main(int argc, char *argv[])
 
 	dev = open(SNAPSHOT_DEVICE, O_WRONLY);
 	if (dev < 0)
-		return -ENOENT;
-	if (read_image(dev, resume_device_name)) {
+		return ENOENT;
+	error = read_image(dev, resume_device_name);
+	if (error) {
 		fprintf(stderr, "resume: Could not read the image\n");
-		error = errno;
+		error = -error;
 		goto Close;
 	}
 	if (freeze(dev)) {
