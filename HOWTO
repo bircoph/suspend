@@ -1,0 +1,24 @@
+Suspend-to-disk HOWTO
+~~~~~~~~~~~~~~~~~~~~~
+Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
+
+
+You'll need /dev/snapshot for these to work:
+
+crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
+
+Then compile userspace tools in usual way. You'll need an -mm kernel
+for now. To suspend-to-disk, run
+
+./suspend /dev/<your_swap_partition>
+
+. (There should be just one, for now.) Suspend is easy, resume is
+slightly harder. Resume application has to be ran without any
+filesystems mounted rw, and without any journalling filesystems
+mounted at all, preferably from initrd (but read-only ext2 should do
+the trick, too). Resume is then as easy as running
+
+./resume /dev/<your_swap_partition>
+
+. You probably want to create script that attempts to resume with
+above command, and if that fails, fall back to init.
