@@ -225,6 +225,7 @@ int write_image(char *resume_dev_name)
 	int fd;
 	int error;
 
+	printf("suspend: System snapshot ready. Preparing to write\n");
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
 		printf("suspend: Could not open resume device\n");
@@ -304,11 +305,11 @@ static void bind_to_active_vt(void)
 		return;
 	fd = open(fname, O_RDWR);
 	if (fd >= 0) {
+		write(fd, "\33[H\33[J", 6);
 		dup2(fd, 0);
 		dup2(fd, 1);
 		dup2(fd, 2);
 		close(fd);
-		printf("suspend: Bound to tty%d\n", vtstat.v_active);
 	}
 }
 
@@ -390,6 +391,29 @@ Close:
 	return error;
 }
 
+static inline int get_kernel_console_loglevel(void)
+{
+	FILE *file;
+	int level = -1;
+
+	file = fopen("/proc/sys/kernel/printk", "r");
+	if (file) {
+		fscanf(file, "%d", &level);
+		fclose(file);
+	}
+	return level;
+}
+
+static inline void set_kernel_console_loglevel(int level)
+{
+	FILE *file;
+
+	file = fopen("/proc/sys/kernel/printk", "w");
+	if (file) {
+		fprintf(file, "%d\n", level);
+		fclose(file);
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -397,7 +421,7 @@ int main(int argc, char *argv[])
 	struct stat stat_buf;
 	dev_t snapshot_dev, resume_dev;
 	pid_t pid;
-	int ret = 0;
+	int orig_loglevel, ret = 0;
 
 	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
 	if (stat(resume_device_name, &stat_buf)) {
@@ -416,11 +440,14 @@ int main(int argc, char *argv[])
 	}
 	snapshot_dev = stat_buf.st_rdev;
 
-	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, "nr_inodes=5")) {
+	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, TMPFS_OPTIONS)) {
 		fprintf(stderr, "suspend: Could not mount the tmpfs filesystem on "
 			CHROOT_DIR);
 		return errno;
 	}
+
+	orig_loglevel = get_kernel_console_loglevel();
+	set_kernel_console_loglevel(SUSPEND_LOGLEVEL);
 
 	sync();
 
@@ -445,6 +472,9 @@ int main(int argc, char *argv[])
 		else
 			return suspend_system(snapshot_dev, resume_dev);
 	}
+
+	if (orig_loglevel > 0)
+		set_kernel_console_loglevel(orig_loglevel);
 
 	umount(CHROOT_DIR);
 

@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/mount.h>
 #include <syscall.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -197,14 +198,38 @@ static int read_image(int dev, char *resume_dev_name)
 	return error;
 }
 
+static void set_kernel_console_loglevel(int level)
+{
+	FILE *file;
+	struct stat stat_buf;
+	char *procname = "/proc/sys/kernel/printk";
+	int proc_mounted = 0;
+
+	if (stat(procname, &stat_buf) && errno == ENOENT) {
+		if (mount("none", "/proc", "proc", 0, NULL)) {
+			printf("resume: Could not mount proc\n");
+			return;
+		} else
+			proc_mounted = 1;
+	}
+	file = fopen(procname, "w");
+	if (file) {
+		fprintf(file, "%d\n", level);
+		fclose(file);
+	}
+	if (proc_mounted)
+		umount("/proc");
+}
+
 int main(int argc, char *argv[])
 {
-	char *snapshot_device_name, *resume_device_name;
+	char *resume_device_name;
 	int dev;
 	int error = 0;
 
 	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
-	snapshot_device_name = SNAPSHOT_DEVICE;
+
+	set_kernel_console_loglevel(SUSPEND_LOGLEVEL);
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -214,7 +239,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	dev = open(snapshot_device_name, O_WRONLY);
+	dev = open(SNAPSHOT_DEVICE, O_WRONLY);
 	if (dev < 0)
 		return -ENOENT;
 	if (read_image(dev, resume_device_name)) {
@@ -231,5 +256,8 @@ int main(int argc, char *argv[])
 	unfreeze(dev);
 Close:
 	close(dev);
+
+	set_kernel_console_loglevel(MAX_LOGLEVEL);
+
 	return error;
 }
