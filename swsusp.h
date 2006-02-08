@@ -119,7 +119,7 @@ static inline void power_off(void)
  *	at a time.
  */
 
-#define MAP_PAGE_ENTRIES	(PAGE_SIZE / sizeof(long) - 1)
+#define MAP_PAGE_ENTRIES	(PAGE_SIZE / sizeof(loff_t) - 1)
 
 struct swap_map_page {
 	loff_t	entries[MAP_PAGE_ENTRIES];
