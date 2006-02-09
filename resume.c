@@ -158,10 +158,8 @@ static int read_image(int dev, char *resume_dev_name)
 	memset(&swsusp_header, 0, sizeof(swsusp_header));
 	ret = read(fd, &swsusp_header, PAGE_SIZE);
 	if (ret == PAGE_SIZE) {
-		if (!memcmp(SWSUSP_SIG, swsusp_header.sig, 10)) {
-		} else {
-			error = -EINVAL;
-		}
+		if (memcmp(SWSUSP_SIG, swsusp_header.sig, 10))
+			return -EINVAL;
 	} else {
 		error = ret < 0 ? ret : -EIO;
 	}
@@ -187,7 +185,7 @@ static int read_image(int dev, char *resume_dev_name)
 			"\tor reboot and try again.\n\n"
 		        "\t[Notice that you may not mount any filesystem between\n"
 		        "\tnow and successful resume. That would badly damage\n"
-		        "\taffected filesystems.]\n"
+		        "\taffected filesystems.]\n\n"
 			"\tDo you want to continue boot (Y/n)? ");
 		fscanf(stdin, "%c", &c);
 		ret = (c == 'n' || c == 'N');
