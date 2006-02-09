@@ -83,20 +83,10 @@ block devices, and the ext2 filesystem, and install it.
 
 (c) Create an empty file, as large as to accommodate all files you'll
 be placing on the initrd filesystem.  In the simplest case that will be the
-resume tool itself and the libraries it's linked with.  To see what they are
-you can do:
+resume tool itself, some directories and some device files.
 
-$ ldd resume
-
-and you'll get an output similar to the following one (from my box):
-
-	libc.so.6 => /lib64/tls/libc.so.6 (0x00002b02b2f42000)
-	/lib64/ld-linux-x86-64.so.2 (0x00002b02b2e2b000)
-
-the second being a link to /lib64/ld-2.3.4.so.  This means I needed the
-/lib64/tls/libc.so.6 and /lib64/ld-2.3.4.so libraries to run resume, so I
-had to copy them to my initrd.  On my box the size of these files and the resume
-tool together was smaller that 2 MB, so I could do:
+The resume tool is linked statically, so you won't need any libraries to run it.
+On my box the size of it was smaller that 2 MB, so I could do:
 
 $ dd if=/dev/zero of=initrd bs=2000k count=1
 
@@ -122,28 +112,19 @@ with respect to it must be the same as in your "normal" root filesystem.]
 
 # mkdir /mnt/proc
 
-(h) Copy the libraries to it.  For example, on my box I had to do:
-
-# mkdir /mnt/lib64
-# mkdir /mnt/lib64/tls
-# cp /lib64/tls/libc.so.6 /mnt/lib64/tls/
-# cp /lib64/ld-2.3.4.so /mnt/lib64/
-# cd /mnt/lib64/
-# ln -s ld-2.3.4.so ld-linux-x86-64.so.2
-
-(i) Copy the resume tool to the initrd filesystem and link it to linuxrc, eg.
+(h) Copy the resume tool to the initrd filesystem and link it to linuxrc, eg.
 
 # cp resume /mnt/
 # cd /mnt
 # ln -s resume linuxrc
 
-(j) Unmount the initrd filesystem and move the file containing it to your /boot
+(i) Unmount the initrd filesystem and move the file containing it to your /boot
 directory, eg.
 
 # umount /mnt
 # mv initrd /boot/resume-initrd
 
-(k) In the GRUB configuration file add the initrd to the configuration of the
+(j) In the GRUB configuration file add the initrd to the configuration of the
 newly installed kernel, eg.
 
 	initrd (hd0,0)/resume-initrd
