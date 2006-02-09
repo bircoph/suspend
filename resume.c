@@ -185,9 +185,12 @@ static int read_image(int dev, char *resume_dev_name)
 			"\tThis might be a result of booting a wrong kernel.\n\n"
 			"\tYou can continue to boot the system and lose the saved state\n"
 			"\tor reboot and try again.\n\n"
-			"\tDo you want to continue (y/n)? ");
+		        "\t[Notice that you may not mount any filesystem between\n"
+		        "\tnow and successful resume. That would badly damage\n"
+		        "\taffected filesystems.]\n"
+			"\tDo you want to continue boot (Y/n)? ");
 		fscanf(stdin, "%c", &c);
-		ret = (c != 'y' && c != 'Y');
+		ret = (c == 'n' || c == 'N');
 		if (ret) {
 			close(fd);
 			reboot();
