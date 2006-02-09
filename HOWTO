@@ -1,14 +1,19 @@
 Suspend-to-disk HOWTO
 ~~~~~~~~~~~~~~~~~~~~~
 Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
+Copyright (C) 2006 Rafael J. Wysocki <rjw@sisk.pl>
 
+I. Quick start
 
 You'll need /dev/snapshot for these to work:
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
 Then compile userspace tools in usual way. You'll need an -mm kernel
-for now. To suspend-to-disk, run
+for now. To be able to use the suspend tool, you'll have to configure
+the kernel to support software suspend and tmpfs.
+
+To suspend-to-disk, run
 
 ./suspend /dev/<your_swap_partition>
 
@@ -21,4 +26,165 @@ the trick, too). Resume is then as easy as running
 ./resume /dev/<your_swap_partition>
 
 . You probably want to create script that attempts to resume with
-above command, and if that fails, fall back to init.
+above command, and if that fails, fall back to init.  Alternatively,
+you can put the resume tool in an initrd and start it from there.
+
+II. Installation
+
+1) You'll need to compile the suspend and resume tools.  It can be done
+by
+
+$ make suspend
+$ make resume
+
+in the directory where you have placed the sources.  However, if you are
+going to start the resume tool from an initrd, it is recommended to
+change RESUME_DEVICE in swsusp.h before compilation so that it is equal
+to the name (full path) of the swap partition you want to use for suspend
+(eg. /dev/hda2).  This partition will be referred to as the "resume partition"
+later on.
+
+The resume partition has to be mounted (with swapon) before suspend, but the
+data on it will not be damaged.  It may be a separate mkswapped partition used
+for suspend only, but that's not necessary.
+
+You'll need at most 1/2 of your RAM of free space on it, but it may be smaller,
+too.  The suspend tool will do its best to create the system snapshot image that
+fits the resume partition.
+
+If you want to limit the size of the image for another reason (eg. to decrease
+the time of writing/reading the image during suspend/resume), you can do this
+by adjusting DEFAULT_IMAGE_SIZE in swsusp.h.
+
+Also of interest is CHROOT_DIR in swsusp.h which has to be equal to the name
+of the directory that will be used by the suspend tool to mount a temporary
+tmpfs filesystem.  This directory must exist before suspend.
+
+It is not recommended to change any other definitions in swsusp.h, unless
+you know _exactly_ what you are doing.
+
+2) You'll need to create the snapshot device file:
+
+# mknod /dev/snapshot c 10 231
+
+The name of this file must be equal to SNAPSHOT_DEVICE in swsusp.h.  Also
+you'll need to create the directory referred to by CHROOT_DIR.
+
+This should be sufficient to use the suspend tool.
+
+3) It is recommended to place the resume tool on an initrd.  For simplicity
+I will only cover the fastest method of setting it up that will allow you to
+get the resume tool up and running quickly.
+
+(a) Configure the kernel to support RAM disks, initial RAM disks, loopback
+block devices, and the ext2 filesystem, and install it.
+
+(b) Create the /initrd directory if it doesn't exist already.
+
+(c) Create an empty file, as large as to accommodate all files you'll
+be placing on the initrd filesystem.  In the simplest case that will be the
+resume tool itself and the libraries it's linked with.  To see what they are
+you can do:
+
+$ ldd resume
+
+and you'll get an output similar to the following one (from my box):
+
+	libc.so.6 => /lib64/tls/libc.so.6 (0x00002b02b2f42000)
+	/lib64/ld-linux-x86-64.so.2 (0x00002b02b2e2b000)
+
+the second being a link to /lib64/ld-2.3.4.so.  This means I needed the
+/lib64/tls/libc.so.6 and /lib64/ld-2.3.4.so libraries to run resume, so I
+had to copy them to my initrd.  On my box the size of these files and the resume
+tool together was smaller that 2 MB, so I could do:
+
+$ dd if=/dev/zero of=initrd bs=2000k count=1
+
+(d) Run mke2fs on this file, eg.
+
+$ /sbin/mke2fs -F -m0 initrd
+
+(e) Become root and mount the filesystem, eg.
+
+# mount -t ext2 -o loop initrd /mnt
+
+(f) Create the console device, the snapshot device, and the resume device on it, eg.
+
+# mkdir /mnt/dev
+# mknod /mnt/dev/console c 5 1
+# mknod /mnt/dev/snapshot c 10 231
+# mknod /mnt/dev/hda2 b 3 2
+
+[The initrd filesystem will be mounted as the root filesystem, so the paths
+with respect to it must be the same as in your "normal" root filesystem.]
+
+(g) Create the proc directory on it (the resume tool will use it), eg.
+
+# mkdir /mnt/proc
+
+(h) Copy the libraries to it.  For example, on my box I had to do:
+
+# mkdir /mnt/lib64
+# mkdir /mnt/lib64/tls
+# cp /lib64/tls/libc.so.6 /mnt/lib64/tls/
+# cp /lib64/ld-2.3.4.so /mnt/lib64/
+# cd /mnt/lib64/
+# ln -s ld-2.3.4.so ld-linux-x86-64.so.2
+
+(i) Copy the resume tool to the initrd filesystem and link it to linuxrc, eg.
+
+# cp resume /mnt/
+# cd /mnt
+# ln -s resume linuxrc
+
+(j) Unmount the initrd filesystem and move the file containing it to your /boot
+directory, eg.
+
+# umount /mnt
+# mv initrd /boot/resume-initrd
+
+(k) In the GRUB configuration file add the initrd to the configuration of the
+newly installed kernel, eg.
+
+	initrd (hd0,0)/resume-initrd
+
+(if you use LILO, please refer to its documentation).
+
+If you have set RESUME_DEVICE in swsusp.h to point to your resume partition before
+compiling the resume tool, you're now ready to use it.
+
+III. Testing
+
+Before you start using the suspend and resume tools for real, you should test
+your setup.  For this purpose it's recommended to boot the new kernel with the
+"init=/bin/bash" command line argument.  Then, the kernel should run bash
+instead of init and you should get a (root) command prompt with the root
+filesystem mounted read-only and with no other filesystems.
+
+If this happens, mount the sysfs and proc filesystems and enable swap:
+
+# mount /sys
+# mount /proc
+# swapon -a
+
+Next, go to the directory where the suspend tool is and do:
+
+# ./suspend
+
+If suspend fails, the tool will return to the command prompt with a (hopefully
+instructive) message.  Otherwise you should be able to see some messages
+from it on the screen and finally the progress meter, and the box should be powered
+off.  If that happens, you can start it again and let the resume utility run
+from the initrd.  If everything is fine, it will read the image and restore
+the system state from it, and you will get the command prompt back.  If so,
+your setup works.  Otherwise there's something wrong and you'll need to find
+out what and why.
+
+The next step is to check whether your device drivers suspend and resume correctly.
+To do this, it is reasonable to boot the kernel to the runlevel 2 and run the
+suspend tool.  If it suspends successfully and the resume tool is able to restore
+the system state, the drivers are most probably fine.  Otherwise please report
+the problem.
+
+Finally, you can start X and try to suspend from an xterm.  If this works, you're
+done.
