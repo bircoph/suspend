@@ -10,8 +10,8 @@ You'll need /dev/snapshot for these to work:
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
 Then compile userspace tools in usual way. You'll need an -mm kernel
-for now. To be able to use the suspend tool, you'll have to configure
-the kernel to support software suspend and tmpfs.
+for now. To be able to use the suspend and resume tools, you'll have to
+configure the kernel to support software suspend.
 
 To suspend-to-disk, run
 
@@ -56,10 +56,6 @@ If you want to limit the size of the image for another reason (eg. to decrease
 the time of writing/reading the image during suspend/resume), you can do this
 by adjusting DEFAULT_IMAGE_SIZE in swsusp.h.
 
-Also of interest is CHROOT_DIR in swsusp.h which has to be equal to the name
-of the directory that will be used by the suspend tool to mount a temporary
-tmpfs filesystem.  This directory must exist before suspend.
-
 It is not recommended to change any other definitions in swsusp.h, unless
 you know _exactly_ what you are doing.
 
@@ -67,10 +63,11 @@ you know _exactly_ what you are doing.
 
 # mknod /dev/snapshot c 10 231
 
-The name of this file must be equal to SNAPSHOT_DEVICE in swsusp.h.  Also
-you'll need to create the directory referred to by CHROOT_DIR.
+The name of this file must be equal to SNAPSHOT_DEVICE in swsusp.h.
 
-This should be sufficient to use the suspend tool.
+This should be sufficient to use the suspend tool, but it is also
+recommended to put the tool into a directory located directly on the root
+filesystem.
 
 3) It is recommended to place the resume tool on an initrd.  For simplicity
 I will only cover the fastest method of setting it up that will allow you to
@@ -81,7 +78,7 @@ block devices, and the ext2 filesystem, and install it.
 
 (b) Create the /initrd directory if it doesn't exist already.
 
-(c) Create an empty file, as large as to accommodate all files you'll
+(c) Create a blank file, as large as to accommodate all files you'll
 be placing on the initrd filesystem.  In the simplest case that will be the
 resume tool itself, some directories and some device files.
 

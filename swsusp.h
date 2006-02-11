@@ -131,8 +131,5 @@ struct swap_map_page {
 
 #define DEFAULT_IMAGE_SIZE	(500 * 1024 * 1024)
 
-#define CHROOT_DIR	"/boot/suspend"
-#define TMPFS_OPTIONS	"nr_inodes=5"
-
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8

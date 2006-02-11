@@ -27,11 +27,10 @@
 
 #include "swsusp.h"
 
-static int dev;
 static char buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
 
-static inline loff_t check_free_swap(void)
+static inline loff_t check_free_swap(int dev)
 {
 	int error;
 	loff_t free_swap;
@@ -44,7 +43,7 @@ static inline loff_t check_free_swap(void)
 	return 0;
 }
 
-static inline unsigned long get_swap_page(void)
+static inline unsigned long get_swap_page(int dev)
 {
 	int error;
 	loff_t offset;
@@ -55,12 +54,12 @@ static inline unsigned long get_swap_page(void)
 	return 0;
 }
 
-static inline int free_swap_pages(void)
+static inline int free_swap_pages(int dev)
 {
 	return ioctl(dev, SNAPSHOT_FREE_SWAP_PAGES, 0);
 }
 
-static inline int set_swap_file(dev_t blkdev)
+static inline int set_swap_file(int dev, dev_t blkdev)
 {
 	return ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
 }
@@ -97,16 +96,17 @@ struct swap_map_handle {
 	struct swap_map_page cur;
 	loff_t cur_swap;
 	unsigned int k;
-	int fd;
+	int dev, fd;
 };
 
-static inline int init_swap_writer(struct swap_map_handle *handle, int fd)
+static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 {
 	memset(&handle->cur, 0, PAGE_SIZE);
-	handle->cur_swap = get_swap_page();
+	handle->cur_swap = get_swap_page(dev);
 	if (!handle->cur_swap)
 		return -ENOSPC;
 	handle->k = 0;
+	handle->dev = dev;
 	handle->fd = fd;
 	return 0;
 }
@@ -116,13 +116,13 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 	int error;
 	loff_t offset;
 
-	offset = get_swap_page();
+	offset = get_swap_page(handle->dev);
 	error = write_page(handle->fd, buf, offset);
 	if (error)
 		return error;
 	handle->cur.entries[handle->k++] = offset;
 	if (handle->k >= MAP_PAGE_ENTRIES) {
-		offset = get_swap_page();
+		offset = get_swap_page(handle->dev);
 		if (!offset)
 			return -ENOSPC;
 		handle->cur.next_swap = offset;
@@ -161,7 +161,7 @@ static int save_image(struct swap_map_handle *handle,
 		m = 1;
 	nr_pages = 0;
 	do {
-		ret = read(dev, buffer, PAGE_SIZE);
+		ret = read(handle->dev, buffer, PAGE_SIZE);
 		if (ret > 0) {
 			error = swap_write_page(handle, buffer);
 			if (error)
@@ -183,9 +183,9 @@ static int save_image(struct swap_map_handle *handle,
  *	space avaiable from the resume partition.
  */
 
-static int enough_swap(unsigned long size)
+static int enough_swap(int dev, unsigned long size)
 {
-	loff_t free_swap = check_free_swap();
+	loff_t free_swap = check_free_swap(dev);
 
 	printf("suspend: Free swap: %lu bytes\n", (unsigned long) free_swap);
 	return free_swap > size;
@@ -217,30 +217,24 @@ static int mark_swap(int fd, loff_t start)
  *	write_image - Write entire image and metadata.
  */
 
-int write_image(char *resume_dev_name)
+int write_image(int snapshot_fd, int resume_fd)
 {
 	static struct swap_map_handle handle;
 	struct swsusp_info *header;
 	loff_t start;
-	int fd;
 	int error;
 
 	printf("suspend: System snapshot ready. Preparing to write\n");
-	fd = open(resume_dev_name, O_RDWR);
-	if (fd < 0) {
-		printf("suspend: Could not open resume device\n");
-		return error;
-	}
-	error = read(dev, buffer, PAGE_SIZE);
+	error = read(snapshot_fd, buffer, PAGE_SIZE);
 	if (error < (int)PAGE_SIZE)
 		return error < 0 ? error : -EFAULT;
 	header = (struct swsusp_info *)buffer;
 	printf("suspend: Image size: %lu bytes\n", header->size);
-	if (!enough_swap(header->size)) {
+	if (!enough_swap(snapshot_fd, header->size)) {
 		printf("suspend: Not enough free swap\n");
 		return -ENOSPC;
 	}
-	error = init_swap_writer(&handle, fd);
+	error = init_swap_writer(&handle, snapshot_fd, resume_fd);
 	if (!error) {
 		start = handle.cur_swap;
 		error = swap_write_page(&handle, header);
@@ -250,11 +244,67 @@ int write_image(char *resume_dev_name)
 	if (!error) {
 		flush_swap_writer(&handle);
 		printf( "S" );
-		error = mark_swap(fd, start);
+		error = mark_swap(resume_fd, start);
 		printf( "|\n" );
 	}
-	fsync(fd);
-	close(fd);
+	fsync(resume_fd);
+	return error;
+}
+
+#define switch_vt_mode(fd, vt, ioc1, ioc2)	ioctl(fd, KDSKBMODE, ioc1); \
+						ioctl(fd, VT_ACTIVATE, vt); \
+						ioctl(fd, VT_WAITACTIVE, vt); \
+						ioctl(fd, KDSKBMODE, ioc2);
+
+int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
+{
+	loff_t avail_swap;
+	unsigned long image_size;
+	int attempts, in_suspend, error = 0;
+
+	avail_swap = check_free_swap(snapshot_fd);
+	if (avail_swap > DEFAULT_IMAGE_SIZE)
+		image_size = DEFAULT_IMAGE_SIZE;
+	else
+		image_size = avail_swap;
+	if (!image_size) {
+		fprintf(stderr, "suspend: No swap space for suspend\n");
+		return ENOSPC;
+	}
+
+	switch_vt_mode(vt_fd, vt_no, K_MEDIUMRAW, KD_GRAPHICS);
+	error = freeze(snapshot_fd);
+	switch_vt_mode(vt_fd, vt_no, KD_TEXT, K_XLATE);
+	if (error)
+		goto Unfreeze;
+
+	printf("suspend: Snapshotting system\n");
+	attempts = 2;
+	do {
+		if (set_image_size(snapshot_fd, image_size)) {
+			error = errno;
+			break;
+		}
+		if (!atomic_snapshot(snapshot_fd, &in_suspend)) {
+			if (!in_suspend)
+				break;
+			if (!write_image(snapshot_fd, resume_fd)) {
+				power_off();
+			} else {
+				free_swap_pages(snapshot_fd);
+				free_snapshot(snapshot_fd);
+				image_size = 0;
+				error = errno;
+			}
+		} else {
+			error = errno;
+			break;
+		}
+	} while (--attempts);
+
+Unfreeze:
+	unfreeze(snapshot_fd);
+
 	return error;
 }
 
@@ -279,117 +329,78 @@ static inline int console_fd(const char *fname)
 }
 
 /**
- *	find_active_vt - find the active virtual terminal
+ *	prepare_console - find a spare virtual terminal, open it and attach
+ *	the standard streams to it.  The number of the currently active
+ *	virtual terminal is saved via @orig_vc
  */
 
-static void bind_to_active_vt(void)
+static int prepare_console(int *orig_vc, int *new_vc)
 {
-	int fd, error;
-	dev_t dev;
-	char *fname = buffer;
+	int fd, error, vt = -1;
+	char *vt_name = buffer;
 	struct vt_stat vtstat;
 
-	dev = makedev(5, 1);
-	if (mknod("console", S_IFCHR | 0600, dev))
-		return;
-	fd = console_fd("console");
+	fd = console_fd("/dev/console");
 	if (fd < 0)
-		return;
+		return fd;
 	error = ioctl(fd, VT_GETSTATE, &vtstat);
-	close(fd);
-	if (error)
-		return;
-	dev = makedev(4, vtstat.v_active);
-	sprintf(fname, "tty%d", vtstat.v_active);
-	if (mknod(fname, S_IFCHR | 0600, dev))
-		return;
-	fd = open(fname, O_RDWR);
-	if (fd >= 0) {
-		char *msg = "\33[H\33[Jsuspend: Snapshoting system\n";
-		write(fd, msg, strlen(msg));
-		dup2(fd, 0);
-		dup2(fd, 1);
-		dup2(fd, 2);
-		close(fd);
+	if (!error) {
+		*orig_vc = vtstat.v_active;
+		error = ioctl(fd, VT_OPENQRY, &vt);
 	}
+	close(fd);
+	if (error || vt < 0)
+		return -1;
+	sprintf(vt_name, "/dev/tty%d", vt);
+	fd = open(vt_name, O_RDWR);
+	if (fd < 0)
+		return fd;
+	error = ioctl(fd, VT_ACTIVATE, vt);
+	if (error) {
+		fprintf(stderr, "Could not activate the VT %d\n", vt);
+		fflush(stderr);
+		goto Close_fd;
+	}
+	error = ioctl(fd, VT_WAITACTIVE, vt);
+	if (error) {
+		fprintf(stderr, "VT %d activation failed\n", vt);
+		fflush(stderr);
+		goto Close_fd;
+	}
+	char *msg = "\33[H\33[J";
+	write(fd, msg, strlen(msg));
+	dup2(fd, 0);
+	dup2(fd, 1);
+	dup2(fd, 2);
+	*new_vc = vt;
+	return fd;
+Close_fd:
+	close(fd);
+	return error;
 }
 
-int suspend_system(dev_t snapshot_dev, dev_t resume_dev)
+/**
+ *	restore_console - switch to the virtual console that was active before
+ *	suspend
+ */
+
+static void restore_console(int fd, int orig_vc)
 {
-	loff_t avail_swap;
-	unsigned long image_size;
-	int attempts, in_suspend, error = 0;
+	int error;
 
-	if (mknod("snapshot", S_IFCHR | 0600, snapshot_dev)) {
-		fprintf(stderr, "suspend: Could not create the snapshot device file\n");
-		return errno;
+	error = ioctl(fd, VT_ACTIVATE, orig_vc);
+	if (error) {
+		fprintf(stderr, "Could not activate the VT %d\n", orig_vc);
+		fflush(stderr);
+		goto Close_fd;
 	}
-	if (mknod("resume", S_IFBLK | 0600, resume_dev)) {
-		fprintf(stderr, "suspend: Could not create the resume device file\n");
-		return errno;
+	error = ioctl(fd, VT_WAITACTIVE, orig_vc);
+	if (error) {
+		fprintf(stderr, "VT %d activation failed\n", orig_vc);
+		fflush(stderr);
 	}
-
-	setvbuf(stdout, NULL, _IONBF, 0);
-	setvbuf(stderr, NULL, _IONBF, 0);
-
-	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
-		fprintf(stderr, "suspend: Could not lock myself\n");
-		return errno;
-	}
-
-	dev = open("snapshot", O_RDONLY);
-	if (dev < 0)
-		return errno;
-	if (set_swap_file(resume_dev)) {
-		fprintf(stderr, "suspend: Could not set the resume device\n");
-		error = errno;
-		goto Close;
-	}
-	avail_swap = check_free_swap();
-	if (avail_swap > DEFAULT_IMAGE_SIZE)
-		image_size = DEFAULT_IMAGE_SIZE;
-	else
-		image_size = avail_swap;
-	if (!image_size) {
-		fprintf(stderr, "suspend: No swap space for suspend\n");
-		error = ENOSPC;
-		goto Close;
-	}
-	close(0);
-	close(1);
-	close(2);
-
-	if (freeze(dev)) {
-		error = errno;
-		goto Unfreeze;
-	}
-	bind_to_active_vt();
-	attempts = 2;
-	do {
-		if (set_image_size(dev, image_size)) {
-			error = errno;
-			break;
-		}
-		if (!atomic_snapshot(dev, &in_suspend)) {
-			if (!in_suspend)
-				break;
-			error = write_image("resume");
-			if (!error) {
-				power_off();
-			} else {
-				free_swap_pages();
-				free_snapshot(dev);
-				image_size = 0;
-				error = errno;
-			}
-		}
-	} while (--attempts);
-Unfreeze:
-	unfreeze(dev);
-Close:
-	close(dev);
-
-	return error;
+Close_fd:
+	close(fd);
 }
 
 static inline int get_kernel_console_loglevel(void)
@@ -418,66 +429,91 @@ static inline void set_kernel_console_loglevel(int level)
 
 int main(int argc, char *argv[])
 {
-	char *resume_device_name;
+	char *resume_device_name, *chroot_path = buffer;
 	struct stat stat_buf;
-	dev_t snapshot_dev, resume_dev;
-	pid_t pid;
+	int resume_fd, snapshot_fd, vt_fd, orig_vc, suspend_vc;
+	dev_t resume_dev;
 	int orig_loglevel, ret = 0;
+
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
+
+	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
+		fprintf(stderr, "suspend: Could not lock myself\n");
+		return errno;
+	}
 
 	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
 	if (stat(resume_device_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the resume device file\n");
 		return ENODEV;
+	} else {
 	}
 	if (!S_ISBLK(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid resume device\n");
 		return EINVAL;
 	}
+	resume_fd = open(resume_device_name, O_RDWR);
+	if (resume_fd < 0) {
+		fprintf(stderr, "suspend: Could not open the resume device\n");
+		return errno;
+	}
 	resume_dev = stat_buf.st_rdev;
+
+	vt_fd = prepare_console(&orig_vc, &suspend_vc);
+	if (vt_fd < 0) {
+		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
+		ret = errno;
+		goto Close_resume_fd;
+	}
 
 	if (stat(SNAPSHOT_DEVICE, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
-		return ENODEV;
+		ret = ENODEV;
+		goto Restore_console;
 	}
-	snapshot_dev = stat_buf.st_rdev;
+	if (!S_ISCHR(stat_buf.st_mode)) {
+		fprintf(stderr, "suspend: Invalid snapshot device\n");
+		ret = EINVAL;
+		goto Restore_console;
+	}
+	snapshot_fd = open(SNAPSHOT_DEVICE, O_RDONLY);
+	if (snapshot_fd < 0) {
+		fprintf(stderr, "suspend: Could not open the snapshot device\n");
+		ret = errno;
+		goto Restore_console;
+	}
 
-	if (mount("none", CHROOT_DIR, "tmpfs", MS_NOEXEC, TMPFS_OPTIONS)) {
-		fprintf(stderr, "suspend: Could not mount the tmpfs filesystem on "
-			CHROOT_DIR);
-		return errno;
+	if (set_swap_file(snapshot_fd, resume_dev)) {
+		fprintf(stderr, "suspend: Could not use the resume device\n");
+		ret = errno;
+		goto Close_snapshot_fd;
 	}
+
+	sprintf(chroot_path, "/proc/%d", getpid());
+	if (chroot(chroot_path)) {
+		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
+		ret = errno;
+		goto Close_snapshot_fd;
+	}
+	chdir("/");
 
 	orig_loglevel = get_kernel_console_loglevel();
 	set_kernel_console_loglevel(SUSPEND_LOGLEVEL);
 
 	sync();
 
-	pid = fork();
-	if (pid) {
-		if (pid < 0) {
-			printf("suspend: Could not fork\n");
-			ret = errno;
-		} else {
-			pid = waitpid(pid, &ret, 0);
-			if (pid < 0)
-				ret = errno;
-			else
-				ret = WEXITSTATUS(ret);
-		}
-	} else {
-		ret = chroot(CHROOT_DIR);
-		if (!ret)
-			ret = chdir("/");
-		if (ret)
-			return errno;
-		else
-			return suspend_system(snapshot_dev, resume_dev);
-	}
+	ret = suspend_system(snapshot_fd, resume_fd, vt_fd, suspend_vc);
 
-	if (orig_loglevel > 0)
+	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
 
-	umount(CHROOT_DIR);
+Close_snapshot_fd:
+	close(snapshot_fd);
+Restore_console:
+	restore_console(vt_fd, orig_vc);
+Close_resume_fd:
+	close(resume_fd);
 
 	return ret;
 }
