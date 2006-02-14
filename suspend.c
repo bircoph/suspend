@@ -101,27 +101,30 @@ static inline int set_swap_file(int dev, dev_t blkdev)
 }
 
 /**
- *	write_page - Write one page to given swap location.
+ *	write_area - Write data to given swap location.
  *	@fd:		File handle of the resume partition
  *	@buf:		Pointer to the area we're writing.
- *	@swap_offset:	Offset of the swap page we're writing to.
+ *	@offset:	Offset of the swap page we're writing to
+ *	@size:		The number of bytes to save
  */
 
-static int write_page(int fd, void *buf, loff_t offset)
+static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
 {
 	int res = -EINVAL;
 	ssize_t cnt = 0;
 
 	if (offset) {
 		if (lseek(fd, offset, SEEK_SET) == offset) 
-			cnt = write(fd, buf, PAGE_SIZE);
-		if (cnt == PAGE_SIZE)
+			cnt = write(fd, buf, size);
+		if (cnt == size)
 			res = 0;
 		else
 			res = cnt < 0 ? cnt : -EIO;
 	}
 	return res;
 }
+
+static char write_buffer[BUFFER_SIZE];
 
 /*
  *	The swap_map_handle structure is used for handling swap in
@@ -130,6 +133,7 @@ static int write_page(int fd, void *buf, loff_t offset)
 
 struct swap_map_handle {
 	struct swap_map_page cur;
+	struct swap_area cur_area;
 	loff_t cur_swap;
 	unsigned int k;
 	int dev, fd;
@@ -137,10 +141,14 @@ struct swap_map_handle {
 
 static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 {
-	memset(&handle->cur, 0, PAGE_SIZE);
+	memset(&handle->cur, 0, sizeof(struct swap_map_page));
 	handle->cur_swap = get_swap_page(dev);
 	if (!handle->cur_swap)
 		return -ENOSPC;
+	handle->cur_area.offset = get_swap_page(dev);
+	if (!handle->cur_area.offset)
+		return -ENOSPC;
+	handle->cur_area.size = 0;
 	handle->k = 0;
 	handle->dev = dev;
 	handle->fd = fd;
@@ -149,23 +157,49 @@ static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int 
 
 static int swap_write_page(struct swap_map_handle *handle, void *buf)
 {
-	int error;
 	loff_t offset;
+	int error;
+
+	if (!handle->cur_area.size) {
+		/* No data in the write buffer */
+		memcpy(write_buffer, buf, PAGE_SIZE);
+		handle->cur_area.size = PAGE_SIZE;
+		return 0;
+	}
 
 	offset = get_swap_page(handle->dev);
-	error = write_page(handle->fd, buf, offset);
+	if (!offset)
+		return -ENOSPC;
+
+	if (offset == handle->cur_area.offset + handle->cur_area.size &&
+	    handle->cur_area.size + PAGE_SIZE <= BUFFER_SIZE) {
+		/* Put the data into the write buffer */
+		memcpy(write_buffer + handle->cur_area.size, buf, PAGE_SIZE);
+		handle->cur_area.size += PAGE_SIZE;
+		return 0;
+	}
+
+	/* The write buffer is full or the offset doesn't fit.  Flush */
+	error = write_area(handle->fd, write_buffer, handle->cur_area.offset,
+			handle->cur_area.size);
 	if (error)
 		return error;
-	handle->cur.entries[handle->k++] = offset;
-	if (handle->k >= MAP_PAGE_ENTRIES) {
+	handle->cur.entries[handle->k].offset = handle->cur_area.offset;
+	handle->cur.entries[handle->k].size = handle->cur_area.size;
+	/* The write buffer has been flushed.  Fill it from the start */
+	handle->cur_area.offset = offset;
+	memcpy(write_buffer, buf, PAGE_SIZE);
+	handle->cur_area.size = PAGE_SIZE;
+	if (++handle->k >= MAP_PAGE_ENTRIES) {
 		offset = get_swap_page(handle->dev);
 		if (!offset)
 			return -ENOSPC;
 		handle->cur.next_swap = offset;
-		error = write_page(handle->fd, &handle->cur, handle->cur_swap);
+		error = write_area(handle->fd, &handle->cur, handle->cur_swap,
+				sizeof(struct swap_map_page));
 		if (error)
 			return error;
-		memset(&handle->cur, 0, PAGE_SIZE);
+		memset(&handle->cur, 0, sizeof(struct swap_map_page));
 		handle->cur_swap = offset;
 		handle->k = 0;
 	}
@@ -174,10 +208,23 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 
 static inline int flush_swap_writer(struct swap_map_handle *handle)
 {
-	if (handle->cur_swap)
-		return write_page(handle->fd, &handle->cur, handle->cur_swap);
-	else
+	int error;
+
+	if (!handle->cur_area.offset || !handle->cur_swap)
 		return -EINVAL;
+
+	/* Flush the write buffer */
+	error = write_area(handle->fd, write_buffer, handle->cur_area.offset,
+			handle->cur_area.size);
+	if (!error) {
+		handle->cur.entries[handle->k].offset = handle->cur_area.offset;
+		handle->cur.entries[handle->k].size = handle->cur_area.size;
+		/* Save the last swap map page */
+		error = write_area(handle->fd, &handle->cur, handle->cur_swap,
+			sizeof(struct swap_map_page));
+	}
+
+	return error;
 }
 
 /**
@@ -207,8 +254,10 @@ static int save_image(struct swap_map_handle *handle,
 			nr_pages++;
 		}
 	} while (ret > 0);
+	if (ret < 0)
+		error = -errno;
 	if (!error)
-		printf(" done\n");
+		printf(" done (%u pages)\n", nr_pages);
 	return error;
 }
 
@@ -281,9 +330,11 @@ int write_image(int snapshot_fd, int resume_fd)
 		flush_swap_writer(&handle);
 		printf( "S" );
 		error = mark_swap(resume_fd, start);
+		fsync(resume_fd);
 		printf( "|\n" );
+	} else {
+		fsync(resume_fd);
 	}
-	fsync(resume_fd);
 	return error;
 }
 

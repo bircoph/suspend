@@ -107,7 +107,9 @@ static inline void power_off(void)
 /*
  *	The swap map is a data structure used for keeping track of each page
  *	written to a swap partition.  It consists of many swap_map_page
- *	structures that contain each an array of MAP_PAGE_SIZE swap entries.
+ *	structures that contain each an array of MAP_PAGE_SIZE swap area
+ *	descriptiors.
+ *
  *	These structures are stored on the swap and linked together with the
  *	help of the .next_swap member.
  *
@@ -119,12 +121,19 @@ static inline void power_off(void)
  *	at a time.
  */
 
-#define MAP_PAGE_ENTRIES	(PAGE_SIZE / sizeof(loff_t) - 1)
+struct swap_area {
+	loff_t offset;
+	unsigned int size;
+};
+
+#define MAP_PAGE_ENTRIES	((PAGE_SIZE - sizeof(loff_t)) / sizeof(struct swap_area))
 
 struct swap_map_page {
-	loff_t	entries[MAP_PAGE_ENTRIES];
-	loff_t	next_swap;
+	struct swap_area entries[MAP_PAGE_ENTRIES];
+	loff_t next_swap;
 };
+
+#define BUFFER_SIZE	0x20000
 
 #define SNAPSHOT_DEVICE	"/dev/snapshot"
 #define RESUME_DEVICE ""

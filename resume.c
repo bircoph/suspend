@@ -64,21 +64,22 @@ static char buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
 
 /**
- *	read_page - Read one page from a swap location.
- *	@fd:	File handle of the resume partition
- *	@buf:	Pointer to the area we're reading into.
- *	@off:	Swap offset of the place to read from.
+ *	read_area - Read data from a swap location.
+ *	@fd:		File handle of the resume partition
+ *	@buf:		Pointer to the area we're reading into
+ *	@offset:	Swap offset of the place to read from
+ *	@size:		The number of bytes to read
  */
 
-static int read_page(int fd, void *buf, loff_t offset)
+static int read_area(int fd, void *buf, loff_t offset, unsigned int size)
 {
 	int res = 0;
 	ssize_t cnt = 0;
 
 	if (offset) {
 		if (lseek(fd, offset, SEEK_SET) == offset) 
-			cnt = read(fd, buf, PAGE_SIZE);
-		if (cnt < (ssize_t)PAGE_SIZE) {
+			cnt = read(fd, buf, size);
+		if (cnt < (ssize_t)size) {
 			if (cnt < 0)
 				res = cnt;
 			else
@@ -88,6 +89,8 @@ static int read_page(int fd, void *buf, loff_t offset)
 	return res;
 }
 
+static char read_buffer[BUFFER_SIZE];
+
 /*
  *	The swap_map_handle structure is used for handling the swap map in
  *	a file-alike way
@@ -95,6 +98,8 @@ static int read_page(int fd, void *buf, loff_t offset)
 
 struct swap_map_handle {
 	struct swap_map_page cur;
+	unsigned int area_size;
+	unsigned int cur_size;
 	unsigned int k;
 	int fd;
 };
@@ -111,34 +116,53 @@ static inline int init_swap_reader(struct swap_map_handle *handle,
 
 	if (!start)
 		return -EINVAL;
-	memset(&handle->cur, 0, PAGE_SIZE);
-	error = read_page(fd, &handle->cur, start);
+	error = read_area(fd, &handle->cur, start, sizeof(struct swap_map_page));
+	if (error)
+		return error;
+	handle->area_size = handle->cur.entries[0].size;
+	error = read_area(fd, read_buffer, handle->cur.entries[0].offset,
+			handle->area_size);
 	if (error)
 		return error;
 	handle->fd = fd;
 	handle->k = 0;
+	handle->cur_size = 0;
 	return 0;
 }
 
 static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 {
 	loff_t offset;
-	int error;
+	int error = 0;
 
-	offset = handle->cur.entries[handle->k++];
-	if (!offset)
-		return -EFAULT;
-	error = read_page(handle->fd, buf, offset);
-	if (error)
-		return error;
-	if (handle->k >= MAP_PAGE_ENTRIES) {
+	if (handle->cur_size + PAGE_SIZE <= handle->area_size) {
+		/* Get the data from the read buffer */
+		memcpy(buf, read_buffer + handle->cur_size, PAGE_SIZE);
+		handle->cur_size += PAGE_SIZE;
+		return 0;
+	}
+
+	/* There are no more data in the read buffer.  Read more */
+	if (++handle->k >= MAP_PAGE_ENTRIES) {
 		handle->k = 0;
 		offset = handle->cur.next_swap;
 		if (offset)
-			error = read_page(handle->fd, &handle->cur, offset);
+			error = read_area(handle->fd, &handle->cur, offset,
+				sizeof(struct swap_map_page));
 		else
 			error = -EINVAL;
 	}
+	if (!error) {
+		handle->area_size = handle->cur.entries[handle->k].size;
+		error = read_area(handle->fd, read_buffer,
+				handle->cur.entries[handle->k].offset,
+				handle->area_size);
+	}
+	if (!error) {
+		memcpy(buf, read_buffer, PAGE_SIZE);
+		handle->cur_size = PAGE_SIZE;
+	}
+
 	return error;
 }
 
