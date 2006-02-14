@@ -375,13 +375,16 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 		if (!atomic_snapshot(snapshot_fd, &in_suspend)) {
 			if (!in_suspend)
 				break;
-			if (!write_image(snapshot_fd, resume_fd)) {
+			error = write_image(snapshot_fd, resume_fd);
+			if (!error) {
 				power_off();
 			} else {
 				free_swap_pages(snapshot_fd);
 				free_snapshot(snapshot_fd);
 				image_size = 0;
-				error = errno;
+				error = -error;
+				if (error != ENOSPC)
+					break;
 			}
 		} else {
 			error = errno;
