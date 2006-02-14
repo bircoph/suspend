@@ -26,6 +26,42 @@
 #include <errno.h>
 
 #include "swsusp.h"
+#include "config.h"
+
+static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
+static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
+static unsigned long pref_image_size = IMAGE_SIZE;
+static int suspend_loglevel = SUSPEND_LOGLEVEL;
+
+static struct config_par parameters[PARAM_NO] = {
+	{
+		.name = "snapshot device",
+		.fmt = "%s",
+		.ptr = snapshot_dev_name,
+		.len = MAX_STR_LEN
+	},
+	{
+		.name = "resume device",
+		.fmt ="%s",
+		.ptr = resume_dev_name,
+		.len = MAX_STR_LEN
+	},
+	{
+		.name = "image size",
+		.fmt = "%lu",
+		.ptr = &pref_image_size,
+	},
+	{
+		.name = "suspend loglevel",
+		.fmt = "%d",
+		.ptr = &suspend_loglevel,
+	},
+	{
+		.name = "max loglevel",
+		.fmt = "%d",
+		.ptr = NULL,
+	}
+};
 
 static char buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
@@ -263,8 +299,8 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 	int attempts, in_suspend, error = 0;
 
 	avail_swap = check_free_swap(snapshot_fd);
-	if (avail_swap > DEFAULT_IMAGE_SIZE)
-		image_size = DEFAULT_IMAGE_SIZE;
+	if (avail_swap > pref_image_size)
+		image_size = pref_image_size;
 	else
 		image_size = avail_swap;
 	if (!image_size) {
@@ -429,11 +465,14 @@ static inline void set_kernel_console_loglevel(int level)
 
 int main(int argc, char *argv[])
 {
-	char *resume_device_name, *chroot_path = buffer;
+	char *chroot_path = buffer;
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc, suspend_vc;
 	dev_t resume_dev;
 	int orig_loglevel, ret = 0;
+
+	if (get_config("suspend", argc, argv, PARAM_NO, parameters, resume_dev_name))
+		return EINVAL;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -443,8 +482,7 @@ int main(int argc, char *argv[])
 		return errno;
 	}
 
-	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
-	if (stat(resume_device_name, &stat_buf)) {
+	if (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the resume device file\n");
 		return ENODEV;
 	} else {
@@ -453,7 +491,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "suspend: Invalid resume device\n");
 		return EINVAL;
 	}
-	resume_fd = open(resume_device_name, O_RDWR);
+	resume_fd = open(resume_dev_name, O_RDWR);
 	if (resume_fd < 0) {
 		fprintf(stderr, "suspend: Could not open the resume device\n");
 		return errno;
@@ -467,7 +505,7 @@ int main(int argc, char *argv[])
 		goto Close_resume_fd;
 	}
 
-	if (stat(SNAPSHOT_DEVICE, &stat_buf)) {
+	if (stat(snapshot_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
 		ret = ENODEV;
 		goto Restore_console;
@@ -477,7 +515,7 @@ int main(int argc, char *argv[])
 		ret = EINVAL;
 		goto Restore_console;
 	}
-	snapshot_fd = open(SNAPSHOT_DEVICE, O_RDONLY);
+	snapshot_fd = open(snapshot_dev_name, O_RDONLY);
 	if (snapshot_fd < 0) {
 		fprintf(stderr, "suspend: Could not open the snapshot device\n");
 		ret = errno;
@@ -499,7 +537,7 @@ int main(int argc, char *argv[])
 	chdir("/");
 
 	orig_loglevel = get_kernel_console_loglevel();
-	set_kernel_console_loglevel(SUSPEND_LOGLEVEL);
+	set_kernel_console_loglevel(suspend_loglevel);
 
 	sync();
 

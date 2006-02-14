@@ -23,6 +23,42 @@
 #include <errno.h>
 
 #include "swsusp.h"
+#include "config.h"
+
+static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
+static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
+static int suspend_loglevel = SUSPEND_LOGLEVEL;
+static int max_loglevel = MAX_LOGLEVEL;
+
+static struct config_par parameters[PARAM_NO] = {
+	{
+		.name = "snapshot device",
+		.fmt = "%s",
+		.ptr = snapshot_dev_name,
+		.len = MAX_STR_LEN
+	},
+	{
+		.name = "resume device",
+		.fmt ="%s",
+		.ptr = resume_dev_name,
+		.len = MAX_STR_LEN
+	},
+	{
+		.name = "suspend loglevel",
+		.fmt = "%d",
+		.ptr = &suspend_loglevel,
+	},
+	{
+		.name = "max loglevel",
+		.fmt = "%d",
+		.ptr = &max_loglevel,
+	},
+	{
+		.name = "image size",
+		.fmt = "%lu",
+		.ptr = NULL,
+	}
+};
 
 static char buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
@@ -239,27 +275,26 @@ static void set_kernel_console_loglevel(int level)
 
 int main(int argc, char *argv[])
 {
-	char *resume_device_name;
 	struct stat stat_buf;
 	int dev;
 	int n, error = 0;
 
-	resume_device_name = argc <= 1 ? RESUME_DEVICE : argv[1];
+	if (get_config("resume", argc, argv, PARAM_NO, parameters, resume_dev_name))
+		return EINVAL;
 
-	while (stat(resume_device_name, &stat_buf)) {
+	while (stat(resume_dev_name, &stat_buf)) {
 		printf("resume: Could not stat the resume device file.\n"
 			"\tPlease type in the file name to try again"
 			"\tor press ENTER to boot the system: ");
-		fgets(buffer, 256, stdin);
-		n = strlen(buffer) - 1;
-		if (!n)
+		fgets(resume_dev_name, MAX_STR_LEN - 1, stdin);
+		n = strlen(resume_dev_name) - 1;
+		if (n <= 0)
 			return ENOENT;
-		if (buffer[n] == '\n')
-			buffer[n] = '\0';
-		resume_device_name = buffer;
+		if (resume_dev_name[n] == '\n')
+			resume_dev_name[n] = '\0';
 	}
 
-	set_kernel_console_loglevel(SUSPEND_LOGLEVEL);
+	set_kernel_console_loglevel(suspend_loglevel);
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -269,10 +304,10 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	dev = open(SNAPSHOT_DEVICE, O_WRONLY);
+	dev = open(snapshot_dev_name, O_WRONLY);
 	if (dev < 0)
 		return ENOENT;
-	error = read_image(dev, resume_device_name);
+	error = read_image(dev, resume_dev_name);
 	if (error) {
 		fprintf(stderr, "resume: Could not read the image\n");
 		error = -error;
@@ -288,7 +323,7 @@ int main(int argc, char *argv[])
 Close:
 	close(dev);
 
-	set_kernel_console_loglevel(MAX_LOGLEVEL);
+	set_kernel_console_loglevel(max_loglevel);
 
 	return error;
 }

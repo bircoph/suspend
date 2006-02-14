@@ -127,9 +127,11 @@ struct swap_map_page {
 };
 
 #define SNAPSHOT_DEVICE	"/dev/snapshot"
-#define RESUME_DEVICE "/dev/hdc3"
+#define RESUME_DEVICE ""
 
-#define DEFAULT_IMAGE_SIZE	(500 * 1024 * 1024)
+#define IMAGE_SIZE	(500 * 1024 * 1024)
 
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8
+
+#define PARAM_NO	5
