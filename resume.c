@@ -24,11 +24,13 @@
 
 #include "swsusp.h"
 #include "config.h"
+#include "md5.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static int max_loglevel = MAX_LOGLEVEL;
+static char compute_checksum;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -57,10 +59,15 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "image size",
 		.fmt = "%lu",
 		.ptr = NULL,
+	},
+	{
+		.name = "compute checksum",
+		.fmt = "%c",
+		.ptr = NULL,
 	}
 };
 
-static char buffer[PAGE_SIZE];
+static char page_buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
 
 /**
@@ -102,6 +109,7 @@ struct swap_map_handle {
 	unsigned int cur_size;
 	unsigned int k;
 	int fd;
+	struct md5_ctx ctx;
 };
 
 /**
@@ -127,6 +135,8 @@ static inline int init_swap_reader(struct swap_map_handle *handle,
 	handle->fd = fd;
 	handle->k = 0;
 	handle->cur_size = 0;
+	if (compute_checksum)
+		md5_init_ctx(&handle->ctx);
 	return 0;
 }
 
@@ -139,7 +149,7 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 		/* Get the data from the read buffer */
 		memcpy(buf, read_buffer + handle->cur_size, PAGE_SIZE);
 		handle->cur_size += PAGE_SIZE;
-		return 0;
+		goto MD5;
 	}
 
 	/* There are no more data in the read buffer.  Read more */
@@ -163,6 +173,10 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 		handle->cur_size = PAGE_SIZE;
 	}
 
+MD5:
+	if (compute_checksum)
+		md5_process_block(buf, PAGE_SIZE, &handle->ctx);
+
 	return error;
 }
 
@@ -185,10 +199,10 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 		m = 1;
 	n = 0;
 	do {
-		error = swap_read_page(handle, buffer);
+		error = swap_read_page(handle, page_buffer);
 		if (error)
 			break;
-		ret = write(dev, buffer, PAGE_SIZE);
+		ret = write(dev, page_buffer, PAGE_SIZE);
 		if (ret < (int)PAGE_SIZE) {
 			error = ret < 0 ? ret : -ENOSPC;
 			break;
@@ -202,9 +216,18 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 	return error;
 }
 
+static inline void print_checksum(unsigned char *checksum)
+{
+	int j;
+
+	for (j = 0; j < 16; j++)
+		printf("%02hhx", checksum[j]);
+}
+
 static int read_image(int dev, char *resume_dev_name)
 {
 	static struct swap_map_handle handle;
+	static unsigned char orig_checksum[16], checksum[16];
 	int fd, ret, error = 0;
 	struct swsusp_info *header;
 	unsigned int nr_pages;
@@ -223,15 +246,21 @@ static int read_image(int dev, char *resume_dev_name)
 	} else {
 		error = ret < 0 ? ret : -EIO;
 	}
+	if (!error)
+		error = read_area(fd, page_buffer, swsusp_header.image, PAGE_SIZE);
 	if (!error) {
-		error = init_swap_reader(&handle, fd, swsusp_header.image);
-		if (!error) {
-			header = (struct swsusp_info *)buffer;
-			error = swap_read_page(&handle, header);
+		header = (struct swsusp_info *)page_buffer;
+		if(header->image_flags & IMAGE_CHECKSUM) {
+			memcpy(orig_checksum, header->checksum, 16);
+			printf("resume: MD5 checksum ");
+			print_checksum(orig_checksum);
+			printf("\n");
+			compute_checksum = 1;
 		}
+		error = init_swap_reader(&handle, fd, header->map_start);
 		if (!error) {
 			nr_pages = header->pages - 1;
-			ret = write(dev, buffer, PAGE_SIZE);
+			ret = write(dev, page_buffer, PAGE_SIZE);
 			if (ret < (int)PAGE_SIZE)
 				error = ret < 0 ? ret : -EIO;
 		}
@@ -255,6 +284,8 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 	}
 	if (!error || !ret) {
+		if (compute_checksum)
+			md5_finish_ctx(&handle.ctx, checksum);
 		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
 		/* Reset swap signature now */
 		ret = lseek(fd, 0, SEEK_SET);
@@ -263,6 +294,13 @@ static int read_image(int dev, char *resume_dev_name)
 		if (ret < (int)PAGE_SIZE) {
 			fprintf(stderr, "resume: Could not restore the partition header\n");
 			error = ret < 0 ? -errno : -EIO;
+		} else if (compute_checksum && memcmp(orig_checksum, checksum, 16)) {
+			printf("resume: MD5 checksum does not match\n");
+			printf("resume: Computed MD5 checksum ");
+			print_checksum(checksum);
+			printf("\n\nPress ENTER to continue.");
+			getchar();
+			error = -EINVAL;
 		}
 	}
 	fsync(fd);

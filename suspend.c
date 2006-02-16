@@ -27,11 +27,13 @@
 
 #include "swsusp.h"
 #include "config.h"
+#include "md5.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static unsigned long pref_image_size = IMAGE_SIZE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
+static char compute_checksum;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -60,10 +62,15 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "max loglevel",
 		.fmt = "%d",
 		.ptr = NULL,
+	},
+	{
+		.name = "compute checksum",
+		.fmt = "%c",
+		.ptr = &compute_checksum,
 	}
 };
 
-static char buffer[PAGE_SIZE];
+static char page_buffer[PAGE_SIZE];
 static struct swsusp_header swsusp_header;
 
 static inline loff_t check_free_swap(int dev)
@@ -137,6 +144,7 @@ struct swap_map_handle {
 	loff_t cur_swap;
 	unsigned int k;
 	int dev, fd;
+	struct md5_ctx ctx;
 };
 
 static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
@@ -152,6 +160,8 @@ static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int 
 	handle->k = 0;
 	handle->dev = dev;
 	handle->fd = fd;
+	if (compute_checksum)
+		md5_init_ctx(&handle->ctx);
 	return 0;
 }
 
@@ -159,6 +169,9 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 {
 	loff_t offset;
 	int error;
+
+	if (compute_checksum)
+		md5_process_block(buf, PAGE_SIZE, &handle->ctx);
 
 	if (!handle->cur_area.size) {
 		/* No data in the write buffer */
@@ -244,9 +257,9 @@ static int save_image(struct swap_map_handle *handle,
 		m = 1;
 	nr_pages = 0;
 	do {
-		ret = read(handle->dev, buffer, PAGE_SIZE);
+		ret = read(handle->dev, page_buffer, PAGE_SIZE);
 		if (ret > 0) {
-			error = swap_write_page(handle, buffer);
+			error = swap_write_page(handle, page_buffer);
 			if (error)
 				break;
 			if (!(nr_pages % m))
@@ -305,15 +318,18 @@ static int mark_swap(int fd, loff_t start)
 int write_image(int snapshot_fd, int resume_fd)
 {
 	static struct swap_map_handle handle;
-	struct swsusp_info *header;
+	static char header_buffer[PAGE_SIZE];
+	struct swsusp_info *header = (struct swsusp_info *)header_buffer;
 	loff_t start;
 	int error;
 
 	printf("suspend: System snapshot ready. Preparing to write\n");
-	error = read(snapshot_fd, buffer, PAGE_SIZE);
+	start = get_swap_page(snapshot_fd);
+	if (!start)
+		return -ENOSPC;
+	error = read(snapshot_fd, header_buffer, PAGE_SIZE);
 	if (error < (int)PAGE_SIZE)
 		return error < 0 ? error : -EFAULT;
-	header = (struct swsusp_info *)buffer;
 	printf("suspend: Image size: %lu bytes\n", header->size);
 	if (!enough_swap(snapshot_fd, header->size)) {
 		printf("suspend: Not enough free swap\n");
@@ -321,20 +337,27 @@ int write_image(int snapshot_fd, int resume_fd)
 	}
 	error = init_swap_writer(&handle, snapshot_fd, resume_fd);
 	if (!error) {
-		start = handle.cur_swap;
-		error = swap_write_page(&handle, header);
+		header->map_start = handle.cur_swap;
+		header->image_flags = 0;
+		if (compute_checksum)
+			header->image_flags |= IMAGE_CHECKSUM;
+		error = save_image(&handle, header->pages - 1);
+	}
+	if (!error) {
+		error = flush_swap_writer(&handle);
+		if (compute_checksum)
+			md5_finish_ctx(&handle.ctx, header->checksum);
 	}
 	if (!error)
-		error = save_image(&handle, header->pages - 1);
+		error = write_area(resume_fd, header_buffer, start, PAGE_SIZE);
 	if (!error) {
-		flush_swap_writer(&handle);
 		printf( "S" );
 		error = mark_swap(resume_fd, start);
-		fsync(resume_fd);
-		printf( "|\n" );
-	} else {
-		fsync(resume_fd);
 	}
+	fsync(resume_fd);
+	if (!error)
+		printf( "|" );
+	printf("\n");
 	return error;
 }
 
@@ -427,7 +450,7 @@ static inline int console_fd(const char *fname)
 static int prepare_console(int *orig_vc, int *new_vc)
 {
 	int fd, error, vt = -1;
-	char *vt_name = buffer;
+	char *vt_name = page_buffer;
 	struct vt_stat vtstat;
 
 	fd = console_fd("/dev/console");
@@ -519,7 +542,7 @@ static inline void set_kernel_console_loglevel(int level)
 
 int main(int argc, char *argv[])
 {
-	char *chroot_path = buffer;
+	char *chroot_path = page_buffer;
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc, suspend_vc;
 	dev_t resume_dev;
@@ -527,6 +550,8 @@ int main(int argc, char *argv[])
 
 	if (get_config("suspend", argc, argv, PARAM_NO, parameters, resume_dev_name))
 		return EINVAL;
+	if (compute_checksum != 'y' && compute_checksum != 'Y')
+		compute_checksum = 0;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);

@@ -9,6 +9,8 @@
  *
  */
 
+#include <stdint.h>
+
 #define PAGE_SHIFT	12
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 
@@ -45,13 +47,19 @@ struct new_utsname {
 
 struct swsusp_info {
 	struct new_utsname	uts;
-	unsigned int		version_code;
+	uint32_t		version_code;
 	unsigned long		num_physpages;
 	int			cpus;
 	unsigned long		image_pages;
 	unsigned long		pages;
 	unsigned long		size;
+	/* The follwing fields are added by the userland */
+	loff_t			map_start;
+	uint32_t		image_flags;
+	unsigned char		checksum[16];
 } __attribute__((aligned(PAGE_SIZE)));
+
+#define IMAGE_CHECKSUM	0x0001
 
 #define SWSUSP_SIG	"ULSUSPEND"
 
@@ -143,4 +151,4 @@ struct swap_map_page {
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8
 
-#define PARAM_NO	5
+#define PARAM_NO	6
