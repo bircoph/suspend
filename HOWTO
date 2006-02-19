@@ -9,67 +9,121 @@ You'll need /dev/snapshot for these to work:
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
+You'll also need the Marc Lehmann's libLZF library to be installed
+on your system.
+
 Then compile userspace tools in usual way. You'll need an -mm kernel
 for now. To be able to use the suspend and resume tools, you'll have to
 configure the kernel to support software suspend.
 
-To suspend-to-disk, run
+Next, create the configuration file /etc/suspend.conf containing the
+following two lines:
 
-./suspend /dev/<your_swap_partition>
+snapshot device = /dev/snapshot
+resume device = /dev/<your_swap_partition>
 
-. (There should be just one, for now.) Suspend is easy, resume is
-slightly harder. Resume application has to be ran without any
-filesystems mounted rw, and without any journalling filesystems
-mounted at all, preferably from initrd (but read-only ext2 should do
-the trick, too). Resume is then as easy as running
+There should be just one resume partition, for now. You'll need at most 1/2 of
+your RAM of free space on it, but it may be smaller, too.  The suspend tool will
+do its best to create the system snapshot image that fits the resume partition.
 
-./resume /dev/<your_swap_partition>
+. To suspend-to-disk, run
 
-. You probably want to create script that attempts to resume with
+./suspend
+
+. Suspend is easy, resume is slightly harder. Resume application has to
+be run without any filesystems mounted rw, and without any journalling
+filesystems mounted at all, preferably from initrd (but read-only ext2
+should do the trick, too). Resume is then as easy as running
+
+./resume
+
+. You'll probably want to create script that attempts to resume with the
 above command, and if that fails, fall back to init.  Alternatively,
-you can put the resume tool in an initrd and start it from there.
+you can put the resume tool on an initrd and start it from there.
+
 
 II. Installation
 
-1) You'll need to compile the suspend and resume tools.  It can be done
-by
+1) You'll need the Marc Lehmann's libLZF library.  Download the tarball
+from http://www.goof.com/pcg/marc/liblzf.html, unpack it, go to the
+directory containing the source and run
+
+$ ./configure
+$ make
+
+Next, become root and run
+
+# make install
+
+[This will put the lzf.h file into /usr/local/include, the library
+into /usr/local/lib, and the lzf binary into /usr/local/bin.]
+
+2) You'll need to compile the suspend and resume tools.  To do this run
 
 $ make suspend
 $ make resume
 
-in the directory where you have placed the sources.  However, if you are
-going to start the resume tool from an initrd, it is recommended to
-change RESUME_DEVICE in swsusp.h before compilation so that it is equal
-to the name (full path) of the swap partition you want to use for suspend
-(eg. /dev/hda2).  This partition will be referred to as the "resume partition"
-later on.
+in the directory where you have placed the sources.
 
-The resume partition has to be mounted (with swapon) before suspend, but the
-data on it will not be damaged.  It may be a separate mkswapped partition used
-for suspend only, but that's not necessary.
+3) Create the configuration file for the suspend tool.  Its default name
+is /etc/suspend.conf, but this can be customized by changing CONFIG_FILE
+in config.h. It is also possible to specify the configuration file name
+from the command line, by using the -f option, eg.
 
-You'll need at most 1/2 of your RAM of free space on it, but it may be smaller,
-too.  The suspend tool will do its best to create the system snapshot image that
-fits the resume partition.
+# suspend -f <config_file>
 
-If you want to limit the size of the image for another reason (eg. to decrease
-the time of writing/reading the image during suspend/resume), you can do this
-by adjusting DEFAULT_IMAGE_SIZE in swsusp.h.
+The configuration file must contain the resume device specification, eg.
 
-It is not recommended to change any other definitions in swsusp.h, unless
-you know _exactly_ what you are doing.
+resume device = /dev/<your_swap_partition>
 
-2) You'll need to create the snapshot device file:
+Optionally, it can contain the snapshot device specification, eg.
+
+snapshot device = /dev/snapshot
+
+and the following parameters:
+
+image size = <preferred_suspend_image_size_in_bytes>
+suspend loglevel = <kernel_console_loglevel_during_suspend>
+compute checksum = <y/n>
+compress = <y/n>
+max loglevel = <ignored>
+
+The "image size" parameter may be used to limit the size of the system
+snapshot image created by the suspend tool, but it's not mandatory. Namely,
+the suspend tool will do its best to limit the image size as required by
+this parameter, but if that's not possible, it will suspend the system anyway,
+with a bigger image. If "image size" is set to 0, the snapshot image will be
+as small as possible.
+
+If the "compute checksum" parameter is set to 'y', the suspend and resume
+tools will use the MD5 algorithm to verify the image integrity.
+
+If the "compress" parameter is set to 'y', the suspend and resume tools will
+use the LZF compression algorithm to compress/decompress the image.
+
+It is sufficient to set "compute checksum = y" and/or "compress = y" for the
+suspend tool which will put the appropriate information for the resume tool
+in the image header.
+
+The resume tool can use the same configuration file that is used by the
+suspend tool, but it will ignore the "image size", "compute checksum", and
+"compress" parameters.  It will use the value of "suspend loglevel" as
+the kernel console loglevel during resume. Additionally it will use the
+value of "max loglevel" as the kernel console loglevel to switch to in
+case the resume fails (this parameter is ignored by the suspend tool).
+
+4) You'll need to create the snapshot device file:
 
 # mknod /dev/snapshot c 10 231
 
-The name of this file must be equal to SNAPSHOT_DEVICE in swsusp.h.
+If the name of this file is equal to SNAPSHOT_DEVICE in swsusp.h, it is not
+necessary to specify it in the configuration file.
 
-This should be sufficient to use the suspend tool, but it is also
-recommended to put the tool into a directory located directly on the root
-filesystem.
+Now you should be able to use the suspend tool. It is recommended, however,
+to put the tool into a directory located directly on the root filesystem,
+for safe testing.
 
-3) It is recommended to place the resume tool on an initrd.  For simplicity
+5) It is recommended to place the resume tool on an initrd.  For simplicity
 I will only cover the fastest method of setting it up that will allow you to
 get the resume tool up and running quickly.
 
@@ -105,9 +159,10 @@ $ /sbin/mke2fs -F -m0 initrd
 [The initrd filesystem will be mounted as the root filesystem, so the paths
 with respect to it must be the same as in your "normal" root filesystem.]
 
-(g) Create the proc directory on it (the resume tool will use it), eg.
+(g) Create the proc and etc directories on it (the resume tool will use them), eg.
 
 # mkdir /mnt/proc
+# mkdir /mnt/etc
 
 (h) Copy the resume tool to the initrd filesystem and link it to linuxrc, eg.
 
@@ -115,21 +170,24 @@ with respect to it must be the same as in your "normal" root filesystem.]
 # cd /mnt
 # ln -s resume linuxrc
 
-(i) Unmount the initrd filesystem and move the file containing it to your /boot
+(i) Put the configuration file for the resume tool in the etc directory on
+the initrd filesystem, eg.
+
+# cp /etc/suspend.conf /mnt/etc/
+
+(j) Unmount the initrd filesystem and move the file containing it to your /boot
 directory, eg.
 
 # umount /mnt
 # mv initrd /boot/resume-initrd
 
-(j) In the GRUB configuration file add the initrd to the configuration of the
+(k) In the GRUB configuration file add the initrd to the configuration of the
 newly installed kernel, eg.
 
 	initrd (hd0,0)/resume-initrd
 
 (if you use LILO, please refer to its documentation).
 
-If you have set RESUME_DEVICE in swsusp.h to point to your resume partition before
-compiling the resume tool, you're now ready to use it.
 
 III. Testing
 
@@ -149,7 +207,7 @@ Next, go to the directory where the suspend tool is and do:
 
 # ./suspend
 
-If suspend fails, the tool will return to the command prompt with a (hopefully
+If this fails, the tool will return to the command prompt with a (hopefully
 instructive) message.  Otherwise you should be able to see some messages
 from it on the screen and finally the progress meter, and the box should be powered
 off.  If that happens, you can start it again and let the resume utility run

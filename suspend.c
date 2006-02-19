@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <lzf.h>
 
 #include "swsusp.h"
 #include "config.h"
@@ -34,6 +35,8 @@ static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static unsigned long pref_image_size = IMAGE_SIZE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
+static char compress;
+static unsigned long compr_diff;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -67,6 +70,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "compute checksum",
 		.fmt = "%c",
 		.ptr = &compute_checksum,
+	},
+	{
+		.name = "compress",
+		.fmt = "%c",
+		.ptr = &compress,
 	}
 };
 
@@ -121,7 +129,7 @@ static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
 	ssize_t cnt = 0;
 
 	if (offset) {
-		if (lseek(fd, offset, SEEK_SET) == offset) 
+		if (lseek(fd, offset, SEEK_SET) == offset)
 			cnt = write(fd, buf, size);
 		if (cnt == size)
 			res = 0;
@@ -132,6 +140,8 @@ static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
 }
 
 static char write_buffer[BUFFER_SIZE];
+/* This MUST NOT be less than PAGE_SIZE */
+static unsigned int max_block_size = PAGE_SIZE;
 
 /*
  *	The swap_map_handle structure is used for handling swap in
@@ -141,13 +151,14 @@ static char write_buffer[BUFFER_SIZE];
 struct swap_map_handle {
 	struct swap_map_page cur;
 	struct swap_area cur_area;
+	unsigned int cur_alloc;
 	loff_t cur_swap;
 	unsigned int k;
 	int dev, fd;
 	struct md5_ctx ctx;
 };
 
-static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
+static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 {
 	memset(&handle->cur, 0, sizeof(struct swap_map_page));
 	handle->cur_swap = get_swap_page(dev);
@@ -157,6 +168,7 @@ static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int 
 	if (!handle->cur_area.offset)
 		return -ENOSPC;
 	handle->cur_area.size = 0;
+	handle->cur_alloc = PAGE_SIZE;
 	handle->k = 0;
 	handle->dev = dev;
 	handle->fd = fd;
@@ -165,9 +177,48 @@ static inline int init_swap_writer(struct swap_map_handle *handle, int dev, int 
 	return 0;
 }
 
-static int swap_write_page(struct swap_map_handle *handle, void *buf)
+static inline int prepare(void *buf, int disp)
+{
+	char *ptr = write_buffer + disp;
+
+	if (compress) {
+		size_t cnt;
+
+		cnt = lzf_compress(buf, PAGE_SIZE,
+				ptr + sizeof(short), PAGE_SIZE - sizeof(short));
+		if (cnt <= 0) {
+			memcpy(ptr + sizeof(short), buf, PAGE_SIZE);
+			cnt = PAGE_SIZE;
+		} else {
+			compr_diff += PAGE_SIZE - cnt;
+		}
+		compr_diff -= sizeof(short);
+		*((unsigned short *)ptr) = cnt;
+		return cnt + sizeof(short);
+	}
+	memcpy(ptr, buf, PAGE_SIZE);
+	return PAGE_SIZE;
+}
+
+static inline int try_get_more_swap(struct swap_map_handle *handle)
 {
 	loff_t offset;
+
+	while (handle->cur_area.size > handle->cur_alloc) {
+		offset = get_swap_page(handle->dev);
+		if (!offset)
+			return -ENOSPC;
+		if (offset == handle->cur_area.offset + handle->cur_alloc)
+			handle->cur_alloc += PAGE_SIZE;
+		else
+			handle->cur_area.offset = offset;
+	}
+	return 0;
+}
+
+static int swap_write_page(struct swap_map_handle *handle, void *buf)
+{
+	loff_t offset = 0;
 	int error;
 
 	if (compute_checksum)
@@ -175,34 +226,45 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 
 	if (!handle->cur_area.size) {
 		/* No data in the write buffer */
-		memcpy(write_buffer, buf, PAGE_SIZE);
-		handle->cur_area.size = PAGE_SIZE;
-		return 0;
+		handle->cur_area.size = prepare(buf, 0);
+		return try_get_more_swap(handle);
 	}
 
-	offset = get_swap_page(handle->dev);
-	if (!offset)
-		return -ENOSPC;
-
-	if (offset == handle->cur_area.offset + handle->cur_area.size &&
-	    handle->cur_area.size + PAGE_SIZE <= BUFFER_SIZE) {
-		/* Put the data into the write buffer */
-		memcpy(write_buffer + handle->cur_area.size, buf, PAGE_SIZE);
-		handle->cur_area.size += PAGE_SIZE;
-		return 0;
+	if (handle->cur_area.size + max_block_size <= BUFFER_SIZE) {
+		if (handle->cur_area.size + max_block_size <= handle->cur_alloc) {
+			handle->cur_area.size += prepare(buf, handle->cur_area.size);
+			return 0;
+		}
+		offset = get_swap_page(handle->dev);
+		if (!offset)
+			return -ENOSPC;
+		if (offset == handle->cur_area.offset + handle->cur_alloc) {
+			handle->cur_alloc += PAGE_SIZE;
+			handle->cur_area.size += prepare(buf, handle->cur_area.size);
+			return 0;
+		}
 	}
 
-	/* The write buffer is full or the offset doesn't fit.  Flush */
+	/* The write buffer is full or the offset doesn't fit.  Flush the buffer */
 	error = write_area(handle->fd, write_buffer, handle->cur_area.offset,
 			handle->cur_area.size);
 	if (error)
 		return error;
 	handle->cur.entries[handle->k].offset = handle->cur_area.offset;
 	handle->cur.entries[handle->k].size = handle->cur_area.size;
+
 	/* The write buffer has been flushed.  Fill it from the start */
+	if (!offset) {
+		offset = get_swap_page(handle->dev);
+		if (!offset)
+			return -ENOSPC;
+	}
 	handle->cur_area.offset = offset;
-	memcpy(write_buffer, buf, PAGE_SIZE);
-	handle->cur_area.size = PAGE_SIZE;
+	handle->cur_alloc = PAGE_SIZE;
+	handle->cur_area.size = prepare(buf, 0);
+	error = try_get_more_swap(handle);
+	if (error)
+		return error;
 	if (++handle->k >= MAP_PAGE_ENTRIES) {
 		offset = get_swap_page(handle->dev);
 		if (!offset)
@@ -330,7 +392,7 @@ int write_image(int snapshot_fd, int resume_fd)
 	error = read(snapshot_fd, header_buffer, PAGE_SIZE);
 	if (error < (int)PAGE_SIZE)
 		return error < 0 ? error : -EFAULT;
-	printf("suspend: Image size: %lu bytes\n", header->size);
+	printf("suspend: Image size: %lu kilobytes\n", header->size / 1024);
 	if (!enough_swap(snapshot_fd, header->size)) {
 		printf("suspend: Not enough free swap\n");
 		return -ENOSPC;
@@ -341,6 +403,10 @@ int write_image(int snapshot_fd, int resume_fd)
 		header->image_flags = 0;
 		if (compute_checksum)
 			header->image_flags |= IMAGE_CHECKSUM;
+		if (compress) {
+			header->image_flags |= IMAGE_COMPRESSED;
+			max_block_size += sizeof(short);
+		}
 		error = save_image(&handle, header->pages - 1);
 	}
 	if (!error) {
@@ -351,6 +417,12 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (!error)
 		error = write_area(resume_fd, header_buffer, start, PAGE_SIZE);
 	if (!error) {
+		if (compress) {
+			double delta = header->size - compr_diff;
+
+			printf("suspend: Compression ratio %4.2lf\n",
+				delta / header->size);
+		}
 		printf( "S" );
 		error = mark_swap(resume_fd, start);
 	}
@@ -552,6 +624,8 @@ int main(int argc, char *argv[])
 		return EINVAL;
 	if (compute_checksum != 'y' && compute_checksum != 'Y')
 		compute_checksum = 0;
+	if (compress != 'y' && compress != 'Y')
+		compress = 0;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -602,7 +676,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (set_swap_file(snapshot_fd, resume_dev)) {
-		fprintf(stderr, "suspend: Could not use the resume device\n");
+		fprintf(stderr, "suspend: Could not use the resume device "
+			"(try swapon -a)\n");
 		ret = errno;
 		goto Close_snapshot_fd;
 	}

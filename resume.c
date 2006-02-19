@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <lzf.h>
 
 #include "swsusp.h"
 #include "config.h"
@@ -30,7 +31,8 @@ static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static int max_loglevel = MAX_LOGLEVEL;
-static char compute_checksum;
+static char verify_checksum;
+static char decompress;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -62,6 +64,11 @@ static struct config_par parameters[PARAM_NO] = {
 	},
 	{
 		.name = "compute checksum",
+		.fmt = "%c",
+		.ptr = NULL,
+	},
+	{
+		.name = "compress",
 		.fmt = "%c",
 		.ptr = NULL,
 	}
@@ -117,8 +124,7 @@ struct swap_map_handle {
  *	in a file-alike way
  */
 
-static inline int init_swap_reader(struct swap_map_handle *handle,
-                                      int fd, loff_t start)
+static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start)
 {
 	int error;
 
@@ -135,20 +141,46 @@ static inline int init_swap_reader(struct swap_map_handle *handle,
 	handle->fd = fd;
 	handle->k = 0;
 	handle->cur_size = 0;
-	if (compute_checksum)
+	if (verify_checksum)
 		md5_init_ctx(&handle->ctx);
 	return 0;
+}
+
+static inline int restore(void *buf, int disp)
+{
+	char *ptr = read_buffer + disp;
+	unsigned short size = PAGE_SIZE;
+
+	if (decompress) {
+		size_t cnt;
+
+		size = *((unsigned short *)ptr);
+		ptr += sizeof(short);
+		if (size == PAGE_SIZE) {
+			size += sizeof(short);
+		} else if (size < PAGE_SIZE) {
+			cnt = lzf_decompress(ptr, size, buf, PAGE_SIZE);
+			return cnt == PAGE_SIZE ? size + sizeof(short) : -ENODATA;
+		} else {
+			return -EINVAL;
+		}
+	}
+	memcpy(buf, ptr, PAGE_SIZE);
+	return size;
 }
 
 static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 {
 	loff_t offset;
+	size_t size;
 	int error = 0;
 
-	if (handle->cur_size + PAGE_SIZE <= handle->area_size) {
+	if (handle->cur_size < handle->area_size) {
 		/* Get the data from the read buffer */
-		memcpy(buf, read_buffer + handle->cur_size, PAGE_SIZE);
-		handle->cur_size += PAGE_SIZE;
+		size = restore(buf, handle->cur_size);
+		if (size < 0)
+			return size;
+		handle->cur_size += size;
 		goto MD5;
 	}
 
@@ -169,12 +201,14 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 				handle->area_size);
 	}
 	if (!error) {
-		memcpy(buf, read_buffer, PAGE_SIZE);
-		handle->cur_size = PAGE_SIZE;
+		size = restore(buf, 0);
+		if (size < 0)
+			return size;
+		handle->cur_size = size;
 	}
 
 MD5:
-	if (compute_checksum)
+	if (verify_checksum)
 		md5_process_block(buf, PAGE_SIZE, &handle->ctx);
 
 	return error;
@@ -204,7 +238,7 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 			break;
 		ret = write(dev, page_buffer, PAGE_SIZE);
 		if (ret < (int)PAGE_SIZE) {
-			error = ret < 0 ? ret : -ENOSPC;
+			error = ret < 0 ? -errno : -ENOSPC;
 			break;
 		}
 		if (!(n % m))
@@ -212,7 +246,7 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 		n++;
 	} while (n < nr_pages);
 	if (!error)
-		printf("\b\b\b\bdone\n");
+		printf(" done\n");
 	return error;
 }
 
@@ -255,7 +289,11 @@ static int read_image(int dev, char *resume_dev_name)
 			printf("resume: MD5 checksum ");
 			print_checksum(orig_checksum);
 			printf("\n");
-			compute_checksum = 1;
+			verify_checksum = 1;
+		}
+		if (header->image_flags & IMAGE_COMPRESSED) {
+			printf("resume: Compressed image\n");
+			decompress = 1;
 		}
 		error = init_swap_reader(&handle, fd, header->map_start);
 		if (!error) {
@@ -276,7 +314,7 @@ static int read_image(int dev, char *resume_dev_name)
 		        "\tnow and successful resume. That would badly damage\n"
 		        "\taffected filesystems.]\n\n"
 			"\tDo you want to continue boot (Y/n)? ");
-		fscanf(stdin, "%c", &c);
+		c = getchar();
 		ret = (c == 'n' || c == 'N');
 		if (ret) {
 			close(fd);
@@ -284,31 +322,35 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 	}
 	if (!error || !ret) {
-		if (compute_checksum)
+		if (!error && verify_checksum) {
 			md5_finish_ctx(&handle.ctx, checksum);
-		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
+			if (memcmp(orig_checksum, checksum, 16)) {
+				printf("resume: MD5 checksum does not match\n");
+				printf("resume: Computed MD5 checksum ");
+				print_checksum(checksum);
+				printf("\n");
+				error = -EINVAL;
+			}
+		}
 		/* Reset swap signature now */
+		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
 		ret = lseek(fd, 0, SEEK_SET);
 		if (!ret)
 			ret = write(fd, &swsusp_header, PAGE_SIZE);
 		if (ret < (int)PAGE_SIZE) {
 			fprintf(stderr, "resume: Could not restore the partition header\n");
 			error = ret < 0 ? -errno : -EIO;
-		} else if (compute_checksum && memcmp(orig_checksum, checksum, 16)) {
-			printf("resume: MD5 checksum does not match\n");
-			printf("resume: Computed MD5 checksum ");
-			print_checksum(checksum);
-			printf("\n\nPress ENTER to continue.");
-			getchar();
-			error = -EINVAL;
 		}
 	}
 	fsync(fd);
 	close(fd);
-	if (!error)
+	if (!error) {
 		printf("resume: Image successfully loaded\n");
-	else
-		printf("resume: Error %d loading the image\n", error);
+	} else {
+		printf("resume: Error %d loading the image\n\nPress ENTER to continue ",
+			error);
+		getchar();
+	}
 	return error;
 }
 

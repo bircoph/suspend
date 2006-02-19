@@ -1,3 +1,6 @@
+CC_FLAGS=-I/usr/local/inlcude
+LD_FLAGS=-L/usr/local/lib -llzf
+
 all: suspend resume s2ram
 
 clean:
@@ -13,8 +16,8 @@ config.o:	config.c config.h
 	gcc -Wall -c config.c
 
 suspend:	md5.o config.o suspend.c swsusp.h config.h md5.h
-	gcc -Wall md5.o config.o suspend.c -o suspend
+	gcc -Wall $(CC_FLAGS) md5.o config.o suspend.c -o suspend $(LD_FLAGS)
 
 resume:	md5.o config.o resume.c swsusp.h config.h md5.h
-	gcc -Wall md5.o config.o resume.c -static -o resume
+	gcc -Wall $(CC_FLAGS) md5.o config.o resume.c -static -o resume $(LD_FLAGS)
 

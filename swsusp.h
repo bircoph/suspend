@@ -59,7 +59,8 @@ struct swsusp_info {
 	unsigned char		checksum[16];
 } __attribute__((aligned(PAGE_SIZE)));
 
-#define IMAGE_CHECKSUM	0x0001
+#define IMAGE_CHECKSUM		0x0001
+#define IMAGE_COMPRESSED	0x0002
 
 #define SWSUSP_SIG	"ULSUSPEND"
 
@@ -151,4 +152,4 @@ struct swap_map_page {
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8
 
-#define PARAM_NO	6
+#define PARAM_NO	7
