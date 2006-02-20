@@ -142,8 +142,7 @@ static void machine_table(void)
                     is_product("HP Compaq nc8230") || is_product("HP Pavilion dv1000") || 
                     is_product("HP Pavilion zt3000") || is_product("HP Tablet PC Tx1100") || 
                     is_product("HP Tablet PC TR1105") || is_product("Pavilion zd7000")) {
-
-	/* HP Compaq nx612: POST_VIDEO=false -- something special */
+	/* HP Compaq nx6120: POST_VIDEO=false -- something special: should not do do_post(). */
 			half_known();
 			vbe_state_save();
 			return;
@@ -170,12 +169,13 @@ static void machine_table(void)
 			return;
 		}
 
-
 		/* These needs something special: R50e
 		is_product("1834") || is_product("1842") || is_product("2670") ||
 			ACPI_SLEEP=true;
 			SAVE_VIDEO_PCI_STATE=true;
 			SAVE_VBE_STATE=false;
+
+			should save/restore /sys/bus/pci/devices/ * /config .
 		*/
 
 		/* X30 */
