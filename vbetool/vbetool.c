@@ -49,7 +49,6 @@ void vbetool_init(void)
 	pacc = pci_alloc();
 	pacc->numeric_ids = 1;
 	pci_init(pacc);
-	return 0;
 }
 
 #ifndef S2RAM
