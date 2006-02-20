@@ -1,4 +1,4 @@
-CC_FLAGS=-I/usr/local/inlcude
+CC_FLAGS=-I/usr/local/inlcude -DCONFIG_COMPRESS
 LD_FLAGS=-L/usr/local/lib -llzf
 
 all: suspend resume s2ram

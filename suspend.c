@@ -24,7 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef CONFIG_COMPRESS
 #include <lzf.h>
+#endif
 
 #include "swsusp.h"
 #include "config.h"
@@ -35,7 +37,11 @@ static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static unsigned long pref_image_size = IMAGE_SIZE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
+#ifdef CONFIG_COMPRESS
 static char compress;
+#else
+#define compress 0
+#endif
 static unsigned long compr_diff;
 
 static struct config_par parameters[PARAM_NO] = {
@@ -71,11 +77,13 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt = "%c",
 		.ptr = &compute_checksum,
 	},
+#ifdef CONFIG_COMPRESS
 	{
 		.name = "compress",
 		.fmt = "%c",
 		.ptr = &compress,
-	}
+	},
+#endif
 };
 
 static char page_buffer[PAGE_SIZE];
@@ -624,8 +632,10 @@ int main(int argc, char *argv[])
 		return EINVAL;
 	if (compute_checksum != 'y' && compute_checksum != 'Y')
 		compute_checksum = 0;
+#ifdef CONFIG_COMPRESS
 	if (compress != 'y' && compress != 'Y')
 		compress = 0;
+#endif
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);

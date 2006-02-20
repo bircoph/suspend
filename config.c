@@ -95,12 +95,8 @@ static int parse(char *my_name, char *file_name, int parc, struct config_par *pa
 	return error;
 }
 
-int get_config(char *my_name,
-               int argc,
-               char *argv[],
-               int parc,
-               struct config_par *parv,
-               char *special)
+int get_config(char *my_name, int argc, char *argv[],
+	       int parc, struct config_par *parv, char *special)
 {
 	struct stat stat_buf;
 	int ret = 0;
@@ -115,7 +111,7 @@ int get_config(char *my_name,
 	}
 
 	if (strncmp(argv[1], "-f", 2)) {
-		fprintf(stderr, "Usage: %s [-f config ][resume_device]\n",
+		fprintf(stderr, "Usage: %s [-f config][resume_device]\n",
 			my_name);
 		return -EINVAL;
 	}

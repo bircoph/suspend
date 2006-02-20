@@ -21,7 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef CONFIG_COMPRESS
 #include <lzf.h>
+#endif
 
 #include "swsusp.h"
 #include "config.h"
@@ -32,7 +34,11 @@ static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static int max_loglevel = MAX_LOGLEVEL;
 static char verify_checksum;
+#ifdef CONFIG_COMPRESS
 static char decompress;
+#else
+#define decompress 0
+#endif
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -67,11 +73,13 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt = "%c",
 		.ptr = NULL,
 	},
+#ifdef CONFIG_COMPRESS
 	{
 		.name = "compress",
 		.fmt = "%c",
 		.ptr = NULL,
-	}
+	},
+#endif
 };
 
 static char page_buffer[PAGE_SIZE];
@@ -293,7 +301,12 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 		if (header->image_flags & IMAGE_COMPRESSED) {
 			printf("resume: Compressed image\n");
+#ifdef CONFIG_COMPRESS
 			decompress = 1;
+#else
+			printf("resume: Compression not supported\n");
+			exit(1);
+#endif
 		}
 		error = init_swap_reader(&handle, fd, header->map_start);
 		if (!error) {
