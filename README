@@ -17,3 +17,6 @@ For debugging, see http://www.opensuse.org/ACPI_Suspend_debugging .
 
 acpi-support package from Ubuntu has *very* long whitelist of machines: 
 http://packages.ubuntu.org.cn/dapper/admin/acpi-support .
+
+vbetool is based on vbetool-0.5-1 from Debian. pciutils-dev package is
+needed to compile vbetool.

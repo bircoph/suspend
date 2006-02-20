@@ -10,11 +10,10 @@
 #define S2RAM
 #include "dmidecode.c"
 #include "radeontool.c"
+#include "vbetool/vbetool.c"
 
 static int test_mode;
-static int need_vbetool;
-
-#define VBE_STATE "/var/cache/vbe.state"
+static void *vbe_buffer;
 
 static void machine_known(void)
 {
@@ -43,12 +42,9 @@ static void set_acpi_video_mode(int mode)
 
 static void vbe_state_save(void)
 {
-	int err = system("vbetool vbestate save > " VBE_STATE );
-	if (err) {
-		printf("vbetool failed to save video state with error %d\n.", err);
-		exit(1);
-	}
-	need_vbetool = 1;
+	int size;
+	vbetool_init();
+	vbe_buffer = __save_state(&size);
 }
 
 static void machine_table(void)
@@ -78,29 +74,6 @@ static void machine_table(void)
 	exit(1);
 }
 
-/* Note: it would be nice to have vbetool integrated into s2ram; that
-   way, user would see useful output even in cases like broken disk
-   driver. OTOH vbetool is big....
-*/
-
-static int vbe_state_restore(void)
-{
-	int err;
-
-	err = system("vbetool post");
-	if (err) {
-		printf("vbetool failed to POST video board with error %d.\n", err);
-		return err;
-	}
-	
-	err = system("vbetool vbestate restore < " VBE_STATE);
-	if (err)
-		printf("vbetool failed to restore video state with error %d.\n", err);
-
-	remove(VBE_STATE);
-	return err;
-}
-
 /* Code that can only be run on non-frozen system. It does not matter now
  * but will matter once we'll do suspend-to-both.
  */
@@ -125,8 +98,10 @@ void s2ram_do(void)
 
 void s2ram_resume(void)
 {
-	if (need_vbetool)
-		vbe_state_restore();
+	if (vbe_buffer) {
+		do_post();
+		restore_state_from(vbe_buffer);
+	}
 }
 
 int main(int argc, char *argv[])

@@ -36,11 +36,11 @@ version 2
 
 static struct pci_access *pacc;
 
-int main(int argc, char *argv[])
+void vbetool_init(void)
 {
 	if (!LRMI_init()) {
 		fprintf(stderr, "Failed to initialise LRMI.\n");
-		return 1;
+		exit(1);
 	}
 
 	ioperm(0, 1024, 1);
@@ -49,7 +49,13 @@ int main(int argc, char *argv[])
 	pacc = pci_alloc();
 	pacc->numeric_ids = 1;
 	pci_init(pacc);
+	return 0;
+}
 
+#ifndef S2RAM
+int main(int argc, char *argv[])
+{
+	vbetool_init();
 	if (argc < 2) {
 		goto usage;
 	} else if (!strcmp(argv[1], "vbestate")) {
@@ -121,6 +127,7 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+#endif
 
 int do_vbe_service(unsigned int AX, unsigned int BX, reg_frame * regs)
 {
@@ -179,7 +186,7 @@ int do_real_post(unsigned pci_device)
 	return error;
 }
 
-int do_post()
+int do_post(void)
 {
 	struct pci_dev *p;
 	unsigned int c;
@@ -203,28 +210,9 @@ int do_post()
 	return 0;
 }
 
-void restore_state()
+void restore_state_from(char *data)
 {
 	struct LRMI_regs r;
-
-	char *data = NULL;
-	char tmpbuffer[524288];
-	int i, length = 0;
-
-	/* We really, really don't want to fail to read the entire set */
-	while ((i = read(0, tmpbuffer + length, sizeof(tmpbuffer)-length))) {
-		if (i == -1) {
-			if (errno != EAGAIN && errno != EINTR) {
-				perror("Failed to read state - ");
-				return;
-			}
-		} else {
-			length += i;
-		}
-	}
-
-	data = LRMI_alloc_real(length);
-	memcpy(data, tmpbuffer, length);
 
 	/* VGA BIOS mode 3 is text mode */
 	do_set_mode(3,1);
@@ -248,9 +236,35 @@ void restore_state()
 	LRMI_free_real(data);
 
 	ioctl(0, KDSETMODE, KD_TEXT);
+
 }
 
-void save_state()
+void restore_state(void)
+{
+
+	char *data = NULL;
+	char tmpbuffer[524288];
+	int i, length = 0;
+
+	/* We really, really don't want to fail to read the entire set */
+	while ((i = read(0, tmpbuffer + length, sizeof(tmpbuffer)-length))) {
+		if (i == -1) {
+			if (errno != EAGAIN && errno != EINTR) {
+				perror("Failed to read state - ");
+				return;
+			}
+		} else {
+			length += i;
+		}
+	}
+
+	data = LRMI_alloc_real(length);
+	memcpy(data, tmpbuffer, length);
+
+	restore_state_from(data);
+}
+
+char *__save_state(int *psize)
 {
 	struct LRMI_regs r;
 	char *buffer;
@@ -272,12 +286,13 @@ void save_state()
 		fprintf(stderr, "Get video state buffer size failed\n");
 	}
 
-	size = (r.ebx & 0xffff) * 64;
+	*psize = size = (r.ebx & 0xffff) * 64;
 
 	buffer = LRMI_alloc_real(size);
 
 	if (buffer == NULL) {
 		fprintf(stderr, "Can't allocate video state buffer\n");
+		return NULL;
 	}
 
 	memset(&r, 0, sizeof(r));
@@ -302,8 +317,16 @@ void save_state()
 	if ((r.eax & 0xffff) != 0x4f) {
 		fprintf(stderr, "Save video state failed\n");
 	}
+	return buffer;
+}
 
-	write(1, buffer, size);
+void save_state(void)
+{
+	int size;
+	char *buffer = __save_state(&size);
+
+	if (buffer)
+		write(1, buffer, size);	/* FIXME: should retry on short write); */
 }
 
 int do_blank(int state)

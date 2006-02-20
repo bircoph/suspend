@@ -1,5 +1,7 @@
-CC_FLAGS=-I/usr/local/inlcude -DCONFIG_COMPRESS
-LD_FLAGS=-L/usr/local/lib -llzf
+CC_FLAGS=-I/usr/local/include
+# add "-DCONFIG_COMPRESS" for compression
+LD_FLAGS=-L/usr/local/lib
+# add "-llzf" for compression
 
 all: suspend resume s2ram
 
@@ -7,7 +9,7 @@ clean:
 	rm md5.o config.o suspend resume s2ram
 
 s2ram:	s2ram.c dmidecode.c
-	gcc -Wall s2ram.c -o s2ram
+	gcc -Wall s2ram.c vbetool/lrmi.o vbetool/x86-common.o -lpci -o s2ram
 
 md5.o:	md5.c md5.h
 	gcc -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c
