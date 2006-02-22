@@ -71,6 +71,14 @@ static void machine_table(void)
 		}
 	}
 
+	if (!strcmp(sys_vendor, "Hewlett-Packard")) {
+		if (!strcmp(sys_version, "HP OmniBook XE3 GF           ")) {
+			machine_known();
+			vbe_state_save();
+			return;
+		}
+	}
+
 	if (!strcmp(sys_vendor, "ASUSTEK ")) {
 		if (!strcmp(sys_product, "L3000D")) {
 			machine_known();
