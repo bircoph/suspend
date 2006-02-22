@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <asm/page.h>
 
 #define RADEON_LVDS_GEN_CNTL                0x02d0
 #       define RADEON_LVDS_ON               (1   <<  0)
@@ -41,7 +40,7 @@ int skip;
 
 /* *radeon_cntl_mem is mapped to the actual device's memory mapped control area. */
 /* Not the address but what it points to is volatile. */
-unsigned char * volatile radeon_cntl_mem;
+volatile unsigned char * radeon_cntl_mem;
 
 static void fatal(char *why)
 {
@@ -58,7 +57,7 @@ static unsigned long radeon_get(unsigned long offset,char *name)
         printf("internal error\n");
 	exit(-2);
     };
-    value = *(unsigned long * volatile)(radeon_cntl_mem+offset);  
+    value = *(volatile unsigned long *)(radeon_cntl_mem+offset);  
     if(debug) 
         printf("%08lx\n",value);
     return value;
@@ -72,7 +71,7 @@ static void radeon_set(unsigned long offset,char *name,unsigned long value)
         printf("internal error\n");
 	exit(-2);
     };
-    *(unsigned long * volatile)(radeon_cntl_mem+offset) = value;  
+    *(volatile unsigned long *)(radeon_cntl_mem+offset) = value;  
 }
 
 static void usage(void)
@@ -87,10 +86,10 @@ static void usage(void)
 /* with /dev/mem, then I could write this whole program in perl, */
 /* but sadly this is only the size of physical RAM.  If you */
 /* want to be truely bad and poke into device memory you have to mmap() */
-static unsigned char * map_devince_memory(unsigned int base,unsigned int length) 
+static volatile unsigned char * map_device_memory(unsigned int base,unsigned int length) 
 {
     int mem_fd;
-    unsigned char *device_mem;
+    volatile unsigned char *device_mem;
 
     /* open /dev/mem */
     if ((mem_fd = open("/dev/mem", O_RDWR) ) < 0) {
@@ -98,12 +97,12 @@ static unsigned char * map_devince_memory(unsigned int base,unsigned int length)
     }
 
     /* mmap graphics memory */
-    if ((device_mem = malloc(length + (PAGE_SIZE-1))) == NULL) {
+    if ((device_mem = malloc(length + (getpagesize()-1))) == NULL) {
         fatal("allocation error \n");
     }
-    if ((unsigned long)device_mem % PAGE_SIZE)
-        device_mem += PAGE_SIZE - ((unsigned long)device_mem % PAGE_SIZE);
-    device_mem = (unsigned char *)mmap(
+    if ((unsigned long)device_mem % getpagesize())
+        device_mem += getpagesize() - ((unsigned long)device_mem % getpagesize());
+    device_mem = (volatile unsigned char *)mmap(
         (caddr_t)device_mem, 
         length,
         PROT_READ|PROT_WRITE,
@@ -111,9 +110,9 @@ static unsigned char * map_devince_memory(unsigned int base,unsigned int length)
         mem_fd, 
         base
     );
-    if ((long)device_mem < 0) {
+    if (device_mem == (volatile unsigned char *)-1) {
         if(debug)
-            fprintf(stderr,"mmap returned %d\n",(int)device_mem);
+            fprintf(stderr,"mmap returned %d\n",(int)(long)device_mem);
         fatal("mmap error \n");
     }
     return device_mem;
@@ -222,7 +221,7 @@ We need to look through it to find the smaller region base address f8fffc00.
     }
     if(debug)
         printf("Radeon found. Base control address is %x.\n",base);
-    radeon_cntl_mem = map_devince_memory(base,0x2000);
+    radeon_cntl_mem = map_device_memory(base,0x2000);
 }
 
 #ifndef S2RAM

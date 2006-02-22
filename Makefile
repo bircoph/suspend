@@ -6,10 +6,16 @@ LD_FLAGS=-L/usr/local/lib
 all: suspend resume s2ram
 
 clean:
-	rm md5.o config.o suspend resume s2ram
+	rm -f md5.o config.o suspend resume s2ram vbetool/*.o
 
-s2ram:	s2ram.c dmidecode.c
+s2ram:	s2ram.c dmidecode.c vbetool/lrmi.o vbetool/x86-common.o
 	gcc -Wall s2ram.c vbetool/lrmi.o vbetool/x86-common.o -lpci -o s2ram
+
+vbetool/lrmi.o:	vbetool/lrmi.c
+	gcc -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o
+
+vbetool/x86-common.o:	vbetool/x86-common.c
+	gcc -Wall -O2 -c vbetool/x86-common.c -o vbetool/x86-common.o
 
 md5.o:	md5.c md5.h
 	gcc -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c
