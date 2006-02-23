@@ -5,14 +5,14 @@ LD_FLAGS=-L/usr/local/lib
 
 all: suspend resume s2ram
 
-S2RAMOBJ=vbetool/lrmi.o vbetool/x86-common.o
+S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o
 
 ifeq ($(ARCH), x86_64)
-S2RAMOBJ=vbetool/thunk.o vbetool/x86-common.o vbetool/x86emu/libx86emu.a
+S2RAMOBJ=vt.o vbetool/thunk.o vbetool/x86-common.o vbetool/x86emu/libx86emu.a
 endif
 
 clean:
-	rm -f md5.o config.o suspend resume s2ram vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
+	rm -f suspend resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c $(S2RAMOBJ)
 	gcc -Wall s2ram.c $(S2RAMOBJ) -lpci -o s2ram
@@ -34,6 +34,9 @@ md5.o:	md5.c md5.h
 
 config.o:	config.c config.h
 	gcc -Wall -c config.c
+
+vt.o:	vt.c vt.h
+	gcc -Wall -c vt.c
 
 suspend:	md5.o config.o suspend.c swsusp.h config.h md5.h
 	gcc -Wall $(CC_FLAGS) md5.o config.o suspend.c -o suspend $(LD_FLAGS)

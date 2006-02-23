@@ -11,8 +11,10 @@
 #include "dmidecode.c"
 #include "radeontool.c"
 #include "vbetool/vbetool.c"
+#include "vt.h"
 
 static int test_mode;
+static int active_console = 0;
 static void *vbe_buffer;
 
 static void machine_known(void)
@@ -31,6 +33,9 @@ static void half_known(void)
 
 static void radeon_backlight_off(void)
 {
+	/* switch to console 1 first, since we might be in X */
+	active_console = fgconsole();
+	chvt(1);
 	map_radeon_cntl_mem();
 	radeon_cmd_light("off");
 }
@@ -51,6 +56,11 @@ static void set_acpi_video_mode(int mode)
 static void vbe_state_save(void)
 {
 	int size;
+	/* vbe_state_save (and especially restore) should not happen behind
+	 * X's back, otherwise bad things might happen. So we switch to console 1.
+	 */
+	active_console = fgconsole();
+	chvt(1);
 	vbetool_init();
 	vbe_buffer = __save_state(&size);
 }
@@ -277,6 +287,10 @@ void s2ram_resume(void)
 		do_post();
 		restore_state_from(vbe_buffer);
 	}
+
+	/* if we switched consoles before suspend, switch back */
+	if (active_console > 0)
+		chvt(active_console);
 }
 
 int main(int argc, char *argv[])
