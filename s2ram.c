@@ -69,6 +69,15 @@ static void vbe_state_save(void)
 	vbe_buffer = __save_state(&size);
 }
 
+static void identify_machine(void)
+{
+	printf("bios_version = \"%s\", sys_vendor = \"%s\", sys_product = \"%s\", sys_version = \"%s\"\n",
+	       bios_version, sys_vendor, sys_product, sys_version);
+	printf("See /usr/src/linux/Doc*/power/video.txt for details,\n"
+	       "then reimplement neccessary steps here and mail patch to\n"
+	       "pavel@suse.cz. Good luck!\n");
+}
+
 static int is_product(char *s)
 {
 	return !(strncmp(sys_product, s, strlen(s)));
@@ -262,11 +271,7 @@ static void machine_table(void)
 	}
 
 	printf("Sorry, unknown machine.\n");
-	printf("bios_version = \"%s\", sys_vendor = \"%s\", sys_product = \"%s\", sys_version = \"%s\"\n",
-	       bios_version, sys_vendor, sys_product, sys_version);
-	printf("See /usr/src/linux/Doc*/power/video.txt for details,\n"
-	       "then reimplement neccessary steps here and mail patch to\n"
-	       "pavel@suse.cz. Good luck!\n");
+	identify_machine();
 	exit(1);
 }
 
@@ -306,12 +311,13 @@ void s2ram_resume(void)
 
 void usage(void)
 {
-	printf("Usage: s2ram [-nh] [-fsra]\n"
+	printf("Usage: s2ram [-nhi] [-fsra]\n"
 	       "\n"
 	       "Options:\n"
 	       "    -h, --help:       this text.\n"
 	       "    -n, --test:       test if the machine is in the database.\n"
 	       "                      returns 0 if known and supported\n"
+	       "    -i, --identify:   prints a string that identifies the machine.\n"
 	       "    -f, --force:      force suspending, even on unknown "
 	       "machines.\n"
 	       "\n"
@@ -336,15 +342,20 @@ int main(int argc, char *argv[])
 		{ "force",	no_argument,		NULL, 'f'},
 		{ "vbe_save",	no_argument,		NULL, 's'},
 		{ "radeontool",	no_argument,		NULL, 'r'},
+		{ "identify",	no_argument,		NULL, 'i'},
 		{ "acpi_sleep",	required_argument,	NULL, 'a'},
 		{ NULL,		0,			NULL,  0 }
 	};
 
-	while ((i = getopt_long(argc, argv, "nhfsra:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, "nhfsria:", options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage();
 			break;
+		case 'i':
+			dmi_scan();
+			identify_machine();
+			exit(0);
 		case 'n':
 			test_mode = 1;
 			break;
@@ -359,6 +370,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':
 			acpi_sleep = atoi(optarg);
+			break;
+		default:
+			usage();
+			exit(1);
 			break;
 		}
 	}
