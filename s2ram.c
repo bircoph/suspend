@@ -97,6 +97,13 @@ static void machine_table(void)
 		}
 	}
 
+	if (!strcmp(sys_vendor, "TOSHIBA")) {
+		if (is_product("Libretto L5/TNK") || is_product("Libretto L5/TNKW")) {
+			machine_known();
+			return;
+		}
+	}
+
 	/* Entries copied from acpi-support_0.52 */
 	if (!strcmp(sys_vendor, "ASUSTeK Computer Inc.")) {
 		if (is_product("L7000G series Notebook PC") || is_product("M6Ne") || is_product("W5A")) {
