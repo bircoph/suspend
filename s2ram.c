@@ -34,8 +34,10 @@ static void half_known(void)
 static void radeon_backlight_off(void)
 {
 	/* switch to console 1 first, since we might be in X */
-	active_console = fgconsole();
-	chvt(1);
+	if (!active_console) {
+		active_console = fgconsole();
+		chvt(1);
+	}
 	map_radeon_cntl_mem();
 	radeon_cmd_light("off");
 }
@@ -59,8 +61,10 @@ static void vbe_state_save(void)
 	/* vbe_state_save (and especially restore) should not happen behind
 	 * X's back, otherwise bad things might happen. So we switch to console 1.
 	 */
-	active_console = fgconsole();
-	chvt(1);
+	if (!active_console) {
+		active_console = fgconsole();
+		chvt(1);
+	}
 	vbetool_init();
 	vbe_buffer = __save_state(&size);
 }
@@ -300,27 +304,88 @@ void s2ram_resume(void)
 		chvt(active_console);
 }
 
+void usage(void)
+{
+	printf("Usage: s2ram [-nh] [-fsra]\n"
+	       "\n"
+	       "Options:\n"
+	       "    -h, --help:       this text.\n"
+	       "    -n, --test:       test if the machine is in the database.\n"
+	       "                      returns 0 if known and supported\n"
+	       "    -f, --force:      force suspending, even on unknown "
+	       "machines.\n"
+	       "\n"
+	       "the following options are only available with --force:\n"
+	       "    -s, --vbe_save:   save VBE state before suspending and "
+	       "restore after resume.\n"
+	       "    -r, --radeontool: turn off the backlight on radeons "
+	       "before suspending.\n"
+	       "    -a, --acpi_sleep: set the acpi_sleep parameter before "
+	       "suspend\n"
+	       "                      1=s3_bios, 2=s3_mode, 3=both\n"
+	       "\n");
+	exit(1);
+}
+
 int main(int argc, char *argv[])
 {
-	int i;
+	int i, force = 0, vbe_save = 0, radeontool = 0, acpi_sleep = -1;
 	struct option options[] = {
-		{ "test",         no_argument,	     NULL, 'n'},
-		{ "help",      	  no_argument,       NULL, 'h'},
-		{ NULL,           0,                 NULL,  0 }
+		{ "test",	no_argument,		NULL, 'n'},
+		{ "help",	no_argument,		NULL, 'h'},
+		{ "force",	no_argument,		NULL, 'f'},
+		{ "vbe_save",	no_argument,		NULL, 's'},
+		{ "radeontool",	no_argument,		NULL, 'r'},
+		{ "acpi_sleep",	required_argument,	NULL, 'a'},
+		{ NULL,		0,			NULL,  0 }
 	};
 
-	while ((i = getopt_long(argc, argv, "nh", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, "nhfsra:", options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
-			printf("Usage: s2ram [-nh]\n");
-			exit(1);
+			usage();
 			break;
 		case 'n':
 			test_mode = 1;
 			break;
+		case 'f':
+			force = 1;
+			break;
+		case 's':
+			vbe_save = 1;
+			break;
+		case 'r':
+			radeontool = 1;
+			break;
+		case 'a':
+			acpi_sleep = atoi(optarg);
+			break;
 		}
 	}
-	s2ram_prepare();
+	if (((acpi_sleep > -1) || vbe_save || radeontool) && !force) {
+		printf("acpi_sleep, vbe_save and radeontool parameter "
+		       "must be used with --force\n\n");
+		usage();
+	}
+	if (force && test_mode) {
+		printf("force and test mode do not make sense together.\n\n");
+		usage();
+	}
+
+	if (force) {
+		if (acpi_sleep > -1) {
+			if (acpi_sleep < 4)
+				set_acpi_video_mode(acpi_sleep);
+			else
+				printf("acpi_sleep parameter out of rande (0-3), ignored.\n");
+		}
+		if (vbe_save)
+			vbe_state_save();
+		if (radeontool)
+			radeon_backlight_off();
+	} else {
+		s2ram_prepare();
+	}
 	s2ram_do();
 	s2ram_resume();
 	return 0;

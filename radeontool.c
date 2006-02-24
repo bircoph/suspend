@@ -74,14 +74,6 @@ static void radeon_set(unsigned long offset,char *name,unsigned long value)
     *(volatile unsigned long *)(radeon_cntl_mem+offset) = value;  
 }
 
-static void usage(void)
-{
-    printf("usage: radeontool [options] [command]\n");
-    printf("         light [on|off]     - power down the backlight \n");
-    exit(-1);
-}
-
-
 /* Ohh, life would be good if we could simply address all memory addresses */
 /* with /dev/mem, then I could write this whole program in perl, */
 /* but sadly this is only the size of physical RAM.  If you */
@@ -130,9 +122,7 @@ void radeon_cmd_light(char *param)
         lvds_gen_cntl |= RADEON_LVDS_ON;
     } else if(strcmp(param,"off") == 0) {
         lvds_gen_cntl &= ~ RADEON_LVDS_ON;
-    } else {
-        usage();	    
-    };
+    }
     radeon_set(RADEON_LVDS_GEN_CNTL,"RADEON_LVDS_GEN_CNTL",lvds_gen_cntl);
 }
 
@@ -239,7 +229,6 @@ int main(int argc,char *argv[])
         }
     };
 
-    usage();
     return 1;
 }
 #endif
