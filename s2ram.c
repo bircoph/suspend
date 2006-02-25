@@ -18,18 +18,22 @@ static int test_mode;
 static int active_console = 0;
 static void *vbe_buffer;
 
-static void machine_known(void)
+static void machine_known(int line)
 {
-	if (test_mode)
+	if (test_mode) {
+		printf("Machine known: whitelist.c: %d\n", line);
 		exit(0);
+	}
 }
 
-static void half_known(void)
+static void half_known(int line)
 {
 	printf("Machine is in the whitelist, but perhaps it is using vbetool,\n");
 	printf("unneccessarily. Please try to find minimal options.\n");
-	if (test_mode)
+	if (test_mode) {
+		printf("Machine half known: whitelist.c: %d\n", line);
 		exit(0);
+	}
 }
 
 static void radeon_backlight_off(void)
@@ -107,6 +111,7 @@ anyproduct(const char *s, ...)
 	va_list args;
 	va_start(args, s);
 	while (t=va_arg(args, char *)) {
+		printf("any_product %s\n", t);
 		if (is_product(t)) {
 			va_end(args);
 			return 1;
