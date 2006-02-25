@@ -46,7 +46,7 @@ VENDOR("ASUSTeK Computer Inc.") {
 		HALF_KNOWN();
 }
 
-if (!strcmp(sys_vendor, "Acer") || !strcmp(sys_vendor, "Acer, inc.")) {
+VENDOR2("Acer", "Acer, inc.") {
 	PRODUCT2_("Aspire 2000", "TravelMate 290", "TravelMate 660", "Aspire 3000", 
 		 "TravelMate 8100")
 		HALF_KNOWN();
