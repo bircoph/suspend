@@ -12,6 +12,7 @@
 #include "radeontool.c"
 #include "vbetool/vbetool.c"
 #include "vt.h"
+#include <stdarg.h>
 
 static int test_mode;
 static int active_console = 0;
@@ -82,6 +83,38 @@ static int is_product(char *s)
 {
 	return !(strncmp(sys_product, s, strlen(s)));
 }
+
+static int
+stranycmp(const char *s, ...)
+{
+	char *t;
+	va_list args;
+	va_start(args, s);
+	while (t=va_arg(args, char *)) {
+		if (!strcmp(s, t)) {
+			va_end(args);
+			return 0;
+		}
+	}
+	va_end(args);
+	return 1;
+} 
+
+static int
+anyproduct(const char *s, ...)
+{
+	char *t;
+	va_list args;
+	va_start(args, s);
+	while (t=va_arg(args, char *)) {
+		if (is_product(t)) {
+			va_end(args);
+			return 1;
+		}
+	}
+	va_end(args);
+	return 0;
+} 
 
 static void machine_table(void)
 {

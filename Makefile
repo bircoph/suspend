@@ -1,7 +1,7 @@
-CC_FLAGS=-I/usr/local/include
+CC_FLAGS=-I/usr/local/include -DCONFIG_ENCRYPT
 # add "-DCONFIG_COMPRESS" for compression
 # add "-DCONFIG_ENCRYPT" for encryption
-LD_FLAGS=-L/usr/local/lib
+LD_FLAGS=-L/usr/local/lib -lcrypto
 # add "-llzf" for compression
 # add "-lcrypto" for encryption
 
