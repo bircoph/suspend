@@ -94,7 +94,7 @@ stranycmp(const char *s, ...)
 	char *t;
 	va_list args;
 	va_start(args, s);
-	while (t=va_arg(args, char *)) {
+	while ((t=va_arg(args, char *))) {
 		if (!strcmp(s, t)) {
 			va_end(args);
 			return 0;
@@ -110,8 +110,7 @@ anyproduct(const char *s, ...)
 	char *t;
 	va_list args;
 	va_start(args, s);
-	while (t=va_arg(args, char *)) {
-		printf("any_product %s\n", t);
+	while ((t=va_arg(args, char *))) {
 		if (is_product(t)) {
 			va_end(args);
 			return 1;

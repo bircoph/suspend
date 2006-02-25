@@ -8,7 +8,6 @@
 #define HALF_KNOWN() do { half_known(__LINE__); vbe_state_save(); return; } while (0)
 
 
-#if 0
 VENDOR("IBM") {
 	if (!strcmp(sys_version, "ThinkPad X32")) {
 		machine_known(__LINE__);
@@ -17,7 +16,6 @@ VENDOR("IBM") {
 		return;
 	}
 }
-#endif
 
 VENDOR("Hewlett-Packard") {
 	if (!strcmp(sys_version, "HP OmniBook XE3 GF           ")) {
@@ -58,7 +56,7 @@ VENDOR("Compaq") {
 	PRODUCT_("Armada    E500")		HALF_KNOWN();
 }
 
-if (!strcmp(sys_vendor, "Dell Inc.") || !strcmp(sys_vendor, "Dell Computer Corporation")) {
+VENDOR2("Dell Inc.", "Dell Computer Corporation") {
 	PRODUCT2_("Inspiron 700m", "Inspiron 1200", "Inspiron 6000",
 		 "Inspiron 8100", "Inspiron 8200", "Inspiron 8600",
 		 "Inspiron 9300", "Latitude 110L", "Latitude D410",
@@ -73,7 +71,7 @@ VENDOR("ECS") {
 		HALF_KNOWN();
 }
 
-if (!strcmp(sys_vendor, "FUJITSU SIEMENS") || !strcmp(sys_vendor, "FUJITSU")) {
+VENDOR2("FUJITSU SIEMENS", "FUJITSU") {
 	PRODUCT2_("Amilo A7640", "AMILO M", "LifeBook S Series",
 		 "LIFEBOOK S6120", "LIFEBOOK P7010")
 		HALF_KNOWN();

@@ -1,7 +1,7 @@
-CC_FLAGS=-I/usr/local/include -DCONFIG_ENCRYPT
+CC_FLAGS=-I/usr/local/include
 # add "-DCONFIG_COMPRESS" for compression
 # add "-DCONFIG_ENCRYPT" for encryption
-LD_FLAGS=-L/usr/local/lib -lcrypto
+LD_FLAGS=-L/usr/local/lib
 # add "-llzf" for compression
 # add "-lcrypto" for encryption
 
@@ -17,7 +17,7 @@ clean:
 	rm -f suspend resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c $(S2RAMOBJ)
-	gcc -Wall s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+	gcc -g -Wall s2ram.c $(S2RAMOBJ) -lpci -o s2ram
 
 vbetool/lrmi.o:	vbetool/lrmi.c
 	gcc -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o
