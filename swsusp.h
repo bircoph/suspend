@@ -61,6 +61,7 @@ struct swsusp_info {
 
 #define IMAGE_CHECKSUM		0x0001
 #define IMAGE_COMPRESSED	0x0002
+#define IMAGE_ENCRYPTED		0x0004
 
 #define SWSUSP_SIG	"ULSUSPEND"
 
@@ -152,4 +153,4 @@ struct swap_map_page {
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8
 
-#define PARAM_NO	7
+#define PARAM_NO	8

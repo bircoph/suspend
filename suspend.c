@@ -26,11 +26,14 @@
 #include <errno.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
+#else
+#define lzf_compress(a, b, c, d)	0
 #endif
 
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
+#include "encrypt.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -43,6 +46,11 @@ static char compress;
 #define compress 0
 #endif
 static unsigned long compr_diff;
+#ifdef CONFIG_ENCRYPT
+static char encrypt;
+#else
+#define encrypt 0
+#endif
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -82,6 +90,13 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "compress",
 		.fmt = "%c",
 		.ptr = &compress,
+	},
+#endif
+#ifdef CONFIG_ENCRYPT
+	{
+		.name = "encrypt",
+		.fmt = "%c",
+		.ptr = &encrypt,
 	},
 #endif
 };
@@ -150,6 +165,9 @@ static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
 static char write_buffer[BUFFER_SIZE];
 /* This MUST NOT be less than PAGE_SIZE */
 static unsigned int max_block_size = PAGE_SIZE;
+#ifdef CONFIG_ENCRYPT
+static unsigned char encrypt_buffer[BUFFER_SIZE];
+#endif
 
 /*
  *	The swap_map_handle structure is used for handling swap in
@@ -164,6 +182,11 @@ struct swap_map_handle {
 	unsigned int k;
 	int dev, fd;
 	struct md5_ctx ctx;
+#ifdef CONFIG_ENCRYPT
+	BF_KEY key;
+	unsigned char ivec[IVEC_SIZE];
+	int num;
+#endif
 };
 
 static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
@@ -185,7 +208,7 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 	return 0;
 }
 
-static inline int prepare(void *buf, int disp)
+static int prepare(void *buf, int disp)
 {
 	char *ptr = write_buffer + disp;
 
@@ -208,7 +231,7 @@ static inline int prepare(void *buf, int disp)
 	return PAGE_SIZE;
 }
 
-static inline int try_get_more_swap(struct swap_map_handle *handle)
+static int try_get_more_swap(struct swap_map_handle *handle)
 {
 	loff_t offset;
 
@@ -221,6 +244,27 @@ static inline int try_get_more_swap(struct swap_map_handle *handle)
 		else
 			handle->cur_area.offset = offset;
 	}
+	return 0;
+}
+
+static int flush_buffer(struct swap_map_handle *handle)
+{
+	void *src = write_buffer;
+	int error;
+
+#ifdef CONFIG_ENCRYPT
+	if (encrypt) {
+		BF_cfb64_encrypt(src, encrypt_buffer, handle->cur_area.size,
+			&handle->key, handle->ivec, &handle->num, BF_ENCRYPT);
+		src = encrypt_buffer;
+	}
+#endif
+	error = write_area(handle->fd, src, handle->cur_area.offset,
+			handle->cur_area.size);
+	if (error)
+		return error;
+	handle->cur.entries[handle->k].offset = handle->cur_area.offset;
+	handle->cur.entries[handle->k].size = handle->cur_area.size;
 	return 0;
 }
 
@@ -254,12 +298,9 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 	}
 
 	/* The write buffer is full or the offset doesn't fit.  Flush the buffer */
-	error = write_area(handle->fd, write_buffer, handle->cur_area.offset,
-			handle->cur_area.size);
+	error = flush_buffer(handle);
 	if (error)
 		return error;
-	handle->cur.entries[handle->k].offset = handle->cur_area.offset;
-	handle->cur.entries[handle->k].size = handle->cur_area.size;
 
 	/* The write buffer has been flushed.  Fill it from the start */
 	if (!offset) {
@@ -297,15 +338,11 @@ static inline int flush_swap_writer(struct swap_map_handle *handle)
 		return -EINVAL;
 
 	/* Flush the write buffer */
-	error = write_area(handle->fd, write_buffer, handle->cur_area.offset,
-			handle->cur_area.size);
-	if (!error) {
-		handle->cur.entries[handle->k].offset = handle->cur_area.offset;
-		handle->cur.entries[handle->k].size = handle->cur_area.size;
+	error = flush_buffer(handle);
+	if (!error)
 		/* Save the last swap map page */
 		error = write_area(handle->fd, &handle->cur, handle->cur_swap,
-			sizeof(struct swap_map_page));
-	}
+				sizeof(struct swap_map_page));
 
 	return error;
 }
@@ -415,6 +452,13 @@ int write_image(int snapshot_fd, int resume_fd)
 			header->image_flags |= IMAGE_COMPRESSED;
 			max_block_size += sizeof(short);
 		}
+#ifdef CONFIG_ENCRYPT
+		if (encrypt) {
+			encrypt_init(&handle.key, handle.ivec, &handle.num,
+					write_buffer, encrypt_buffer, 1);
+			header->image_flags |= IMAGE_ENCRYPTED;
+		}
+#endif
 		error = save_image(&handle, header->pages - 1);
 	}
 	if (!error) {
@@ -635,6 +679,10 @@ int main(int argc, char *argv[])
 #ifdef CONFIG_COMPRESS
 	if (compress != 'y' && compress != 'Y')
 		compress = 0;
+#endif
+#ifdef CONFIG_ENCRYPT
+	if (encrypt != 'y' && encrypt != 'Y')
+		encrypt = 0;
 #endif
 
 	setvbuf(stdout, NULL, _IONBF, 0);

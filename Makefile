@@ -1,7 +1,9 @@
 CC_FLAGS=-I/usr/local/include
 # add "-DCONFIG_COMPRESS" for compression
+# add "-DCONFIG_ENCRYPT" for encryption
 LD_FLAGS=-L/usr/local/lib
 # add "-llzf" for compression
+# add "-lcrypto" for encryption
 
 all: suspend resume s2ram
 
@@ -32,15 +34,18 @@ vbetool/thunk.o:	vbetool/thunk.c
 md5.o:	md5.c md5.h
 	gcc -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c
 
+encrypt.o:	encrypt.c encrypt.h md5.h
+	gcc -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) -c encrypt.c
+
 config.o:	config.c config.h
-	gcc -Wall -c config.c
+	gcc -Wall $(CC_FLAGS) -c config.c
 
 vt.o:	vt.c vt.h
 	gcc -Wall -c vt.c
 
-suspend:	md5.o config.o suspend.c swsusp.h config.h md5.h
-	gcc -Wall $(CC_FLAGS) md5.o config.o suspend.c -o suspend $(LD_FLAGS)
+suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h
+	gcc -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c -o suspend $(LD_FLAGS)
 
-resume:	md5.o config.o resume.c swsusp.h config.h md5.h
-	gcc -Wall $(CC_FLAGS) md5.o config.o resume.c -static -o resume $(LD_FLAGS)
+resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h
+	gcc -Wall $(CC_FLAGS) md5.o encrypt.o config.o resume.c -static -o resume $(LD_FLAGS)
 

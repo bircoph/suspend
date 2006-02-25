@@ -23,11 +23,14 @@
 #include <errno.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
+#else
+#define lzf_decompress(a, b, c, d)	0
 #endif
 
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
+#include "encrypt.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -38,6 +41,11 @@ static char verify_checksum;
 static char decompress;
 #else
 #define decompress 0
+#endif
+#ifdef CONFIG_ENCRYPT
+static char decrypt;
+#else
+#define decrypt 0
 #endif
 
 static struct config_par parameters[PARAM_NO] = {
@@ -80,6 +88,13 @@ static struct config_par parameters[PARAM_NO] = {
 		.ptr = NULL,
 	},
 #endif
+#ifdef CONFIG_ENCRYPT
+	{
+		.name = "encrypt",
+		.fmt = "%c",
+		.ptr = NULL,
+	},
+#endif
 };
 
 static char page_buffer[PAGE_SIZE];
@@ -112,6 +127,9 @@ static int read_area(int fd, void *buf, loff_t offset, unsigned int size)
 }
 
 static char read_buffer[BUFFER_SIZE];
+#ifdef CONFIG_ENCRYPT
+static char decrypt_buffer[BUFFER_SIZE];
+#endif
 
 /*
  *	The swap_map_handle structure is used for handling the swap map in
@@ -125,12 +143,39 @@ struct swap_map_handle {
 	unsigned int k;
 	int fd;
 	struct md5_ctx ctx;
+#ifdef CONFIG_ENCRYPT
+	BF_KEY key;
+	unsigned char ivec[IVEC_SIZE];
+	int num;
+#endif
 };
 
 /**
  *	The following functions allow us to read data using a swap map
  *	in a file-alike way
  */
+
+static int fill_buffer(struct swap_map_handle *handle)
+{
+	void *dst = read_buffer;
+	int error;
+
+	handle->area_size = handle->cur.entries[handle->k].size;
+#ifdef CONFIG_ENCRYPT
+	if (decrypt)
+		dst = decrypt_buffer;
+#endif
+	error = read_area(handle->fd, dst,
+			handle->cur.entries[handle->k].offset,
+			handle->area_size);
+#ifdef CONFIG_ENCRYPT
+	if (!error && decrypt)
+		BF_cfb64_encrypt(dst, (unsigned char *)read_buffer,
+			handle->area_size, &handle->key, handle->ivec,
+			&handle->num, BF_DECRYPT);
+#endif
+	return error;
+}
 
 static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start)
 {
@@ -141,20 +186,18 @@ static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start
 	error = read_area(fd, &handle->cur, start, sizeof(struct swap_map_page));
 	if (error)
 		return error;
-	handle->area_size = handle->cur.entries[0].size;
-	error = read_area(fd, read_buffer, handle->cur.entries[0].offset,
-			handle->area_size);
-	if (error)
-		return error;
 	handle->fd = fd;
 	handle->k = 0;
+	error = fill_buffer(handle);
+	if (error)
+		return error;
 	handle->cur_size = 0;
 	if (verify_checksum)
 		md5_init_ctx(&handle->ctx);
 	return 0;
 }
 
-static inline int restore(void *buf, int disp)
+static int restore(void *buf, int disp)
 {
 	char *ptr = read_buffer + disp;
 	unsigned short size = PAGE_SIZE;
@@ -202,24 +245,21 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 		else
 			error = -EINVAL;
 	}
-	if (!error) {
-		handle->area_size = handle->cur.entries[handle->k].size;
-		error = read_area(handle->fd, read_buffer,
-				handle->cur.entries[handle->k].offset,
-				handle->area_size);
-	}
-	if (!error) {
-		size = restore(buf, 0);
-		if (size < 0)
-			return size;
-		handle->cur_size = size;
-	}
+	if (!error)
+		error = fill_buffer(handle);
+	if (error)
+		return error;
+
+	size = restore(buf, 0);
+	if (size < 0)
+		return size;
+	handle->cur_size = size;
 
 MD5:
 	if (verify_checksum)
 		md5_process_block(buf, PAGE_SIZE, &handle->ctx);
 
-	return error;
+	return 0;
 }
 
 /**
@@ -305,11 +345,22 @@ static int read_image(int dev, char *resume_dev_name)
 			decompress = 1;
 #else
 			printf("resume: Compression not supported\n");
-			exit(1);
+			error = -EINVAL;
 #endif
 		}
-		error = init_swap_reader(&handle, fd, header->map_start);
+		if (!error && (header->image_flags & IMAGE_ENCRYPTED)) {
+			printf("resume: Encrypted image\n");
+#ifdef CONFIG_ENCRYPT
+			encrypt_init(&handle.key, handle.ivec, &handle.num,
+					read_buffer, decrypt_buffer, 0);
+			decrypt = 1;
+#else
+			printf("resume: Encryption not supported\n");
+			error = -EINVAL;
+#endif
+		}
 		if (!error) {
+			error = init_swap_reader(&handle, fd, header->map_start);
 			nr_pages = header->pages - 1;
 			ret = write(dev, page_buffer, PAGE_SIZE);
 			if (ret < (int)PAGE_SIZE)
@@ -319,8 +370,13 @@ static int read_image(int dev, char *resume_dev_name)
 			error = load_image(&handle, dev, nr_pages);
 	}
 	if (error) {
-		printf("resume: The system snapshot image could not be read.\n\n"
+		printf("\nresume: The system snapshot image could not be read.\n\n"
+#ifdef CONFIG_ENCRYPT
+			"\tThis might be a result of booting a wrong kernel\n"
+			"\tor typing in a wrong passphrase.\n\n"
+#else
 			"\tThis might be a result of booting a wrong kernel.\n\n"
+#endif
 			"\tYou can continue to boot the system and lose the saved state\n"
 			"\tor reboot and try again.\n\n"
 		        "\t[Notice that you may not mount any filesystem between\n"
