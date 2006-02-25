@@ -3,8 +3,8 @@
 #define PRODUCT(x) if (!strcmp(sys_product, x))
 #define PRODUCT2(a...) if (!stranycmp(sys_product, a, NULL))
 /* Warning: these only looks at substrings! -- for compatibility only! */
-#define PRODUCT_(x) if (is_product(x))
-#define PRODUCT2_(a...) if (anyproduct("foo", a, NULL))
+#define PRODUCT_(x) if (!strxcmp(sys_product, x))
+#define PRODUCT2_(a...) if (!stranyxcmp(sys_product, a, NULL))
 #define HALF_KNOWN() do { half_known(__LINE__); vbe_state_save(); return; } while (0)
 
 

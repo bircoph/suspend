@@ -83,11 +83,6 @@ static void identify_machine(void)
 	       "pavel@suse.cz. Good luck!\n");
 }
 
-static int is_product(char *s)
-{
-	return !(strncmp(sys_product, s, strlen(s)));
-}
-
 static int
 stranycmp(const char *s, ...)
 {
@@ -104,20 +99,25 @@ stranycmp(const char *s, ...)
 	return 1;
 } 
 
+static int strxcmp(const char *t, const char *s)
+{
+	return strncmp(t, s, strlen(s));
+}
+
 static int
-anyproduct(const char *s, ...)
+stranyxcmp(const char *s, ...)
 {
 	char *t;
 	va_list args;
 	va_start(args, s);
 	while ((t=va_arg(args, char *))) {
-		if (is_product(t)) {
+		if (!strxcmp(s, t)) {
 			va_end(args);
-			return 1;
+			return 0;
 		}
 	}
 	va_end(args);
-	return 0;
+	return 1;
 } 
 
 static void machine_table(void)
