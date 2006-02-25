@@ -709,28 +709,21 @@ int main(int argc, char *argv[])
 	}
 	resume_dev = stat_buf.st_rdev;
 
-	vt_fd = prepare_console(&orig_vc, &suspend_vc);
-	if (vt_fd < 0) {
-		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
-		ret = errno;
-		goto Close_resume_fd;
-	}
-
 	if (stat(snapshot_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
 		ret = ENODEV;
-		goto Restore_console;
+		goto Close_resume_fd;
 	}
 	if (!S_ISCHR(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid snapshot device\n");
 		ret = EINVAL;
-		goto Restore_console;
+		goto Close_resume_fd;
 	}
 	snapshot_fd = open(snapshot_dev_name, O_RDONLY);
 	if (snapshot_fd < 0) {
 		fprintf(stderr, "suspend: Could not open the snapshot device\n");
 		ret = errno;
-		goto Restore_console;
+		goto Close_resume_fd;
 	}
 
 	if (set_swap_file(snapshot_fd, resume_dev)) {
@@ -740,11 +733,18 @@ int main(int argc, char *argv[])
 		goto Close_snapshot_fd;
 	}
 
+	vt_fd = prepare_console(&orig_vc, &suspend_vc);
+	if (vt_fd < 0) {
+		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
+		ret = errno;
+		goto Close_snapshot_fd;
+	}
+
 	sprintf(chroot_path, "/proc/%d", getpid());
 	if (chroot(chroot_path)) {
 		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
 		ret = errno;
-		goto Close_snapshot_fd;
+		goto Restore_console;
 	}
 	chdir("/");
 
@@ -758,10 +758,10 @@ int main(int argc, char *argv[])
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
 
-Close_snapshot_fd:
-	close(snapshot_fd);
 Restore_console:
 	restore_console(vt_fd, orig_vc);
+Close_snapshot_fd:
+	close(snapshot_fd);
 Close_resume_fd:
 	close(resume_fd);
 
