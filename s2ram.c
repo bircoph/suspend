@@ -34,17 +34,6 @@ static void half_known(int line)
 	}
 }
 
-static void radeon_backlight_off(void)
-{
-	/* switch to console 1 first, since we might be in X */
-	if (!active_console) {
-		active_console = fgconsole();
-		chvt(1);
-	}
-	map_radeon_cntl_mem();
-	radeon_cmd_light("off");
-}
-
 static void set_acpi_video_mode(int mode)
 {
 	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
@@ -55,21 +44,6 @@ static void set_acpi_video_mode(int mode)
 	fprintf(f, "%d", mode);
 	fflush(f);
 	fclose(f);
-}
-
-
-static void vbe_state_save(void)
-{
-	int size;
-	/* vbe_state_save (and especially restore) should not happen behind
-	 * X's back, otherwise bad things might happen. So we switch to console 1.
-	 */
-	if (!active_console) {
-		active_console = fgconsole();
-		chvt(1);
-	}
-	vbetool_init();
-	vbe_buffer = __save_state(&size);
 }
 
 /* Variables set from whitelist */
@@ -143,16 +117,26 @@ void s2ram_prepare(void)
 		       vbe_save, radeontool, acpi_sleep);
 		exit(0);
 	}
+
+	/* switch to console 1 first, since we might be in X */
+	active_console = fgconsole();
+	chvt(1);
+
 	if (acpi_sleep > -1) {
 		if (acpi_sleep < 4)
 			set_acpi_video_mode(acpi_sleep);
 		else
 			printf("acpi_sleep parameter out of rande (0-3), ignored.\n");
 	}
-	if (vbe_save)
-		vbe_state_save();
-	if (radeontool)
-		radeon_backlight_off();
+	if (vbe_save) {
+		int size;
+		vbetool_init();
+		vbe_buffer = __save_state(&size);
+	}
+	if (radeontool) {
+		map_radeon_cntl_mem();
+		radeon_cmd_light("off");
+	}
 }
 
 /* Actually enter the suspend. May be ran on frozen system. */
