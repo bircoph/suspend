@@ -14,15 +14,14 @@
 #include "vt.h"
 #include <stdarg.h>
 
-static int test_mode;
-static int active_console = 0;
+static int test_mode, force;
+static int active_console;
 static void *vbe_buffer;
 
 static void machine_known(int line)
 {
 	if (test_mode) {
 		printf("Machine known: whitelist.c: %d\n", line);
-		exit(0);
 	}
 }
 
@@ -32,7 +31,6 @@ static void half_known(int line)
 	printf("unneccessarily. Please try to find minimal options.\n");
 	if (test_mode) {
 		printf("Machine half known: whitelist.c: %d\n", line);
-		exit(0);
 	}
 }
 
@@ -73,6 +71,9 @@ static void vbe_state_save(void)
 	vbetool_init();
 	vbe_buffer = __save_state(&size);
 }
+
+/* Variables set from whitelist */
+static int vbe_save, radeontool, acpi_sleep = -1;
 
 static void identify_machine(void)
 {
@@ -133,8 +134,25 @@ static void machine_table(void)
  */
 void s2ram_prepare(void)
 {
-	dmi_scan();
-	machine_table();
+	if (!force) {
+		dmi_scan();
+		machine_table();
+	}
+	if (test_mode) {
+		printf("Fixes: vbe_save = %d, radeontool = %d, acpi_sleep = %d\n",
+		       vbe_save, radeontool, acpi_sleep);
+		exit(0);
+	}
+	if (acpi_sleep > -1) {
+		if (acpi_sleep < 4)
+			set_acpi_video_mode(acpi_sleep);
+		else
+			printf("acpi_sleep parameter out of rande (0-3), ignored.\n");
+	}
+	if (vbe_save)
+		vbe_state_save();
+	if (radeontool)
+		radeon_backlight_off();
 }
 
 /* Actually enter the suspend. May be ran on frozen system. */
@@ -188,7 +206,7 @@ void usage(void)
 
 int main(int argc, char *argv[])
 {
-	int i, force = 0, vbe_save = 0, radeontool = 0, acpi_sleep = -1;
+	int i;
 	struct option options[] = {
 		{ "test",	no_argument,		NULL, 'n'},
 		{ "help",	no_argument,		NULL, 'h'},
@@ -240,20 +258,7 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
-	if (force) {
-		if (acpi_sleep > -1) {
-			if (acpi_sleep < 4)
-				set_acpi_video_mode(acpi_sleep);
-			else
-				printf("acpi_sleep parameter out of rande (0-3), ignored.\n");
-		}
-		if (vbe_save)
-			vbe_state_save();
-		if (radeontool)
-			radeon_backlight_off();
-	} else {
-		s2ram_prepare();
-	}
+	s2ram_prepare();
 	s2ram_do();
 	s2ram_resume();
 	return 0;

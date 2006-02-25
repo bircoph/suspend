@@ -5,14 +5,13 @@
 /* Warning: these only looks at substrings! -- for compatibility only! */
 #define PRODUCT_(x) if (!strxcmp(sys_product, x))
 #define PRODUCT2_(a...) if (!stranyxcmp(sys_product, a, NULL))
-#define HALF_KNOWN() do { half_known(__LINE__); vbe_state_save(); return; } while (0)
-
+#define HALF_KNOWN() do { half_known(__LINE__); vbe_save = 1; } while (0)
 
 VENDOR("IBM") {
 	if (!strcmp(sys_version, "ThinkPad X32")) {
 		machine_known(__LINE__);
-		set_acpi_video_mode(3);
-		radeon_backlight_off();
+		acpi_sleep = 3;
+		radeontool = 1;
 		return;
 	}
 }
@@ -20,15 +19,14 @@ VENDOR("IBM") {
 VENDOR("Hewlett-Packard") {
 	if (!strcmp(sys_version, "HP OmniBook XE3 GF           ")) {
 		machine_known(__LINE__);
-		vbe_state_save();
-		return;
+		vbe_save = 1;
 	}
 }
 
 VENDOR("ASUSTEK ") {
 	PRODUCT("L3000D") {
 		machine_known(__LINE__);
-		vbe_state_save();
+		vbe_save = 1;
 		return;
 	}
 }
@@ -111,8 +109,8 @@ VENDOR("IBM") {
 	/* X30 */
 	PRODUCT2_("2672", "2673", "2884", "2885", "2890", "2891") {
 		half_known(__LINE__);
-		vbe_state_save();
-		radeon_backlight_off();
+		vbe_save = 1;
+		radeontool = 1;
 		return;
 	}
 }
