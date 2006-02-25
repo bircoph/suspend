@@ -1,20 +1,16 @@
-To get encrypted swsusp to work, following steps may be good guide:
+To get encrypted swsusp to work, try this:
 
-1) apply LZW compression to the suspend image (to get familiar with
-the code)
+cryptosuspend:
+#!/bin/bash
+PASSPHRASE=`cat /dev/urandom | uuenpipe | head -3 | tail -1`
+echo $PASSPHRASE | gpg -e -r Suspendkey > /tmp/swsusp.Suspendkey
+# gpg-keygen, call the key 'Suspendkey'. Provide passphrase you want to use as resume password.
+echo $PASSPHRASE | ./suspend -p /dev/hda1
 
-2) encrypt image with random key and some strong encryption. Wipe key
-after you decrypt the image. This prevents mlock-ed passwords to be
-retrieved after system resume. Andreas Steinmetz <ast@domdv.de>
-implemented something like this for in-kernel swsusp, it might be nice
-to ask him for review/testing.
+cryptoresume:
+#!/bin/bash
+cat /tmp/swsusp.Suspendkey | gpg -d -r Suspendkey | ./resume -p /dev/hda1
 
-3) ask for key on both suspend and resume. This is little inconvenient
-to use, but already secure.
-
-4) generate public/private key pair, protect private key with
-passphrase (aka "resume password"). Encrypt suspend image with public
-key => passphrase is neccessary for successful resume.
 
 Known problems with freezer:
 
