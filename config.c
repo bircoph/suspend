@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "encrypt.h"
 
 /**
  *	parse - read and parse the configuration file
@@ -100,6 +101,18 @@ int get_config(char *my_name, int argc, char *argv[],
 {
 	struct stat stat_buf;
 	int ret = 0;
+#ifdef CONFIG_ENCRYPT
+	if (!strcmp(argv[1], "-p")) {
+		static char buf[PASS_SIZE];
+		extern char *passphrase;
+
+		argc--;
+		argv++;
+		fgets(buf, 10240, stdin);
+		passphrase = buf;
+
+	}
+#endif
 
 	if (argc <= 2) {
 		if (!stat(CONFIG_FILE, &stat_buf))
@@ -111,7 +124,7 @@ int get_config(char *my_name, int argc, char *argv[],
 	}
 
 	if (strncmp(argv[1], "-f", 2)) {
-		fprintf(stderr, "Usage: %s [-f config][resume_device]\n",
+		fprintf(stderr, "Usage: %s [-p][-f config][resume_device]\n",
 			my_name);
 		return -EINVAL;
 	}

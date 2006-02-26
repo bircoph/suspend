@@ -17,26 +17,19 @@
 #include "md5.h"
 #include "encrypt.h"
 
-/**
- *	encrypt_init - set up the encryption key, initialization vector and mumber
- *	@pass_buf - auxiliary buffer that must be at least 2*PASS_SIZE bytes long
- *	if @vrfy is non-zero or at least PASS_SIZE long otherwise
- *	@key_buf - auxiliary buffer that must be at least max(KEY_SIZE,16) bytes
- *	long
- */
+char *passphrase;
 
-void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
-		char *pass_buf, void *key_buf, int vrfy)
+static void read_password(char *pass_buf, int vrfy)
 {
 	struct termios termios;
-	struct md5_ctx ctx;
-	int len;
 	char *vrfy_buf = vrfy ? pass_buf + PASS_SIZE : pass_buf;
+	int len;
 
 	tcgetattr(0, &termios);
 	termios.c_lflag &= ~ECHO;
 	termios.c_lflag |= ICANON | ECHONL;
 	tcsetattr(0, TCSANOW, &termios);
+
 	do {
 		do {
 			printf("Passphrase please (must be non-empty): ");
@@ -54,6 +47,26 @@ void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
 	} while (vrfy && strncmp(pass_buf, vrfy_buf, PASS_SIZE));
 	termios.c_lflag |= ECHO;
 	tcsetattr(0, TCSANOW, &termios);
+
+}
+
+/**
+ *	encrypt_init - set up the encryption key, initialization vector and mumber
+ *	@pass_buf - auxiliary buffer that must be at least 2*PASS_SIZE bytes long
+ *	if @vrfy is non-zero or at least PASS_SIZE long otherwise
+ *	@key_buf - auxiliary buffer that must be at least max(KEY_SIZE,16) bytes
+ *	long
+ */
+
+void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
+		char *pass_buf, void *key_buf, int vrfy)
+{
+
+	struct md5_ctx ctx;
+
+	if (passphrase) {
+		strcpy(pass_buf, passphrase);
+	} else 	read_password(pass_buf, vrfy);
 
 	memset(ivec, 0, IVEC_SIZE);
 	strncpy((char *)ivec, pass_buf, IVEC_SIZE);
