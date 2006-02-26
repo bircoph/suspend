@@ -5,6 +5,10 @@ LD_FLAGS=-L/usr/local/lib
 # add "-llzf" for compression
 # add "-lcrypto" for encryption
 
+SUSPEND_DIR=/usr/local/sbin
+CONFIG_DIR=/etc
+RESUME_DEVICE=<path_to_resume_device_file>
+
 all: suspend resume s2ram
 
 S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o
@@ -48,4 +52,15 @@ suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h
 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h
 	gcc -Wall $(CC_FLAGS) md5.o encrypt.o config.o resume.c -static -o resume $(LD_FLAGS)
+
+install-suspend:	suspend conf/suspend.conf
+	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+	install --mode=755 suspend $(SUSPEND_DIR)
+	install --mode=644 conf/suspend.conf $(CONFIG_DIR)
+
+install-resume-initrd:	resume conf/suspend.conf
+	./scripts/create-resume-initrd.sh $(RESUME_DEVICE)
+
+install-resume:		resume 
+	./scripts/install-resume.sh
 

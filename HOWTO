@@ -5,48 +5,69 @@ Copyright (C) 2006 Rafael J. Wysocki <rjw@sisk.pl>
 
 I. Quick start
 
-You'll need /dev/snapshot for these to work:
+You'll need an -mm kernel for now.  It has to be configured to support
+software suspend.  It is also recommended to configure it to support RAM disks,
+initial RAM disks, loopback block devices, and the ext2 filesystem.
+
+You'll also need /dev/snapshot for the suspend tool to work:
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
-You'll also need the Marc Lehmann's libLZF library to be installed
-on your system.
+For compression, you'll additionally need the Marc Lehmann's libLZF library
+to be installed on your system and for encyption you'll need OpenSSL.
 
-Then compile userspace tools in usual way. You'll need an -mm kernel
-for now. To be able to use the suspend and resume tools, you'll have to
-configure the kernel to support software suspend.
-
-Next, create the configuration file /etc/suspend.conf containing the
-following two lines:
-
-snapshot device = /dev/snapshot
-resume device = /dev/<your_swap_partition>
+First, edit Makefile and the conf/suspend.conf file to reflect the
+configuration of your system.  The value of the RESUME_DEVICE constant in Makefile
+must be the same as the value of the "resume device" parameter in the configuration
+file and it must be the full path of your suspend swap partition device file.
 
 There should be just one resume partition, for now. You'll need at most 1/2 of
 your RAM of free space on it, but it may be smaller, too.  The suspend tool will
 do its best to create the system snapshot image that fits the resume partition.
 
-. To suspend-to-disk, run
+Next, build the userspace tools in the usual way:
+
+$ make suspend
+$ make resume
+
+To install them you have to become root.  Then run:
+
+# make install-suspend
+# make install-resume-initrd
+
+and add the following line to the GRUB configuration file (right after your
+kernel configuration):
+
+	initrd (hd0,0)/resume-initrd
+
+where (hd0,0) should be replaced with the identification of your boot partition
+(please refer to the GRUB documentation for details).  If you use LILO, please refer
+to its documentation for the information related to initrd files.
+
+To suspend-to-disk, run
 
 ./suspend
 
-. Suspend is easy, resume is slightly harder. Resume application has to
+Suspend is easy, resume is slightly harder. Resume application has to
 be run without any filesystems mounted rw, and without any journalling
 filesystems mounted at all, preferably from initrd (but read-only ext2
-should do the trick, too). Resume is then as easy as running
+should do the trick, too).  However, if you have followed the instructions above,
+the resume tool should be started automatically when the kernel boots, but you
+should pass the "noresume" command line argument to the kernel.
+
+If you prefer to run resume manually, it is also easy
 
 ./resume
 
-. You'll probably want to create script that attempts to resume with the
-above command, and if that fails, fall back to init.  Alternatively,
-you can put the resume tool on an initrd and start it from there.
+but you MUST ensure not to mount any filesystems rw and any journaled filesystems
+at all before that.  Otherwise you can lose data.
 
 
 II. Installation
 
-1) You'll need the Marc Lehmann's libLZF library.  Download the tarball
-from http://www.goof.com/pcg/marc/liblzf.html, unpack it, go to the
-directory containing the source and run
+1) For compression you'll need the Marc Lehmann's libLZF library.  If it's not installed
+on your system, download the tarball from http://www.goof.com/pcg/marc/liblzf.html,
+unpack it, go to the directory containing the source and run
 
 $ ./configure
 $ make
@@ -57,6 +78,10 @@ Next, become root and run
 
 [This will put the lzf.h file into /usr/local/include, the library
 into /usr/local/lib, and the lzf binary into /usr/local/bin.]
+
+For encryption you'll need the OpenSSL library, but it should be installed on your
+system.  If it is not (highly unlikely), please refer to the documentation at
+http://www.openssl.org for installation instructions.
 
 2) You'll need to compile the suspend and resume tools.  To do this run
 
@@ -86,6 +111,7 @@ image size = <preferred_suspend_image_size_in_bytes>
 suspend loglevel = <kernel_console_loglevel_during_suspend>
 compute checksum = <y/n>
 compress = <y/n>
+encrypt = <y/n>
 max loglevel = <ignored>
 
 The "image size" parameter may be used to limit the size of the system
@@ -101,13 +127,16 @@ tools will use the MD5 algorithm to verify the image integrity.
 If the "compress" parameter is set to 'y', the suspend and resume tools will
 use the LZF compression algorithm to compress/decompress the image.
 
-It is sufficient to set "compute checksum = y" and/or "compress = y" for the
-suspend tool which will put the appropriate information for the resume tool
-in the image header.
+If the "encrypt" parameter is set to 'y', the suspend and resume tools will
+use the Blowfish encryption algorithm to encrypt/decrypt the image.
+
+It is sufficient to set "compute checksum = y" and/or "compress = y",
+and/or "encrypt = y" for the suspend tool which will put the appropriate
+information for the resume tool in the image header.
 
 The resume tool can use the same configuration file that is used by the
-suspend tool, but it will ignore the "image size", "compute checksum", and
-"compress" parameters.  It will use the value of "suspend loglevel" as
+suspend tool, but it will ignore the "image size", "compute checksum", "compress",
+and "encrypt" parameters.  It will use the value of "suspend loglevel" as
 the kernel console loglevel during resume. Additionally it will use the
 value of "max loglevel" as the kernel console loglevel to switch to in
 case the resume fails (this parameter is ignored by the suspend tool).
@@ -119,13 +148,20 @@ case the resume fails (this parameter is ignored by the suspend tool).
 If the name of this file is equal to SNAPSHOT_DEVICE in swsusp.h, it is not
 necessary to specify it in the configuration file.
 
+If you use "make install-suspend" to install the suspend tool, it will also
+install the configuration file from the conf directory in your /etc
+directory and it will create the snapshot device file for you if it's not present.
+
 Now you should be able to use the suspend tool. It is recommended, however,
 to put the tool into a directory located directly on the root filesystem,
 for safe testing.
 
-5) It is recommended to place the resume tool on an initrd.  For simplicity
-I will only cover the fastest method of setting it up that will allow you to
-get the resume tool up and running quickly.
+5) It is recommended to place the resume tool on an initrd.  It may be done
+using "make install-resume-initrd", but I'll describe the full procedure in case
+you want to do something in a different way.  For simplicity I will only cover the
+fastest method of setting it up that will allow you to get the resume tool up and
+running quickly.  [The described procedure reflects the actions performed by
+"make install-resume-initrd".]
 
 (a) Configure the kernel to support RAM disks, initial RAM disks, loopback
 block devices, and the ext2 filesystem, and install it.
@@ -187,6 +223,10 @@ newly installed kernel, eg.
 	initrd (hd0,0)/resume-initrd
 
 (if you use LILO, please refer to its documentation).
+
+6. If you already have the resume initrd file which is called resume-initrd
+and located in the /boot directory, you can install the resume tool on it
+by using "make install-resume".
 
 
 III. Testing
