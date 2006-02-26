@@ -172,6 +172,7 @@ void usage(void)
 	       "    -h, --help:       this text.\n"
 	       "    -n, --test:       test if the machine is in the database.\n"
 	       "                      returns 0 if known and supported\n"
+	       "    -d, --dump:	      dump the whitelist.\n"
 	       "    -i, --identify:   prints a string that identifies the machine.\n"
 	       "    -f, --force:      force suspending, even on unknown "
 	       "machines.\n"
@@ -194,6 +195,7 @@ int main(int argc, char *argv[])
 	struct option options[] = {
 		{ "test",	no_argument,		NULL, 'n'},
 		{ "help",	no_argument,		NULL, 'h'},
+		{ "dump",	no_argument,		NULL, 'd'},
 		{ "force",	no_argument,		NULL, 'f'},
 		{ "vbe_save",	no_argument,		NULL, 's'},
 		{ "radeontool",	no_argument,		NULL, 'r'},
@@ -207,6 +209,11 @@ int main(int argc, char *argv[])
 		case 'h':
 			usage();
 			break;
+		case 'd':
+			printf(
+#include "whitelist2.c"
+			);
+			exit(1);
 		case 'i':
 			dmi_scan();
 			identify_machine();
