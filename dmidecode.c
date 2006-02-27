@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -46,22 +47,63 @@ static char *dmi_string(struct dmi_header *dm, u8 s)
 	return bp;
 }
 
-
-static void dmi_table(int fd, u32 base, int len, int num)
+/*
+ * Copy a physical memory chunk into a memory buffer.
+ * This function allocates memory.
+ */
+void *mem_chunk(size_t base, size_t len)
 {
-	char *buf=malloc(len);
+	void *p;
+	int fd;
+	size_t mmoffset;
+	void *mmp;
+
+	if((fd=open("/dev/mem", O_RDONLY))==-1){
+		perror("/dev/mem");
+		return NULL;
+        }
+
+	if((p=malloc(len))==NULL) {
+		perror("/dev/mem malloc");
+		return NULL;
+	}
+
+	mmoffset=base%getpagesize();
+	/*
+	 * Please note that we don't use mmap() for performance reasons here,
+	 * but to workaround problems many people encountered when trying
+	 * to read from /dev/mem using regular read() calls.
+	 */
+	mmp=mmap(0, mmoffset+len, PROT_READ, MAP_SHARED, fd, base-mmoffset);
+	if(mmp==MAP_FAILED) {
+		perror("mmap");
+		free(p);
+		return NULL;
+	}
+
+	memcpy(p, (u8 *)mmp+mmoffset, len);
+
+	if(munmap(mmp, mmoffset+len)==-1)
+		perror("/dev/mem munmap");
+
+	if(close(fd)==-1)
+		perror("/dev/mem");
+
+	return p;
+}
+
+static void dmi_table(u32 base, int len, int num)
+{
+	char *buf;
 	struct dmi_header *dm;
 	char *data;
 	int i=0;
 	
-	if (lseek(fd, (long)base, 0)==-1) {
-		perror("dmi: lseek");
+	if ((buf=mem_chunk(base, len))==0) {
+		printf("DMI Table is unreachable\n");
 		return;
 	}
-	if (read(fd, buf, len)!=len) {
-		perror("dmi: read");
-		return;
-	}
+	
 	data = buf;
 	while (i<num) {
 		u32 u;
@@ -126,42 +168,31 @@ static void dmi_table(int fd, u32 base, int len, int num)
 
 void dmi_scan(void)
 {
-	unsigned char buf[20];
-	int fd=open("/dev/mem", O_RDONLY);
-	long fp=0xE0000L;
-	if (fd==-1) {
-		perror("/dev/mem");
-		exit(1);
-	}
-	if (lseek(fd,fp,0)==-1)	{
-		perror("seek");
-		exit(1);
-	}
-	
-	
-	fp -= 16;
-	
-	while( fp < 0xFFFFF)
-	{
-		fp+=16;
-		if (read(fd, buf, 16)!=16)
-			perror("read");
-		if (memcmp(buf, "_DMI_", 5)==0) {
-			u16 num=buf[13]<<8|buf[12];
-			u16 len=buf[7]<<8|buf[6];
-			u32 base=buf[11]<<24|buf[10]<<16|buf[9]<<8|buf[8];
-			
+	size_t fp;
+	u8 *buf;
+
+	if((buf=mem_chunk(0xF0000, 0x10000))==NULL)
+		return;
+
+	for(fp=0; fp<=0xFFF0; fp+=16) {
+		if(memcmp(buf+fp, "_DMI_", 5)==0) {
+			u8 *cur = buf+fp;
+			u16 num=cur[13]<<8|cur[12];
+			u16 len=cur[7]<<8|cur[6];
+			u32 base=cur[11]<<24|cur[10]<<16|cur[9]<<8|cur[8];
+
 			PRINTF("DMI %d.%d present.\n",
-			       buf[14]>>4, buf[14]&0x0F);
+			       cur[14]>>4, cur[14]&0x0F);
 			PRINTF("%d structures occupying %d bytes.\n",
-			       buf[13]<<8|buf[12],
-			       buf[7]<<8|buf[6]);
+			       cur[13]<<8|cur[12],
+			       cur[7]<<8|cur[6]);
 			PRINTF("DMI table at 0x%08X.\n",
-			       buf[11]<<24|buf[10]<<16|buf[9]<<8|buf[8]);
-			dmi_table(fd, base,len, num);
+			       cur[11]<<24|cur[10]<<16|cur[9]<<8|cur[8]);
+			dmi_table(base,len,num);
 		}
 	}
-	close(fd);
+	free(buf);
+	return;
 }
 
 #ifndef S2RAM
