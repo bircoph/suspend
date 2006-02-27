@@ -20,11 +20,8 @@ endif
 clean:
 	rm -f suspend resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
-whitelist2.c: whitelist.c
-	cat whitelist.c | sed 's/"/\\"/g' | sed 's/^/"/' | sed 's/$$/\\n"/' > whitelist2.c
-
-s2ram:	s2ram.c dmidecode.c $(S2RAMOBJ) whitelist2.c whitelist.c
-	gcc -g -Wall s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+s2ram:	s2ram.c dmidecode.c whitelist.c $(S2RAMOBJ)
+	gcc -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
 
 vbetool/lrmi.o:	vbetool/lrmi.c
 	gcc -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o

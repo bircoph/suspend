@@ -12,26 +12,40 @@
 #include "radeontool.c"
 #include "vbetool/vbetool.c"
 #include "vt.h"
-#include <stdarg.h>
+#include "whitelist.c"
 
 static int test_mode, force;
 static int active_console;
 static void *vbe_buffer;
+/* Flags set from whitelist */
+static int vbe_save, vbe_post, radeontool, halfknown = 0, acpi_sleep = -1;
 
-static void machine_known(int line)
+static void identify_machine(void)
 {
-	if (test_mode) {
-		printf("Machine known: whitelist.c: %d\n", line);
-	}
+	printf("This machine can be identified by:\n");
+	printf("    bios_version = \"%s\"\n"
+	       "    sys_vendor = \"%s\"\n"
+	       "    sys_product = \"%s\"\n"
+	       "    sys_version = \"%s\"\n",
+	       bios_version, sys_vendor, sys_product, sys_version);
+	printf("See /usr/src/linux/Doc*/power/video.txt for details,\n"
+	       "then reimplement neccessary steps here and mail patch to\n"
+	       "pavel@suse.cz. Good luck!\n");
 }
 
-static void half_known(int line)
+static void machine_known(int i)
 {
-	printf("Machine is in the whitelist, but perhaps it is using vbetool,\n");
-	printf("unneccessarily. Please try to find minimal options.\n");
-	if (test_mode) {
-		printf("Machine half known: whitelist.c: %d\n", line);
-	}
+	printf("Machine matched: %d: sys_vendor='%s' sys_product='%s' "
+	       "sys_version='%s' bios_version='%s'\n", i,
+	       whitelist[i].sys_vendor, whitelist[i].sys_product,
+	       whitelist[i].sys_version, whitelist[i].bios_version);
+	printf("Fixes: vbe_save = %d, vbe_post = %d, radeontool = %d, acpi_sleep = %d\n",
+	       vbe_save, vbe_post, radeontool, acpi_sleep);
+	if (halfknown)
+		printf("Machine is in the whitelist but perhaps using "
+		       "vbetool unnecessarily.\n"
+		       "Please try to find minimal options.\n");
+	identify_machine();
 }
 
 static void set_acpi_video_mode(int mode)
@@ -46,61 +60,34 @@ static void set_acpi_video_mode(int mode)
 	fclose(f);
 }
 
-/* Variables set from whitelist */
-static int vbe_save, radeontool, acpi_sleep = -1;
-
-static void identify_machine(void)
+static int match(const char *t, const char *s)
 {
-	printf("bios_version = \"%s\", sys_vendor = \"%s\", sys_product = \"%s\", sys_version = \"%s\"\n",
-	       bios_version, sys_vendor, sys_product, sys_version);
-	printf("See /usr/src/linux/Doc*/power/video.txt for details,\n"
-	       "then reimplement neccessary steps here and mail patch to\n"
-	       "pavel@suse.cz. Good luck!\n");
+	int len = strlen(s);
+	/* empty string matches always */
+	if (len == 0)
+		return 1;
+
+	if (s[len-1] == '*') {
+		len--;
+		return !strncmp(t, s, len);
+	} else {
+		return !strcmp(t,s);
+	}
 }
 
-static int
-stranycmp(const char *s, ...)
+static int machine_match(void)
 {
-	char *t;
-	va_list args;
-	va_start(args, s);
-	while ((t=va_arg(args, char *))) {
-		if (!strcmp(s, t)) {
-			va_end(args);
-			return 0;
+	int i;
+	/* sys_vendor = NULL terminates the whitelist array */
+	for (i = 0; whitelist[i].sys_vendor; i++) {
+		if (match(sys_vendor,   whitelist[i].sys_vendor)  &&
+		    match(sys_product,  whitelist[i].sys_product) &&
+		    match(sys_version,  whitelist[i].sys_version) &&
+		    match(bios_version, whitelist[i].bios_version)) {
+			return i;
 		}
 	}
-	va_end(args);
-	return 1;
-} 
-
-static int strxcmp(const char *t, const char *s)
-{
-	return strncmp(t, s, strlen(s));
-}
-
-static int
-stranyxcmp(const char *s, ...)
-{
-	char *t;
-	va_list args;
-	va_start(args, s);
-	while ((t=va_arg(args, char *))) {
-		if (!strxcmp(s, t)) {
-			va_end(args);
-			return 0;
-		}
-	}
-	va_end(args);
-	return 1;
-} 
-
-static void machine_table(void)
-{
-#include "whitelist.c"
-	printf("Sorry, unknown machine.\n");
-	identify_machine();
-	exit(1);
+	return -1;
 }
 
 /* Code that can only be run on non-frozen system. It does not matter now
@@ -108,30 +95,51 @@ static void machine_table(void)
  */
 void s2ram_prepare(void)
 {
+	int i;
+	unsigned int flags;
+
+	dmi_scan();
+	i = machine_match();
+
 	if (!force) {
-		dmi_scan();
-		machine_table();
+		if (i < 0) {
+			printf("Machine is unknown.\n");
+			identify_machine();
+			exit(127);
+		} else {
+			flags = whitelist[i].flags;
+			printf("flags: %d\n",flags);
+			acpi_sleep = flags & (S3_BIOS|S3_MODE);
+			vbe_save   = !!(flags & VBE_SAVE);
+			vbe_post   = !(flags & VBE_NOPOST);
+			radeontool = !!(flags & RADEON_OFF);
+			halfknown  = !!(flags & UNSURE);
+		}
 	}
-	if (test_mode) {
-		printf("Fixes: vbe_save = %d, radeontool = %d, acpi_sleep = %d\n",
-		       vbe_save, radeontool, acpi_sleep);
+
+	/* force && test_mode are caught earlier, so i >= 0 here */
+	if (test_mode){
+		machine_known(i);
 		exit(0);
+	}
+
+	if (acpi_sleep > -1) {
+		if (acpi_sleep < 4)
+			set_acpi_video_mode(acpi_sleep);
+		else
+			printf("acpi_sleep parameter out of range (0-3), ignored.\n");
 	}
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
 	chvt(1);
 
-	if (acpi_sleep > -1) {
-		if (acpi_sleep < 4)
-			set_acpi_video_mode(acpi_sleep);
-		else
-			printf("acpi_sleep parameter out of rande (0-3), ignored.\n");
-	}
-	if (vbe_save) {
+	if (vbe_save || vbe_post) {
 		int size;
+		/* do vbetool_init even if not doing vbe_save, for do_post after resume */
 		vbetool_init();
-		vbe_buffer = __save_state(&size);
+		if (vbe_save)
+			vbe_buffer = __save_state(&size);
 	}
 	if (radeontool) {
 		map_radeon_cntl_mem();
@@ -154,10 +162,10 @@ void s2ram_do(void)
 
 void s2ram_resume(void)
 {
-	if (vbe_buffer) {
+	if (vbe_post)
 		do_post();
+	if (vbe_buffer)
 		restore_state_from(vbe_buffer);
-	}
 
 	/* if we switched consoles before suspend, switch back */
 	if (active_console > 0)
@@ -172,7 +180,6 @@ void usage(void)
 	       "    -h, --help:       this text.\n"
 	       "    -n, --test:       test if the machine is in the database.\n"
 	       "                      returns 0 if known and supported\n"
-	       "    -d, --dump:	      dump the whitelist.\n"
 	       "    -i, --identify:   prints a string that identifies the machine.\n"
 	       "    -f, --force:      force suspending, even on unknown "
 	       "machines.\n"
@@ -180,6 +187,7 @@ void usage(void)
 	       "the following options are only available with --force:\n"
 	       "    -s, --vbe_save:   save VBE state before suspending and "
 	       "restore after resume.\n"
+	       "    -p, --vbe_post:   VBE POST the graphics card after resume\n"
 	       "    -r, --radeontool: turn off the backlight on radeons "
 	       "before suspending.\n"
 	       "    -a, --acpi_sleep: set the acpi_sleep parameter before "
@@ -195,25 +203,20 @@ int main(int argc, char *argv[])
 	struct option options[] = {
 		{ "test",	no_argument,		NULL, 'n'},
 		{ "help",	no_argument,		NULL, 'h'},
-		{ "dump",	no_argument,		NULL, 'd'},
 		{ "force",	no_argument,		NULL, 'f'},
 		{ "vbe_save",	no_argument,		NULL, 's'},
+		{ "vbe_post",	no_argument,		NULL, 'p'},
 		{ "radeontool",	no_argument,		NULL, 'r'},
 		{ "identify",	no_argument,		NULL, 'i'},
 		{ "acpi_sleep",	required_argument,	NULL, 'a'},
 		{ NULL,		0,			NULL,  0 }
 	};
 
-	while ((i = getopt_long(argc, argv, "nhfsria:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, "nhfspria:", options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage();
 			break;
-		case 'd':
-			printf(
-#include "whitelist2.c"
-			);
-			exit(1);
 		case 'i':
 			dmi_scan();
 			identify_machine();
@@ -227,6 +230,9 @@ int main(int argc, char *argv[])
 		case 's':
 			vbe_save = 1;
 			break;
+		case 'p':
+			vbe_post = 1;
+			break;
 		case 'r':
 			radeontool = 1;
 			break;
@@ -239,8 +245,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-	if (((acpi_sleep > -1) || vbe_save || radeontool) && !force) {
-		printf("acpi_sleep, vbe_save and radeontool parameter "
+	if (((acpi_sleep > -1) || vbe_save || vbe_post || radeontool) && !force) {
+		printf("acpi_sleep, vbe_save, vbe_post and radeontool parameter "
 		       "must be used with --force\n\n");
 		usage();
 	}
