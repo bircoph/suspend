@@ -22,7 +22,7 @@ static int flags;
 #define S3_BIOS     0x01	/* machine needs acpi_sleep=s3_bios */
 #define S3_MODE     0x02	/* machine needs acpi_sleep=s3_mode */
 #define VBE_SAVE    0x04	/* machine needs "vbetool save / restore" */
-#define VBE_NOPOST  0x08	/* machine does not need / may not use "vbetool post" */
+#define VBE_POST    0x08	/* machine does not need / may not use "vbetool post" */
 #define RADEON_OFF  0x10	/* machine needs "radeontool light off" */
 #define UNSURE      0x20	/* unverified entries from acpi-support 0.59 */
 
@@ -47,9 +47,12 @@ static void machine_known(int i)
 	       "sys_version='%s' bios_version='%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: vbe_save = %d, vbe_nopost = %d, radeontool = %d, acpi_sleep = %d\n",
-	       flags & VBE_SAVE, flags & VBE_NOPOST, flags & RADEON_OFF, 
-	       flags & (S3_BIOS | S3_MODE));
+	printf("Fixes: 0x%x  %s%s%s%s%s\n", flags,
+	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
+	       (flags & VBE_POST) ? "VBE_POST " : "",
+	       (flags & RADEON_OFF) ? "RADEON_OFF " : "", 
+	       (flags & S3_BIOS) ? "S3_BIOS " : "",
+	       (flags & S3_MODE) ? "S3_MODE" : "");
 	if (flags & UNSURE)
 		printf("Machine is in the whitelist but perhaps using "
 		       "vbetool unnecessarily.\n"
@@ -125,10 +128,9 @@ void s2ram_prepare(void)
 		exit(0);
 	}
 
+	/* 0 means: don't touch what was set on kernel commandline */
 	if (flags & (S3_BIOS | S3_MODE))
 		set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
-	else
-		printf("acpi_sleep parameter out of range (0-3), ignored.\n");
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
@@ -160,10 +162,13 @@ void s2ram_do(void)
 
 void s2ram_resume(void)
 {
+	// FIXME: can we call vbetool_init() multiple times without cleaning up?
+	if (flags & VBE_POST) {
+		vbetool_init();
+		do_post();
+	}
 	if (vbe_buffer) {
 		vbetool_init();
-		if (!(flags & VBE_NOPOST))
-			do_post();
 		restore_state_from(vbe_buffer);
 	}
 
@@ -231,7 +236,7 @@ int main(int argc, char *argv[])
 			flags |= VBE_SAVE;
 			break;
 		case 'p':
-			flags |= VBE_NOPOST;
+			flags |= VBE_POST;
 			break;
 		case 'r':
 			flags |= RADEON_OFF;
@@ -246,7 +251,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	if (flags && !force) {
-		printf("acpi_sleep, vbe_save, vbe_nopost and radeontool parameter "
+		printf("acpi_sleep, vbe_save, vbe_post and radeontool parameter "
 		       "must be used with --force\n\n");
 		usage();
 	}
