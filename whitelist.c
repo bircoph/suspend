@@ -3,19 +3,6 @@
  * and all the workarounds
  */
 
-// machine needs acpi_sleep=s3_bios
-#define S3_BIOS     0x01
-// machine needs acpi_sleep=s3_mode
-#define S3_MODE     0x02
-// machine needs "vbetool save / restore"
-#define VBE_SAVE    0x04
-// machine does not need / may not use "vbetool post"
-#define VBE_NOPOST  0x08
-// machine needs "radeontool light off"
-#define RADEON_OFF  0x10
-// machine is only "half known" - unverified entries from acpi-support 0.59
-#define UNSURE      0x20
-
 struct machine_entry
 {
 	const char *sys_vendor;
@@ -26,12 +13,12 @@ struct machine_entry
 };
 
 struct machine_entry whitelist[] = {
-	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|VBE_NOPOST|S3_BIOS|S3_MODE },
+	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_SAVE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_SAVE },
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
-	{ "SHARP                           ",	"PC-AR10 *",	"",	"", VBE_NOPOST },
+	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 
 	// entries below are imported from acpi-support 0.59 and though "half known".
 	{ "ASUSTeK Computer Inc.",	"L7000G series Notebook PC*", "","", VBE_SAVE|UNSURE },
