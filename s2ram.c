@@ -6,6 +6,7 @@
  */
 
 #include <getopt.h>
+#include <errno.h>
 
 #define S2RAM
 #include "dmidecode.c"
@@ -64,7 +65,7 @@ static void set_acpi_video_mode(int mode)
 {
 	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
 	if (!f) {
-		printf("/proc/sys/kernel/acpi_video_flags does not exist; perhaps you need -mm kernel?\n");
+		printf("/proc/sys/kernel/acpi_video_flags does not exist; you need a kernel >=2.6.16.\n");
 		exit(1);
 	}
 	fprintf(f, "%d", mode);
@@ -134,30 +135,43 @@ void s2ram_prepare(void)
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
+	printf ("Switching from vt%d to vt1\n", active_console);
 	chvt(1);
 
 	if (flags & VBE_SAVE) {
 		int size;
 		vbetool_init();
+		printf("Calling save_state\n");
 		vbe_buffer = __save_state(&size);
 	}
 	if (flags & RADEON_OFF) {
 		map_radeon_cntl_mem();
+		printf("Calling radeon_cmd_light");
 		radeon_cmd_light("off");
 	}
 }
 
 /* Actually enter the suspend. May be ran on frozen system. */
-void s2ram_do(void)
+int s2ram_do(void)
 {
+	int ret = 0;
 	FILE *f = fopen("/sys/power/state", "w");
 	if (!f) {
 		printf("/sys/power/state does not exist; what kind of ninja mutant machine is this?\n");
-		exit(1);
+		return ENODEV;
 	}
-	fprintf(f, "mem");
-	fflush(f);
-	fclose(f);
+	if (fprintf(f, "mem") < 0) {
+		ret = errno;
+		perror("s2ram_do");
+	}
+	/* usually only fclose fails, not fprintf, so it does not matter
+	 * that we might overwrite the previous error.
+	 */
+	if (fclose(f) < 0) {
+		ret = errno;
+		perror("s2ram_do");
+	}
+	return ret;
 } 
 
 void s2ram_resume(void)
@@ -165,16 +179,20 @@ void s2ram_resume(void)
 	// FIXME: can we call vbetool_init() multiple times without cleaning up?
 	if (flags & VBE_POST) {
 		vbetool_init();
+		printf("Calling do_post\n");
 		do_post();
 	}
 	if (vbe_buffer) {
 		vbetool_init();
+		printf("Calling restore_state_from\n");
 		restore_state_from(vbe_buffer);
 	}
 
 	/* if we switched consoles before suspend, switch back */
-	if (active_console > 0)
+	if (active_console > 0) {
+		printf("switching back to vt%d\n", active_console);
 		chvt(active_console);
+	}
 }
 
 void usage(void)
@@ -261,7 +279,7 @@ int main(int argc, char *argv[])
 	}
 
 	s2ram_prepare();
-	s2ram_do();
+	i = s2ram_do();
 	s2ram_resume();
-	return 0;
+	return i;
 }
