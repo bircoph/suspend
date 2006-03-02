@@ -32,23 +32,29 @@ static int flags;
 static void identify_machine(void)
 {
 	printf("This machine can be identified by:\n");
-	printf("    bios_version = \"%s\"\n"
-	       "    sys_vendor = \"%s\"\n"
-	       "    sys_product = \"%s\"\n"
-	       "    sys_version = \"%s\"\n",
-	       bios_version, sys_vendor, sys_product, sys_version);
+	printf("    sys_vendor   = \"%s\"\n"
+	       "    sys_product  = \"%s\"\n"
+	       "    sys_version  = \"%s\"\n"
+	       "    bios_version = \"%s\"\n",
+	       sys_vendor, sys_product, sys_version, bios_version);
 	printf("See /usr/src/linux/Doc*/power/video.txt for details,\n"
 	       "then reimplement neccessary steps here and mail patch to\n"
-	       "pavel@suse.cz. Good luck!\n");
+	       "pavel@suse.cz. Good luck!\n"
+	       "\n"
+	       "If you report a problem, please include the complete output "
+	       "above.\n");
 }
 
 static void machine_known(int i)
 {
-	printf("Machine matched: %d: sys_vendor='%s' sys_product='%s' "
-	       "sys_version='%s' bios_version='%s'\n", i,
+	printf("Machine matched entry %d:\n"
+	       "    sys_vendor   = '%s'\n"
+	       "    sys_product  = '%s'\n"
+	       "    sys_version  = '%s'\n"
+	       "    bios_version = '%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: 0x%x  %s%s%s%s%s\n", flags,
+	printf("Fixes: 0x%x  %s%s%s%s%s\n\n", flags,
 	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
 	       (flags & VBE_POST) ? "VBE_POST " : "",
 	       (flags & RADEON_OFF) ? "RADEON_OFF " : "", 
@@ -57,7 +63,10 @@ static void machine_known(int i)
 	if (flags & UNSURE)
 		printf("Machine is in the whitelist but perhaps using "
 		       "vbetool unnecessarily.\n"
-		       "Please try to find minimal options.\n");
+		       "Please try to find minimal options.\n\n");
+	/* in case of a bugreport we might need to find a better match than
+	 * the one we already have (additional BIOS version e.g)...
+	 */
 	identify_machine();
 }
 
@@ -264,7 +273,6 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			usage();
-			exit(1);
 			break;
 		}
 	}
