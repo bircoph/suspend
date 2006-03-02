@@ -23,6 +23,7 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
+	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 
 	// entries below are imported from acpi-support 0.59 and though "half known".
 	{ "ASUSTeK Computer Inc.",	"L7000G series Notebook PC*", "","", VBE_POST|VBE_SAVE|UNSURE },
