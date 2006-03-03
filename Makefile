@@ -8,6 +8,7 @@ LD_FLAGS=-L/usr/local/lib
 SUSPEND_DIR=/usr/local/sbin
 CONFIG_DIR=/etc
 RESUME_DEVICE=<path_to_resume_device_file>
+BOOT_DIR=/boot
 
 all: suspend resume s2ram
 
@@ -59,7 +60,7 @@ install-suspend:	suspend conf/suspend.conf
 	install --mode=644 conf/suspend.conf $(CONFIG_DIR)
 
 install-resume-initrd:	resume conf/suspend.conf
-	./scripts/create-resume-initrd.sh $(RESUME_DEVICE)
+	BOOT_DIR=$(BOOT_DIR) ./scripts/create-resume-initrd.sh $(RESUME_DEVICE)
 
 install-resume:		resume 
 	./scripts/install-resume.sh

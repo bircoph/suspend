@@ -30,9 +30,16 @@ Next, build the userspace tools in the usual way:
 $ make suspend
 $ make resume
 
-To install them you have to become root.  Then run:
+To install the suspend tool, become root and run:
 
 # make install-suspend
+
+The installation procedure for the resume tool depends on whether you use an initrd
+or not.
+
+If you don't use an initrd, you'll need one to run the resume tool.  It's not
+anything to worry about, though.  Become root, run:
+
 # make install-resume-initrd
 
 and add the following line to the GRUB configuration file (right after your
@@ -41,8 +48,19 @@ kernel configuration):
 	initrd (hd0,0)/resume-initrd
 
 where (hd0,0) should be replaced with the identification of your boot partition
-(please refer to the GRUB documentation for details).  If you use LILO, please refer
-to its documentation for the information related to initrd files.
+(please refer to the GRUB documentation for details).
+[In fact this will work if you have a separate boot partition.  If you don't,
+the line you should add to the GRUB configuration file is:
+
+	initrd (hd0,0)/boot/resume-initrd
+
+where (hd0,0) should be replaced with the identification of your root partition.]
+If you use LILO, please refer to its documentation for the information related to
+initrd files.
+
+If you use an initrd already, you should know how to put the resume binary into it.
+Also, you ought to have a linuxrc script or binary on the initrd, so you'll need to
+make it execute the resume binary at the very end.
 
 To suspend-to-disk, run
 

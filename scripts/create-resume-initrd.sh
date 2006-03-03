@@ -16,10 +16,23 @@ if [ -z "$CONFIG_FILE" ]; then
 	CONFIG_FILE="conf/suspend.conf"
 fi 
 if [ -z "$MOUNT_POINT" ]; then
-	MOUNT_POINT="/mnt"
+	MOUNT_POINT="mnt"
+	if [ ! -d $MOUNT_POINT ]; then
+		mkdir $MOUNT_POINT
+		if [ ! -d $MOUNT_POINT ]; then
+			echo "Could not create the mount point"
+			exit 1
+		fi
+		RMDIR_MOUNT_POINT="yes"
+	else
+		RMDIR_MOUNT_POINT=""
+	fi
+fi
+if [ -z "$BOOT_DIR" ]; then
+	BOOT_DIR="/boot"
 fi
 if [ -z "$INITRD_FILE" ]; then
-	INITRD_FILE="/boot/resume-initrd"
+	INITRD_FILE="$BOOT_DIR/resume-initrd"
 fi
 
 if [ -f $RESUME -a -d $MOUNT_POINT -a -b $RESUME_DEVICE ]; then
@@ -28,8 +41,8 @@ if [ -f $RESUME -a -d $MOUNT_POINT -a -b $RESUME_DEVICE ]; then
 	mount -t ext2 -o loop $TMP_FILE $MOUNT_POINT
 	if [ "$?" = "0" ]; then 
 		mkdir $MOUNT_POINT/dev
-		mknod $MOUNT_POINT/dev/console c 5 1
-		mknod $MOUNT_POINT/dev/snapshot c 10 231
+		cp -r /dev/console  $MOUNT_POINT/dev/
+		cp -r /dev/snapshot $MOUNT_POINT/dev/
 		cp -r $RESUME_DEVICE $MOUNT_POINT/dev/
 		mkdir $MOUNT_POINT/proc
 		mkdir $MOUNT_POINT/etc
@@ -47,5 +60,9 @@ if [ -f $RESUME -a -d $MOUNT_POINT -a -b $RESUME_DEVICE ]; then
 	fi
 else
 	echo "Could not install the resume initrd"
+fi
+
+if [ -n "$RMDIR_MOUNT_POINT" ]; then
+	rmdir $MOUNT_POINT
 fi
 
