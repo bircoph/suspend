@@ -18,10 +18,16 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",	"Extensa 4150                    ", "",	"", S3_BIOS|S3_MODE },
 	{ "Acer           ",	"TravelMate C300",		"",	"", VBE_SAVE },
+	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", 0 },
+	/* R51 and T43 confirmed by Christian Zoz */
+	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
+	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
+	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */
+	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 
@@ -34,7 +40,6 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"Aspire 2000*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Acer, inc.",			"TravelMate 8100*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Acer, inc.",			"Aspire 3000*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Compaq",			"Armada    E500*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 700m*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 1200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 6000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
