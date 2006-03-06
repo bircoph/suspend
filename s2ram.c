@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 		{ "help",	no_argument,		NULL, 'h'},
 		{ "force",	no_argument,		NULL, 'f'},
 		{ "vbe_save",	no_argument,		NULL, 's'},
-		{ "vbe_nopost",	no_argument,		NULL, 'p'},
+		{ "vbe_post",	no_argument,		NULL, 'p'},
 		{ "radeontool",	no_argument,		NULL, 'r'},
 		{ "identify",	no_argument,		NULL, 'i'},
 		{ "acpi_sleep",	required_argument,	NULL, 'a'},
