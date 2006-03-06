@@ -21,6 +21,9 @@ struct machine_entry whitelist[] = {
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", 0 },
+	/* The nx5000 still needs some verification, i pinged the known suspects */
+	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
+	{ "Hewlett-Packard",	"hp compaq nx5000                ", "", "68BCU*", VBE_POST|VBE_SAVE },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
