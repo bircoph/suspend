@@ -15,15 +15,17 @@ struct machine_entry
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_POST|VBE_SAVE },
-	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",	"Extensa 4150                    ", "",	"", S3_BIOS|S3_MODE },
 	{ "Acer           ",	"TravelMate C300",		"",	"", VBE_SAVE },
+	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
+	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", 0 },
 	/* The nx5000 still needs some verification, i pinged the known suspects */
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
-	{ "Hewlett-Packard",	"hp compaq nx5000                ", "", "68BCU*", VBE_POST|VBE_SAVE },
+	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
+	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
@@ -33,10 +35,10 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
+	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
 
 	// entries below are imported from acpi-support 0.59 and though "half known".
 	{ "ASUSTeK Computer Inc.",	"L7000G series Notebook PC*", "","", VBE_POST|VBE_SAVE|UNSURE },
-	{ "ASUSTeK Computer Inc.",	"M6Ne*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "ASUSTeK Computer Inc.",	"W5A*",			"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Acer",			"TravelMate 290*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Acer",			"TravelMate 660*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
