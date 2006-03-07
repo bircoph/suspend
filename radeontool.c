@@ -129,7 +129,7 @@ void radeon_cmd_light(char *param)
 
 
 /* Here we fork() and exec() the lspci command to look for the Radeon hardware address. */
-static void map_radeon_cntl_mem(void)
+void map_radeon_cntl_mem(void)
 {
     int pipefd[2];
     int forkrc;

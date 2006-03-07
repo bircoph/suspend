@@ -29,9 +29,13 @@ struct dmi_header
 	u16	handle;
 };
 
-char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
-
+#ifdef S2RAM
+extern char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define PRINTF(a...)
+#else
+char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
+#define PRINTF printf
+#endif
 
 static char *dmi_string(struct dmi_header *dm, u8 s)
 {

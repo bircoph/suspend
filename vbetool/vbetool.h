@@ -12,4 +12,6 @@ void text_mode(void);
 int check_console(void);
 int enable_vga(void);
 int disable_vga(void);
-
+void vbetool_init(void);
+char *__save_state(int *);
+void restore_state_from(char *);

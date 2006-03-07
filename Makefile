@@ -12,17 +12,20 @@ BOOT_DIR=/boot
 
 all: suspend resume s2ram
 
-S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o
+S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o vbetool/vbetool.o radeontool.o dmidecode.o
 
 ifeq ($(ARCH), x86_64)
-S2RAMOBJ=vt.o vbetool/thunk.o vbetool/x86-common.o vbetool/x86emu/libx86emu.a
+S2RAMOBJ=vt.o vbetool/thunk.o vbetool/x86-common.o vbetool/vbetool.o vbetool/x86emu/libx86emu.a radeontool.o dmidecode.o
 endif
 
 clean:
 	rm -f suspend resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
-s2ram:	s2ram.c dmidecode.c whitelist.c $(S2RAMOBJ)
+s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
 	gcc -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+
+vbetool/vbetool.o:	vbetool/vbetool.c
+	gcc -Wall -O2 -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o
 
 vbetool/lrmi.o:	vbetool/lrmi.c
 	gcc -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o
@@ -35,6 +38,12 @@ vbetool/x86emu/libx86emu.a:
 
 vbetool/thunk.o:	vbetool/thunk.c
 	gcc -Wall -O2 -c vbetool/thunk.c -o vbetool/thunk.o
+
+dmidecode.o:	dmidecode.c
+	gcc -Wall -O2 -DS2RAM -c dmidecode.c -o dmidecode.o
+
+radeontool.o:	radeontool.c
+	gcc -Wall -O2 -DS2RAM -c radeontool.c -o radeontool.o
 
 md5.o:	md5.c md5.h
 	gcc -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c

@@ -5,13 +5,14 @@
  * Distribute under GPLv2.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <getopt.h>
 #include <errno.h>
+#include <string.h>
 
 #define S2RAM
-#include "dmidecode.c"
-#include "radeontool.c"
-#include "vbetool/vbetool.c"
+#include "vbetool/vbetool.h"
 #include "vt.h"
 
 static int test_mode, force;
@@ -19,6 +20,7 @@ static int active_console;
 static void *vbe_buffer;
 /* Flags set from whitelist */
 static int flags;
+char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 #define S3_BIOS     0x01	/* machine needs acpi_sleep=s3_bios */
 #define S3_MODE     0x02	/* machine needs acpi_sleep=s3_mode */
@@ -28,6 +30,12 @@ static int flags;
 #define UNSURE      0x20	/* unverified entries from acpi-support 0.59 */
 
 #include "whitelist.c"
+
+/* from radeontool.c */
+void radeon_cmd_light(char *);
+void map_radeon_cntl_mem(void);
+/* from dmidecode.c */
+void dmi_scan(void);
 
 static void identify_machine(void)
 {
