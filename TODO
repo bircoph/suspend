@@ -9,8 +9,7 @@ echo $PASSPHRASE | ./suspend -p /dev/hda1
 
 cryptoresume:
 #!/bin/bash
-cat /tmp/swsusp.Suspendkey | gpg -d -r Suspendkey | ./resume -p /dev/hda1
-
+echo 'passphrase' | gpg -d -r Suspendkey --passphrase-fd 0 /tmp/swsusp.Suspendkey | ./resume -p /dev/hda1
 
 Known problems with freezer:
 
