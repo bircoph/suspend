@@ -33,7 +33,6 @@
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
-#include "encrypt.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -454,8 +453,13 @@ int write_image(int snapshot_fd, int resume_fd)
 		}
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
+			int j;
+
 			encrypt_init(&handle.key, handle.ivec, &handle.num,
 					write_buffer, encrypt_buffer, 1);
+			get_random_salt(header->salt, IVEC_SIZE);
+			for (j = 0; j < IVEC_SIZE; j++)
+				handle.ivec[j] ^= header->salt[j];
 			header->image_flags |= IMAGE_ENCRYPTED;
 		}
 #endif

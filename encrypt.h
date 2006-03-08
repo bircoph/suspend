@@ -19,4 +19,6 @@
 
 void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
 		char *pass_buf, void *key_buf, int vrfy);
+
+void get_random_salt(char *salt, size_t size);
 #endif

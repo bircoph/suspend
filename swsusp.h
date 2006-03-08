@@ -12,6 +12,8 @@
 #include <asm/page.h>
 #include <stdint.h>
 
+#include "encrypt.h"
+
 #define SNAPSHOT_IOC_MAGIC	'3'
 #define SNAPSHOT_FREEZE			_IO(SNAPSHOT_IOC_MAGIC, 1)
 #define SNAPSHOT_UNFREEZE		_IO(SNAPSHOT_IOC_MAGIC, 2)
@@ -51,10 +53,13 @@ struct swsusp_info {
 	unsigned long		image_pages;
 	unsigned long		pages;
 	unsigned long		size;
-	/* The follwing fields are added by the userland */
+	/* The following fields are added by the userland */
 	loff_t			map_start;
 	uint32_t		image_flags;
 	unsigned char		checksum[16];
+#ifdef CONFIG_ENCRYPT
+	char			salt[IVEC_SIZE];
+#endif
 } __attribute__((aligned(PAGE_SIZE)));
 
 #define IMAGE_CHECKSUM		0x0001

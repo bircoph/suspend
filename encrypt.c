@@ -10,6 +10,10 @@
  */
 
 #ifdef CONFIG_ENCRYPT
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <termios.h>
@@ -75,5 +79,17 @@ void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
 	md5_finish_ctx(&ctx, key_buf);
 	BF_set_key(key, KEY_SIZE, key_buf);
 	*num = 0;
+}
+
+void get_random_salt(char *salt, size_t size)
+{
+	int fd;
+
+	memset(salt, 0, size);
+	fd = open("/dev/random", O_RDONLY);
+	if (fd >= 0) {
+		read(fd, salt, size);
+		close(fd);
+	}
 }
 #endif

@@ -30,7 +30,6 @@
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
-#include "encrypt.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -349,10 +348,14 @@ static int read_image(int dev, char *resume_dev_name)
 #endif
 		}
 		if (!error && (header->image_flags & IMAGE_ENCRYPTED)) {
-			printf("resume: Encrypted image\n");
 #ifdef CONFIG_ENCRYPT
+			int j;
+
+			printf("resume: Encrypted image\n");
 			encrypt_init(&handle.key, handle.ivec, &handle.num,
 					read_buffer, decrypt_buffer, 0);
+			for (j = 0; j < IVEC_SIZE; j++)
+				handle.ivec[j] ^= header->salt[j];
 			decrypt = 1;
 #else
 			printf("resume: Encryption not supported\n");
