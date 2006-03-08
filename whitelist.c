@@ -20,6 +20,7 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
+	{ "Dell Computer Corporation",  "Inspiron 5150*",       "",     "", VBE_POST|VBE_SAVE },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", 0 },
 	/* The nx5000 still needs some verification, i pinged the known suspects */
