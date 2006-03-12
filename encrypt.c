@@ -23,7 +23,7 @@
 
 char *passphrase;
 
-static void read_password(char *pass_buf, int vrfy)
+void read_password(char *pass_buf, int vrfy)
 {
 	struct termios termios;
 	char *vrfy_buf = vrfy ? pass_buf + PASS_SIZE : pass_buf;

@@ -59,12 +59,15 @@ struct swsusp_info {
 	unsigned char		checksum[16];
 #ifdef CONFIG_ENCRYPT
 	char			salt[IVEC_SIZE];
+	struct RSA_data		rsa_data;
+	struct encrypted_key	key_data;
 #endif
 } __attribute__((aligned(PAGE_SIZE)));
 
 #define IMAGE_CHECKSUM		0x0001
 #define IMAGE_COMPRESSED	0x0002
 #define IMAGE_ENCRYPTED		0x0004
+#define IMAGE_USE_RSA		0x0008
 
 #define SWSUSP_SIG	"ULSUSPEND"
 
@@ -156,4 +159,18 @@ struct swap_map_page {
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8
 
-#define PARAM_NO	8
+#define GEN_PARAM	6
+
+#ifdef CONFIG_COMPRESS
+#define COMPRESS_PARAM	1
+#else
+#define COMPRESS_PARAM	0
+#endif
+
+#ifdef CONFIG_ENCRYPT
+#define ENCRYPT_PARAM	2
+#else
+#define ENCRYPT_PARAM	0
+#endif
+
+#define PARAM_NO	(GEN_PARAM + COMPRESS_PARAM + ENCRYPT_PARAM)

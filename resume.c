@@ -93,6 +93,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt = "%c",
 		.ptr = NULL,
 	},
+	{
+		.name = "RSA key file",
+		.fmt = "%s",
+		.ptr = NULL,
+	},
 #endif
 };
 
@@ -302,8 +307,64 @@ static inline void print_checksum(unsigned char *checksum)
 	int j;
 
 	for (j = 0; j < 16; j++)
-		printf("%02hhx", checksum[j]);
+		printf("%02hhx ", checksum[j]);
 }
+
+#ifdef CONFIG_ENCRYPT
+static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *ivec)
+{
+	RSA *rsa;
+	unsigned char *buf, *out, *key_buf;
+	char *pass_buf;
+	struct md5_ctx ctx;
+	struct RSA_data *rsa_data;
+	int n = 0, ret = 0;
+
+	rsa = RSA_new();
+	if (!rsa)
+		return -ENOMEM;
+
+	rsa_data = &header->rsa_data;
+	buf = rsa_data->data;
+	rsa->n = BN_mpi2bn(buf, rsa_data->n_size, NULL);
+	buf += rsa_data->n_size;
+	rsa->e = BN_mpi2bn(buf, rsa_data->e_size, NULL);
+	buf += rsa_data->e_size;
+
+	pass_buf = read_buffer;
+	key_buf = (unsigned char *)read_buffer + PASS_SIZE;
+	do {
+		read_password(pass_buf, 0);
+		memset(ivec, 0, IVEC_SIZE);
+		strncpy((char *)ivec, pass_buf, IVEC_SIZE);
+		md5_init_ctx(&ctx);
+		md5_process_bytes(pass_buf, strlen(pass_buf), &ctx);
+		md5_finish_ctx(&ctx, key_buf);
+		BF_set_key(key, KEY_SIZE, key_buf);
+		BF_ecb_encrypt(KEY_TEST_DATA, key_buf, key, BF_ENCRYPT);
+		ret = memcmp(key_buf, rsa_data->key_test, KEY_TEST_SIZE);
+		if (ret)
+			printf("resume: Wrong passphrase, try again.\n");
+	} while (ret);
+
+	out = (unsigned char *)decrypt_buffer;
+	BF_cfb64_encrypt(buf, out, rsa_data->d_size, key, ivec, &n, BF_DECRYPT);
+	rsa->d = BN_mpi2bn(out, rsa_data->d_size, NULL);
+
+	ret = RSA_private_decrypt(header->key_data.size, header->key_data.data,
+			out, rsa, RSA_PKCS1_PADDING);
+	if (ret != (int)(KEY_SIZE + IVEC_SIZE)) {
+		ret = -ENODATA;
+	} else {
+		BF_set_key(key, KEY_SIZE, out);
+		memcpy(ivec, out + KEY_SIZE, IVEC_SIZE);
+		ret = 0;
+	}
+
+	RSA_free(rsa);
+	return ret;
+}
+#endif
 
 static int read_image(int dev, char *resume_dev_name)
 {
@@ -349,14 +410,20 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 		if (!error && (header->image_flags & IMAGE_ENCRYPTED)) {
 #ifdef CONFIG_ENCRYPT
-			int j;
+			if (header->image_flags & IMAGE_USE_RSA) {
+				handle.num = 0;
+				error = decrypt_key(header, &handle.key, handle.ivec);
+			} else {
+				int j;
 
-			printf("resume: Encrypted image\n");
-			encrypt_init(&handle.key, handle.ivec, &handle.num,
-					read_buffer, decrypt_buffer, 0);
-			for (j = 0; j < IVEC_SIZE; j++)
-				handle.ivec[j] ^= header->salt[j];
-			decrypt = 1;
+				printf("resume: Encrypted image\n");
+				encrypt_init(&handle.key, handle.ivec, &handle.num,
+						read_buffer, decrypt_buffer, 0);
+				for (j = 0; j < IVEC_SIZE; j++)
+					handle.ivec[j] ^= header->salt[j];
+			}
+			if (!error)
+				decrypt = 1;
 #else
 			printf("resume: Encryption not supported\n");
 			error = -EINVAL;
@@ -365,7 +432,7 @@ static int read_image(int dev, char *resume_dev_name)
 		if (!error) {
 			error = init_swap_reader(&handle, fd, header->map_start);
 			nr_pages = header->pages - 1;
-			ret = write(dev, page_buffer, PAGE_SIZE);
+			ret = write(dev, header, PAGE_SIZE);
 			if (ret < (int)PAGE_SIZE)
 				error = ret < 0 ? ret : -EIO;
 		}
@@ -400,7 +467,8 @@ static int read_image(int dev, char *resume_dev_name)
 				printf("resume: MD5 checksum does not match\n");
 				printf("resume: Computed MD5 checksum ");
 				print_checksum(checksum);
-				printf("\n");
+				printf("\nPress ENTER to continue ");
+				getchar();
 				error = -EINVAL;
 			}
 		}
@@ -419,8 +487,8 @@ static int read_image(int dev, char *resume_dev_name)
 	if (!error) {
 		printf("resume: Image successfully loaded\n");
 	} else {
-		printf("resume: Error %d loading the image\n\nPress ENTER to continue ",
-			error);
+		printf("resume: Error %d loading the image\n"
+			"\nPress ENTER to continue", error);
 		getchar();
 	}
 	return error;

@@ -47,8 +47,11 @@ static char compress;
 static unsigned long compr_diff;
 #ifdef CONFIG_ENCRYPT
 static char encrypt;
+static char use_RSA;
+static char key_name[MAX_STR_LEN] = KEY_FILE;
 #else
 #define encrypt 0
+#define key_name NULL
 #endif
 
 static struct config_par parameters[PARAM_NO] = {
@@ -96,6 +99,12 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "encrypt",
 		.fmt = "%c",
 		.ptr = &encrypt,
+	},
+	{
+		.name = "RSA key file",
+		.fmt = "%s",
+		.ptr = key_name,
+		.len = MAX_STR_LEN
 	},
 #endif
 };
@@ -453,14 +462,29 @@ int write_image(int snapshot_fd, int resume_fd)
 		}
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
-			int j;
+			if (use_RSA) {
+				struct key_data *key_data;
 
-			encrypt_init(&handle.key, handle.ivec, &handle.num,
-					write_buffer, encrypt_buffer, 1);
-			get_random_salt(header->salt, IVEC_SIZE);
-			for (j = 0; j < IVEC_SIZE; j++)
-				handle.ivec[j] ^= header->salt[j];
-			header->image_flags |= IMAGE_ENCRYPTED;
+				key_data = (struct key_data *)encrypt_buffer;
+				BF_set_key(&handle.key, KEY_SIZE, key_data->key);
+				memcpy(handle.ivec, key_data->ivec, IVEC_SIZE);
+				handle.num = 0;
+				header->image_flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
+				memcpy(&header->rsa_data, &key_data->rsa_data,
+					sizeof(struct RSA_data));
+				memcpy(&header->key_data,
+					encrypt_buffer + sizeof(struct key_data),
+					sizeof(struct encrypted_key));
+			} else {
+				int j;
+
+				encrypt_init(&handle.key, handle.ivec, &handle.num,
+						write_buffer, encrypt_buffer, 1);
+				get_random_salt(header->salt, IVEC_SIZE);
+				for (j = 0; j < IVEC_SIZE; j++)
+					handle.ivec[j] ^= header->salt[j];
+				header->image_flags |= IMAGE_ENCRYPTED;
+			}
 		}
 #endif
 		error = save_image(&handle, header->pages - 1);
@@ -471,7 +495,7 @@ int write_image(int snapshot_fd, int resume_fd)
 			md5_finish_ctx(&handle.ctx, header->checksum);
 	}
 	if (!error)
-		error = write_area(resume_fd, header_buffer, start, PAGE_SIZE);
+		error = write_area(resume_fd, header, start, PAGE_SIZE);
 	if (!error) {
 		if (compress) {
 			double delta = header->size - compr_diff;
@@ -668,6 +692,59 @@ static inline void set_kernel_console_loglevel(int level)
 	}
 }
 
+#ifdef CONFIG_ENCRYPT
+static void generate_key(void)
+{
+	RSA *rsa;
+	int fd, rnd_fd;
+	struct key_data *key_data;
+	struct RSA_data *rsa_data;
+	unsigned char *buf;
+
+	fd = open(key_name, O_RDONLY);
+	if (fd < 0)
+		return;
+
+	rsa = RSA_new();
+	if (!rsa)
+		goto Close;
+
+	key_data = (struct key_data *)encrypt_buffer;
+	rsa_data = &key_data->rsa_data;
+	if (read(fd, rsa_data, sizeof(struct RSA_data)) <= 0)
+		goto Free_rsa;
+
+	buf = rsa_data->data;
+	rsa->n = BN_mpi2bn(buf, rsa_data->n_size, NULL);
+	buf += rsa_data->n_size;
+	rsa->e = BN_mpi2bn(buf, rsa_data->e_size, NULL);
+
+	rnd_fd = open("/dev/urandom", O_RDONLY);
+	if (rnd_fd > 0) {
+		unsigned short size = KEY_SIZE + IVEC_SIZE;
+
+		if (read(rnd_fd, key_data->key, size) == size) {
+			struct encrypted_key *enc_key;
+			int ret;
+
+			enc_key = (struct encrypted_key *)(encrypt_buffer
+					+ sizeof(struct key_data));
+			ret = RSA_public_encrypt(size, key_data->key,
+					enc_key->data, rsa, RSA_PKCS1_PADDING);
+			if (ret > 0) {
+				enc_key->size = ret;
+				use_RSA = 'y';
+			}
+		}
+		close(rnd_fd);
+	}
+Free_rsa:
+	RSA_free(rsa);
+Close:
+	close(fd);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	char *chroot_path = page_buffer;
@@ -685,7 +762,9 @@ int main(int argc, char *argv[])
 		compress = 0;
 #endif
 #ifdef CONFIG_ENCRYPT
-	if (encrypt != 'y' && encrypt != 'Y')
+	if (encrypt == 'y' || encrypt == 'Y')
+		generate_key();
+	else
 		encrypt = 0;
 #endif
 
