@@ -149,6 +149,11 @@ struct swap_map_page {
 	loff_t next_swap;
 };
 
+struct buf_block {
+	unsigned short size;
+	char data[PAGE_SIZE];
+};
+
 #define BUFFER_SIZE	0x20000
 
 #define SNAPSHOT_DEVICE	"/dev/snapshot"

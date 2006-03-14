@@ -203,25 +203,25 @@ static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start
 
 static int restore(void *buf, int disp)
 {
-	char *ptr = read_buffer + disp;
-	unsigned short size = PAGE_SIZE;
+	struct buf_block *block = (struct buf_block *)(read_buffer + disp);
 
 	if (decompress) {
-		size_t cnt;
+		unsigned short cnt = block->size;
 
-		size = *((unsigned short *)ptr);
-		ptr += sizeof(short);
-		if (size == PAGE_SIZE) {
-			size += sizeof(short);
-		} else if (size < PAGE_SIZE) {
-			cnt = lzf_decompress(ptr, size, buf, PAGE_SIZE);
-			return cnt == PAGE_SIZE ? size + sizeof(short) : -ENODATA;
+		if (cnt == PAGE_SIZE) {
+			memcpy(buf, block->data, PAGE_SIZE);
+		} else if (cnt < PAGE_SIZE) {
+			cnt = lzf_decompress(block->data, cnt, buf, PAGE_SIZE);
+			if (cnt != PAGE_SIZE)
+				return -ENODATA;
 		} else {
 			return -EINVAL;
 		}
+		block->size += sizeof(short);
+		return block->size;
 	}
-	memcpy(buf, ptr, PAGE_SIZE);
-	return size;
+	memcpy(buf, block, PAGE_SIZE);
+	return PAGE_SIZE;
 }
 
 static inline int swap_read_page(struct swap_map_handle *handle, void *buf)

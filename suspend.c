@@ -218,24 +218,25 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 
 static int prepare(void *buf, int disp)
 {
-	char *ptr = write_buffer + disp;
+	struct buf_block *block = (struct buf_block *)(write_buffer + disp);
 
 	if (compress) {
-		size_t cnt;
+		unsigned short cnt;
 
 		cnt = lzf_compress(buf, PAGE_SIZE,
-				ptr + sizeof(short), PAGE_SIZE - sizeof(short));
-		if (cnt <= 0) {
-			memcpy(ptr + sizeof(short), buf, PAGE_SIZE);
+				block->data, PAGE_SIZE - sizeof(short));
+		if (!cnt) {
+			memcpy(block->data, buf, PAGE_SIZE);
 			cnt = PAGE_SIZE;
 		} else {
 			compr_diff += PAGE_SIZE - cnt;
 		}
 		compr_diff -= sizeof(short);
-		*((unsigned short *)ptr) = cnt;
-		return cnt + sizeof(short);
+		block->size = cnt;
+		cnt += sizeof(short);
+		return cnt;
 	}
-	memcpy(ptr, buf, PAGE_SIZE);
+	memcpy(block, buf, PAGE_SIZE);
 	return PAGE_SIZE;
 }
 
@@ -458,7 +459,7 @@ int write_image(int snapshot_fd, int resume_fd)
 			header->image_flags |= IMAGE_CHECKSUM;
 		if (compress) {
 			header->image_flags |= IMAGE_COMPRESSED;
-			max_block_size += sizeof(short);
+			max_block_size = sizeof(struct buf_block);
 		}
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
