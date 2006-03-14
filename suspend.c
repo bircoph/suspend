@@ -248,10 +248,12 @@ static int try_get_more_swap(struct swap_map_handle *handle)
 		offset = get_swap_page(handle->dev);
 		if (!offset)
 			return -ENOSPC;
-		if (offset == handle->cur_area.offset + handle->cur_alloc)
+		if (offset == handle->cur_area.offset + handle->cur_alloc) {
 			handle->cur_alloc += PAGE_SIZE;
-		else
+		} else {
 			handle->cur_area.offset = offset;
+			handle->cur_alloc = PAGE_SIZE;
+		}
 	}
 	return 0;
 }
@@ -291,7 +293,7 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 		return try_get_more_swap(handle);
 	}
 
-	if (handle->cur_area.size + max_block_size <= BUFFER_SIZE) {
+	if (handle->cur_alloc + max_block_size <= BUFFER_SIZE) {
 		if (handle->cur_area.size + max_block_size <= handle->cur_alloc) {
 			handle->cur_area.size += prepare(buf, handle->cur_area.size);
 			return 0;
@@ -302,7 +304,7 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 		if (offset == handle->cur_area.offset + handle->cur_alloc) {
 			handle->cur_alloc += PAGE_SIZE;
 			handle->cur_area.size += prepare(buf, handle->cur_area.size);
-			return 0;
+			return try_get_more_swap(handle);
 		}
 	}
 
