@@ -350,6 +350,10 @@ static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *i
 	out = (unsigned char *)decrypt_buffer;
 	BF_cfb64_encrypt(buf, out, rsa_data->d_size, key, ivec, &n, BF_DECRYPT);
 	rsa->d = BN_mpi2bn(out, rsa_data->d_size, NULL);
+	if (!rsa->n || !rsa->e || !rsa->d) {
+		ret = -EFAULT;
+		goto Free_rsa;
+	}
 
 	ret = RSA_private_decrypt(header->key_data.size, header->key_data.data,
 			out, rsa, RSA_PKCS1_PADDING);
@@ -361,6 +365,7 @@ static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *i
 		ret = 0;
 	}
 
+Free_rsa:
 	RSA_free(rsa);
 	return ret;
 }

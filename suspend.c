@@ -719,6 +719,8 @@ static void generate_key(void)
 	rsa->n = BN_mpi2bn(buf, rsa_data->n_size, NULL);
 	buf += rsa_data->n_size;
 	rsa->e = BN_mpi2bn(buf, rsa_data->e_size, NULL);
+	if (!rsa->n || !rsa->e)
+		goto Free_rsa;
 
 	rnd_fd = open("/dev/urandom", O_RDONLY);
 	if (rnd_fd > 0) {
