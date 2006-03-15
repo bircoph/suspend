@@ -13,6 +13,8 @@
  * for patches.
  *
  * Stripped down to bare bones by Pavel Machek <pavel@suse.cz> -- for use in s2ram.c
+ * Rework of the map_radeon_cntl_mem function and various cleanups 
+ *                                  by Stefan Seyfried <seife@suse.de>
  */
 
 #include <stdio.h>
@@ -23,6 +25,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <pci/pci.h>
 
 #define RADEON_LVDS_GEN_CNTL                0x02d0
 #       define RADEON_LVDS_ON               (1   <<  0)
@@ -36,7 +39,6 @@
 
 
 int debug;
-int skip;
 
 /* *radeon_cntl_mem is mapped to the actual device's memory mapped control area. */
 /* Not the address but what it points to is volatile. */
@@ -126,8 +128,12 @@ void radeon_cmd_light(char *param)
     radeon_set(RADEON_LVDS_GEN_CNTL,"RADEON_LVDS_GEN_CNTL",lvds_gen_cntl);
 }
 
-
-
+/* I have not got much feedback on my radeontool rework, hence i leave the old
+ * code #if 0-ed in for reference.
+ * Once some time passes without complaints about the new code, i will remove it.
+ * Sorry for the clutter - seife.
+ */
+#if 0
 /* Here we fork() and exec() the lspci command to look for the Radeon hardware address. */
 void map_radeon_cntl_mem(void)
 {
@@ -189,9 +195,7 @@ We need to look through it to find the smaller region base address f8fffc00.
           fatal("Radeon hardware not found in lspci output.\n");
        }
        if(strstr(line,"Radeon") || strstr(line,"ATI Tech")) {  /* if line contains a "radeon" string */
-          if(skip-- < 1) {
              break;
-          }
        }
     };
     if(debug) 
@@ -213,6 +217,63 @@ We need to look through it to find the smaller region base address f8fffc00.
         printf("Radeon found. Base control address is %x.\n",base);
     radeon_cntl_mem = map_device_memory(base,0x2000);
 }
+#else
+
+static u32
+get_conf_long(unsigned char *d, unsigned int pos)
+{
+    return d[pos] | (d[pos+1] << 8) | (d[pos+2] << 16) | (d[pos+3] << 24);
+}
+
+/* Find out where the radeon memory is. The idea is taken from radeontool-1.5,
+ * but we no longer fork lspci and parse its output :-)
+ * The logic seems to be: the memory range that is not I/O space and smaller
+ * than 1 MB is the radeon chip control range. Let's hope that this is true.
+ */
+void map_radeon_cntl_mem(void)
+{
+    struct pci_access *pacc;
+    struct pci_dev *dev;
+    unsigned int class;
+    int i;
+    int base = -1;
+    unsigned char *config;
+
+    config = malloc(64);
+    if (!config)
+        fatal("malloc(64) failed\n");
+    pacc = pci_alloc();		/* Get the pci_access structure */
+    pci_init(pacc);		/* Initialize the PCI library */
+    pci_scan_bus(pacc);		/* We want to get the list of devices */
+    for(dev=pacc->devices; dev; dev=dev->next) {            /* Iterate over all devices */
+        pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_BASES);/* Fill in header info we need */
+        class = pci_read_word(dev, PCI_CLASS_DEVICE);       /* Read config register directly */
+        if (dev->vendor_id == 0x1002 && class == 0x300) {   /* ATI && Graphics card */
+            pci_read_block(dev, 0, config, 64);
+            for (i=0; i<6; i++){
+                u32 flag = get_conf_long(config, PCI_BASE_ADDRESS_0 + 4*i);
+                if (flag & PCI_BASE_ADDRESS_SPACE_IO)   /* I/O-Ports, not memory */
+                    continue;
+                /* the original code parsed lspci for "emory" and "K", so it
+                 * has to be at least 1K and less than 1M
+                 */
+                if (dev->size[i] >=1024 && dev->size[i] < 1024*1024) {
+                    base = dev->base_addr[i];
+                    goto found;
+                }
+            }
+        }
+    }
+ found:
+    pci_cleanup(pacc);
+    free(config);
+    if (base == -1)
+        fatal("Radeon not found.\n");
+    if (debug)
+        printf("Radeon found. Base control address is %x.\n",base);
+    radeon_cntl_mem = map_device_memory(base,0x2000);
+}
+#endif
 
 #ifndef S2RAM
 int main(int argc,char *argv[]) 
