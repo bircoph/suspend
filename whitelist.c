@@ -29,6 +29,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
+	/* X40 confirmed by Christian Deckelmann */
+	{ "IBM",			"2371*",	"ThinkPad X40",	"", S3_BIOS|S3_MODE },
 	/* T42p confirmed by Joe Shaw */
 	{ "IBM",			"2373*",	"ThinkPad T42p","", S3_BIOS|S3_MODE },
 	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
@@ -175,7 +177,6 @@ struct machine_entry whitelist[] = {
 	// X40
 	{ "IBM",			"2369*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2370*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2371*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2372*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2382*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2386*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
