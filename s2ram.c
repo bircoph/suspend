@@ -32,7 +32,7 @@ char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #include "whitelist.c"
 
 /* from radeontool.c */
-void radeon_cmd_light(char *);
+void radeon_cmd_light(int);
 void map_radeon_cntl_mem(void);
 /* from dmidecode.c */
 void dmi_scan(void);
@@ -163,8 +163,8 @@ void s2ram_prepare(void)
 	}
 	if (flags & RADEON_OFF) {
 		map_radeon_cntl_mem();
-		printf("Calling radeon_cmd_light");
-		radeon_cmd_light("off");
+		printf("Calling radeon_cmd_light\n");
+		radeon_cmd_light(0);
 	}
 }
 

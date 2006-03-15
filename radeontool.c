@@ -37,43 +37,31 @@
 #       define RADEON_LVDS_BLON             (1   << 19)
 #       define RADEON_LVDS_SEL_CRTC2        (1   << 23)
 
-
-int debug;
-
 /* *radeon_cntl_mem is mapped to the actual device's memory mapped control area. */
 /* Not the address but what it points to is volatile. */
 volatile unsigned char * radeon_cntl_mem;
 
-static void fatal(char *why)
-{
-    fprintf(stderr,why);
-    exit (-1);
-}
-
-static unsigned long radeon_get(unsigned long offset,char *name)
+static unsigned long radeon_get(unsigned long offset)
 {
     unsigned long value;
-    if(debug) 
-        printf("reading %s (%lx) is ",name,offset);
+
     if(radeon_cntl_mem == NULL) {
-        printf("internal error\n");
-	exit(-2);
-    };
-    value = *(volatile unsigned long *)(radeon_cntl_mem+offset);  
-    if(debug) 
-        printf("%08lx\n",value);
+        fprintf(stderr, "radeon_get: radeon_cntl_mem == NULL");
+        return 0;
+    }
+
+    value = *(volatile unsigned long *)(radeon_cntl_mem+offset);
     return value;
 }
 
-static void radeon_set(unsigned long offset,char *name,unsigned long value)
+static void radeon_set(unsigned long offset, unsigned long value)
 {
-    if(debug) 
-        printf("writing %s (%lx) -> %08lx\n",name,offset,value);
     if(radeon_cntl_mem == NULL) {
-        printf("internal error\n");
-	exit(-2);
-    };
-    *(volatile unsigned long *)(radeon_cntl_mem+offset) = value;  
+        fprintf(stderr, "radeon_set: radeon_cntl_mem == NULL");
+        return;
+    }
+
+    *(volatile unsigned long *)(radeon_cntl_mem+offset) = value;
 }
 
 /* Ohh, life would be good if we could simply address all memory addresses */
@@ -87,12 +75,15 @@ static volatile unsigned char * map_device_memory(unsigned int base,unsigned int
 
     /* open /dev/mem */
     if ((mem_fd = open("/dev/mem", O_RDWR) ) < 0) {
-        fatal("can't open /dev/mem\nAre you root?\n");
+        perror("radeontool /dev/mem");
+        return NULL;
     }
 
     /* mmap graphics memory */
     if ((device_mem = malloc(length + (getpagesize()-1))) == NULL) {
-        fatal("allocation error \n");
+        perror("radeontool malloc");
+        close(mem_fd);
+        return NULL;
     }
     if ((unsigned long)device_mem % getpagesize())
         device_mem += getpagesize() - ((unsigned long)device_mem % getpagesize());
@@ -105,27 +96,24 @@ static volatile unsigned char * map_device_memory(unsigned int base,unsigned int
         base
     );
     if (device_mem == (volatile unsigned char *)-1) {
-        if(debug)
-            fprintf(stderr,"mmap returned %d\n",(int)(long)device_mem);
-        fatal("mmap error \n");
+        perror("radeontool mmap");
+        return NULL;
     }
     return device_mem;
 }
 
-void radeon_cmd_light(char *param)
+void radeon_cmd_light(int param)
 {
     unsigned long lvds_gen_cntl;
 
-    lvds_gen_cntl = radeon_get(RADEON_LVDS_GEN_CNTL,"RADEON_LVDS_GEN_CNTL");
-    if(param == NULL) {
-        printf("The radeon backlight looks %s\n",(lvds_gen_cntl&(RADEON_LVDS_ON))?"on":"off");
-        exit (-1);
-    } else if(strcmp(param,"on") == 0) {
+    lvds_gen_cntl = radeon_get(RADEON_LVDS_GEN_CNTL);
+
+    if (param)
         lvds_gen_cntl |= RADEON_LVDS_ON;
-    } else if(strcmp(param,"off") == 0) {
+    else
         lvds_gen_cntl &= ~ RADEON_LVDS_ON;
-    }
-    radeon_set(RADEON_LVDS_GEN_CNTL,"RADEON_LVDS_GEN_CNTL",lvds_gen_cntl);
+
+    radeon_set(RADEON_LVDS_GEN_CNTL, lvds_gen_cntl);
 }
 
 /* I have not got much feedback on my radeontool rework, hence i leave the old
@@ -239,13 +227,17 @@ void map_radeon_cntl_mem(void)
     int base = -1;
     unsigned char *config;
 
+    radeon_cntl_mem = NULL;
+
     config = malloc(64);
-    if (!config)
-        fatal("malloc(64) failed\n");
+    if (!config) {
+        perror("map_radeon_cntl_mem malloc(64)");
+        return;
+    }
     pacc = pci_alloc();		/* Get the pci_access structure */
     pci_init(pacc);		/* Initialize the PCI library */
     pci_scan_bus(pacc);		/* We want to get the list of devices */
-    for(dev=pacc->devices; dev; dev=dev->next) {            /* Iterate over all devices */
+    for (dev=pacc->devices; dev; dev=dev->next) {           /* Iterate over all devices */
         pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_BASES);/* Fill in header info we need */
         class = pci_read_word(dev, PCI_CLASS_DEVICE);       /* Read config register directly */
         if (dev->vendor_id == 0x1002 && class == 0x300) {   /* ATI && Graphics card */
@@ -267,10 +259,10 @@ void map_radeon_cntl_mem(void)
  found:
     pci_cleanup(pacc);
     free(config);
-    if (base == -1)
-        fatal("Radeon not found.\n");
-    if (debug)
-        printf("Radeon found. Base control address is %x.\n",base);
+    if (base == -1) {
+        fprintf(stderr, "radeontool: Radeon not found.\n");
+        return;
+    }
     radeon_cntl_mem = map_device_memory(base,0x2000);
 }
 #endif
@@ -278,18 +270,17 @@ void map_radeon_cntl_mem(void)
 #ifndef S2RAM
 int main(int argc,char *argv[]) 
 {
-    if(strcmp(argv[1],"--debug") == 0) {
-        debug=1;
-        argv++; argc--;
-    };
     map_radeon_cntl_mem();
+    if (radeon_cntl_mem == NULL) {
+        fprintf(stderr, "Fatal error: radeon_cntl_mem == NULL.\n");
+        return 1;
+    }
     if (argc == 3) {
         if(strcmp(argv[1],"light") == 0) {
-            radeon_cmd_light(argv[2]);
+            radeon_cmd_light(strcmp(argv[2],"off"));
             return 0;
         }
     };
-
     return 1;
 }
 #endif
