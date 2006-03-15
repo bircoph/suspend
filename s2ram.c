@@ -14,6 +14,7 @@
 #define S2RAM
 #include "vbetool/vbetool.h"
 #include "vt.h"
+#include "s2ram.h"
 
 static int test_mode, force;
 static int active_console;
@@ -30,12 +31,6 @@ char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define UNSURE      0x20	/* unverified entries from acpi-support 0.59 */
 
 #include "whitelist.c"
-
-/* from radeontool.c */
-void radeon_cmd_light(int);
-void map_radeon_cntl_mem(void);
-/* from dmidecode.c */
-void dmi_scan(void);
 
 static void identify_machine(void)
 {
@@ -212,7 +207,8 @@ void s2ram_resume(void)
 	}
 }
 
-void usage(void)
+#ifndef CONFIG_BOTH
+static void usage(void)
 {
 	printf("Usage: s2ram [-nhi] [-fsra]\n"
 	       "\n"
@@ -299,3 +295,4 @@ int main(int argc, char *argv[])
 	s2ram_resume();
 	return i;
 }
+#endif
