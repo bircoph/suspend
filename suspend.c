@@ -33,6 +33,7 @@
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
+#include "s2ram.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -53,6 +54,7 @@ static char key_name[MAX_STR_LEN] = KEY_FILE;
 #define encrypt 0
 #define key_name NULL
 #endif
+static int s2ram = 1;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -107,6 +109,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.len = MAX_STR_LEN
 	},
 #endif
+	{
+		.name = "suspend to both",
+		.fmt = "%c",
+		.ptr = &s2ram,
+	},
 };
 
 static char page_buffer[PAGE_SIZE];
@@ -521,6 +528,46 @@ int write_image(int snapshot_fd, int resume_fd)
 						ioctl(fd, VT_WAITACTIVE, vt); \
 						ioctl(fd, KDSKBMODE, ioc2);
 
+
+static int reset_signature(int fd)
+{
+	int ret, error = 0;
+
+	error = lseek(fd, 0, SEEK_SET);
+
+	if (!error) {
+		memset(&swsusp_header, 0, sizeof(swsusp_header));
+		ret = read(fd, &swsusp_header, PAGE_SIZE);
+		if (ret == PAGE_SIZE) {
+			if (memcmp(SWSUSP_SIG, swsusp_header.sig, 10)) {
+				/* Impossible? We wrote signature and it is not there?! */
+				error = -EINVAL;
+			}
+		} else {
+			error = ret < 0 ? ret : -EIO;
+		}
+	}
+
+	if (!error) {
+		/* Reset swap signature now */
+		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
+		error = lseek(fd, 0, SEEK_SET);
+	}
+	if (!error) {
+		ret = write(fd, &swsusp_header, PAGE_SIZE);
+		error = (ret != PAGE_SIZE);
+	}
+	fsync(fd);
+	if (error) {
+		printf("reset_signature: Error %d resetting the image.\n"
+		       "There should be valid image on disk. Powerdown and do normal resume.\n"
+		       "Continuing with this booted system will lead to data corruption.\n", 
+		       error);
+		while(1);
+	}
+	return error;
+}
+
 int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 {
 	loff_t avail_swap;
@@ -555,7 +602,27 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 				break;
 			error = write_image(snapshot_fd, resume_fd);
 			if (!error) {
-				power_off();
+				if (!s2ram) {
+					power_off();
+					/* Signature is on disk, it is very dangerous now.
+					   We'd do resume with stale caches on next boot. */
+					printf("Powerdown failed. Thats impossible.\n");
+					while(1);
+				} else {
+					/* FIXME: will restart tasks twice, loose cpus on
+					   SMP, and cause other related badness.
+
+					   If we die (and allow system to continue) between
+					   now and reset_signature(), very bad things will
+					   happen.
+					*/
+					s2ram_do();
+					reset_signature(resume_fd);
+					free_swap_pages(snapshot_fd);
+					free_snapshot(snapshot_fd);
+					s2ram_resume();
+					return EDOM;
+				}
 			} else {
 				free_swap_pages(snapshot_fd);
 				free_snapshot(snapshot_fd);
@@ -572,7 +639,6 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 
 Unfreeze:
 	unfreeze(snapshot_fd);
-
 	return error;
 }
 
@@ -772,6 +838,8 @@ int main(int argc, char *argv[])
 	else
 		encrypt = 0;
 #endif
+	if (s2ram != 'y' && s2ram != 'Y')
+		s2ram = 0;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -784,7 +852,6 @@ int main(int argc, char *argv[])
 	if (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the resume device file\n");
 		return ENODEV;
-	} else {
 	}
 	if (!S_ISBLK(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid resume device\n");
@@ -802,6 +869,10 @@ int main(int argc, char *argv[])
 		ret = ENODEV;
 		goto Close_resume_fd;
 	}
+
+	if (s2ram)
+		s2ram_prepare();
+
 	if (!S_ISCHR(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid snapshot device\n");
 		ret = EINVAL;
@@ -829,7 +900,7 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(chroot_path, "/proc/%d", getpid());
-	if (chroot(chroot_path)) {
+	if (s2ram || chroot(chroot_path)) {
 		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
 		ret = errno;
 		goto Restore_console;

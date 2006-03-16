@@ -69,8 +69,8 @@ config.o:	config.c config.h
 vt.o:	vt.c vt.h
 	gcc -Wall -c vt.c
 
-suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h
-	gcc -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c -o suspend $(LD_FLAGS)
+suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
+	gcc -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o suspend $(S2RAMOBJ) $(LD_FLAGS) -lpci 
 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h
 	gcc -Wall $(CC_FLAGS) md5.o encrypt.o config.o resume.c -static -o resume $(LD_FLAGS)
