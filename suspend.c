@@ -899,21 +899,22 @@ int main(int argc, char *argv[])
 		goto Close_snapshot_fd;
 	}
 
+	orig_loglevel = get_kernel_console_loglevel();
+	set_kernel_console_loglevel(suspend_loglevel);
+
 	sprintf(chroot_path, "/proc/%d", getpid());
-	if (s2ram || chroot(chroot_path)) {
+	if (!s2ram && chroot(chroot_path)) {
 		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
 		ret = errno;
 		goto Restore_console;
 	}
 	chdir("/");
 
-	orig_loglevel = get_kernel_console_loglevel();
-	set_kernel_console_loglevel(suspend_loglevel);
-
 	sync();
 
 	ret = suspend_system(snapshot_fd, resume_fd, vt_fd, suspend_vc);
 
+	/* FIXME: this can't work, we are still in chroot */
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
 
