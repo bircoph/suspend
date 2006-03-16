@@ -21,8 +21,6 @@
 #include "md5.h"
 #include "encrypt.h"
 
-char *passphrase;
-
 void read_password(char *pass_buf, int vrfy)
 {
 	struct termios termios;
@@ -67,10 +65,7 @@ void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
 
 	struct md5_ctx ctx;
 
-	if (passphrase)
-		strncpy(pass_buf, passphrase, PASS_SIZE);
-	else
-		read_password(pass_buf, vrfy);
+	read_password(pass_buf, vrfy);
 
 	memset(ivec, 0, IVEC_SIZE);
 	strncpy((char *)ivec, pass_buf, IVEC_SIZE);

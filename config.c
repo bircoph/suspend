@@ -102,19 +102,6 @@ int get_config(char *my_name, int argc, char *argv[],
 	struct stat stat_buf;
 	int ret = 0;
 
-#ifdef CONFIG_ENCRYPT
-	if (argc > 1 && !strncmp(argv[1], "-p", 2)) {
-		static char buf[PASS_SIZE];
-		extern char *passphrase;
-
-		argc--;
-		argv++;
-		fgets(buf, PASS_SIZE, stdin);
-		passphrase = buf;
-
-	}
-#endif
-
 	if (argc <= 2) {
 		if (!stat(CONFIG_FILE, &stat_buf))
 			ret = parse(my_name, CONFIG_FILE, parc, parv);
@@ -125,7 +112,7 @@ int get_config(char *my_name, int argc, char *argv[],
 	}
 
 	if (strncmp(argv[1], "-f", 2)) {
-		fprintf(stderr, "Usage: %s [-p][-f config][resume_device]\n",
+		fprintf(stderr, "Usage: %s [-f config][resume_device]\n",
 			my_name);
 		return -EINVAL;
 	}
