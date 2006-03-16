@@ -54,7 +54,7 @@ static char key_name[MAX_STR_LEN] = KEY_FILE;
 #define encrypt 0
 #define key_name NULL
 #endif
-static int s2ram = 1;
+static char s2ram;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -523,12 +523,6 @@ int write_image(int snapshot_fd, int resume_fd)
 	return error;
 }
 
-#define switch_vt_mode(fd, vt, ioc1, ioc2)	ioctl(fd, KDSKBMODE, ioc1); \
-						ioctl(fd, VT_ACTIVATE, vt); \
-						ioctl(fd, VT_WAITACTIVE, vt); \
-						ioctl(fd, KDSKBMODE, ioc2);
-
-
 static int reset_signature(int fd)
 {
 	int ret, error = 0;
@@ -567,6 +561,11 @@ static int reset_signature(int fd)
 	}
 	return error;
 }
+
+#define switch_vt_mode(fd, vt, ioc1, ioc2)	ioctl(fd, KDSKBMODE, ioc1); \
+						ioctl(fd, VT_ACTIVATE, vt); \
+						ioctl(fd, VT_WAITACTIVE, vt); \
+						ioctl(fd, KDSKBMODE, ioc2);
 
 int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 {
@@ -737,24 +736,29 @@ Close_fd:
 	close(fd);
 }
 
-static inline int get_kernel_console_loglevel(void)
+static inline int get_kernel_console_loglevel(int *printk_fd)
 {
-	FILE *file;
+	int fd;
+	FILE *file = NULL;
 	int level = -1;
 
-	file = fopen("/proc/sys/kernel/printk", "r");
+	fd = open("/proc/sys/kernel/printk", O_RDWR);
+	if (fd >= 0)
+		file = fdopen(fd, "r+");
 	if (file) {
 		fscanf(file, "%d", &level);
-		fclose(file);
 	}
+	if (printk_fd)
+		*printk_fd = fd;
 	return level;
 }
 
-static inline void set_kernel_console_loglevel(int level)
+static inline void set_kernel_console_loglevel(int printk_fd, int level)
 {
-	FILE *file;
+	FILE *file = NULL;
 
-	file = fopen("/proc/sys/kernel/printk", "w");
+	if (printk_fd >= 0)
+		file = fdopen(printk_fd, "w+");
 	if (file) {
 		fprintf(file, "%d\n", level);
 		fclose(file);
@@ -820,7 +824,8 @@ int main(int argc, char *argv[])
 {
 	char *chroot_path = page_buffer;
 	struct stat stat_buf;
-	int resume_fd, snapshot_fd, vt_fd, orig_vc, suspend_vc;
+	int resume_fd, snapshot_fd, vt_fd, printk_fd = -1;
+	int orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
 	int orig_loglevel, ret = 0;
 
@@ -899,8 +904,8 @@ int main(int argc, char *argv[])
 		goto Close_snapshot_fd;
 	}
 
-	orig_loglevel = get_kernel_console_loglevel();
-	set_kernel_console_loglevel(suspend_loglevel);
+	orig_loglevel = get_kernel_console_loglevel(&printk_fd);
+	set_kernel_console_loglevel(printk_fd, suspend_loglevel);
 
 	sprintf(chroot_path, "/proc/%d", getpid());
 	if (!s2ram && chroot(chroot_path)) {
@@ -914,9 +919,8 @@ int main(int argc, char *argv[])
 
 	ret = suspend_system(snapshot_fd, resume_fd, vt_fd, suspend_vc);
 
-	/* FIXME: this can't work, we are still in chroot */
 	if (orig_loglevel >= 0)
-		set_kernel_console_loglevel(orig_loglevel);
+		set_kernel_console_loglevel(printk_fd, orig_loglevel);
 
 Restore_console:
 	restore_console(vt_fd, orig_vc);
