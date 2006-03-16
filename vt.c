@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <linux/vt.h>
 
 int is_a_console(int fd)
@@ -91,4 +93,31 @@ void chvt(int num)
 	if (ioctl(fd, VT_WAITACTIVE, num)) {
 		perror("VT_WAITACTIVE");
 	}
+}
+
+int is_framebuffer(void)
+{
+	return !access("/sys/class/graphics/fb0", F_OK);
+}
+
+char *get_fbname(void)
+{
+	int fd, len;
+	/* id of the driver can be 16bytes long + cr appended by sysfs */
+	char *id = malloc(17);
+	fd = open("/sys/class/graphics/fb0/name", O_RDONLY);
+	if (fd < 0) {
+		strcpy(id, "error");
+		goto out;
+	}
+	len = read(fd, id, 17);
+	if (len <= 0)
+		strcpy(id, "error");
+	else
+		/* strip the cr appended by sysfs */
+		id[len-1] = '\0';
+
+	close(fd);
+ out:
+	return id;
 }

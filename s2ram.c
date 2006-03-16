@@ -29,6 +29,7 @@ char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define VBE_POST    0x08	/* machine does not need / may not use "vbetool post" */
 #define RADEON_OFF  0x10	/* machine needs "radeontool light off" */
 #define UNSURE      0x20	/* unverified entries from acpi-support 0.59 */
+#define NOFB        0x40	/* must not use a frame buffer */
 
 #include "whitelist.c"
 
@@ -57,12 +58,13 @@ static void machine_known(int i)
 	       "    bios_version = '%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: 0x%x  %s%s%s%s%s\n\n", flags,
+	printf("Fixes: 0x%x  %s%s%s%s%s%s\n\n", flags,
 	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
 	       (flags & VBE_POST) ? "VBE_POST " : "",
-	       (flags & RADEON_OFF) ? "RADEON_OFF " : "", 
+	       (flags & RADEON_OFF) ? "RADEON_OFF " : "",
 	       (flags & S3_BIOS) ? "S3_BIOS " : "",
-	       (flags & S3_MODE) ? "S3_MODE" : "");
+	       (flags & S3_MODE) ? "S3_MODE " : "",
+	       (flags & NOFB) ? "NOFB " : "");
 	if (flags & UNSURE)
 		printf("Machine is in the whitelist but perhaps using "
 		       "vbetool unnecessarily.\n"
