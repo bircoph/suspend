@@ -134,12 +134,20 @@ void s2ram_prepare(void)
 			exit(127);
 		} else {
 			flags = whitelist[i].flags;
+			if ((flags & NOFB) && is_framebuffer() && !test_mode) {
+				printf("This machine can only suspend without framebuffer.\n");
+				exit(126);
+			}
 		}
 	}
 
 	/* force && test_mode are caught earlier, so i >= 0 here */
 	if (test_mode) {
 		machine_known(i);
+		if ((flags & NOFB) && is_framebuffer()) {
+			printf("This machine can only suspend without framebuffer.\n");
+			exit(126);
+		}
 		exit(0);
 	}
 
