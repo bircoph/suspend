@@ -40,6 +40,7 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
+	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
