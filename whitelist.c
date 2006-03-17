@@ -27,6 +27,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
+	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
+	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	/* X40 confirmed by Christian Deckelmann */
@@ -100,8 +102,6 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc6120*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nx6125*",	"",	"", VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc6220*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Hewlett-Packard",		"HP Compaq nc6230*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Hewlett-Packard",		"HP Compaq nx8220*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc8230*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Pavilion dv1000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Pavilion zt3000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
