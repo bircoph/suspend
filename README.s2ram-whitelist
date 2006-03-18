@@ -1,0 +1,133 @@
+HOWTO get suspend to RAM to work out of the box.
+================================================
+Stefan Seyfried, March 2006
+
+The goal of the s2ram binary is to get suspend to RAM working out of the box
+on as many machines as possible. 
+
+Background:
+-----------
+Suspend to RAM is working on many machines already - which means that the
+machine comes back to life and resumes operation, the keyboard works and
+the harddisk is still accessible - but to get video working and the backlight
+back on, you need the one or other "dirty trick". There are some different
+workarounds for that:
+* passing acpi_sleep=s3_bios to the kernel
+* passing acpi_sleep=s3_mode to the kernel
+* passing both of the above (acpi_sleep=s3_bios,s3_mode) to the kernel
+* POSTing the video card from userspace after resume using vbetool
+* saving the VBE state before suspend and restoring it after resume
+  using vbetool
+
+Since kernel 2.6.16, the acpi_sleep parameter can be set during runtime
+(no reboot needed) in /proc/sys/kernel/acpi_video_flags, with
+  "1" for s3_bios,
+  "2" for s3_mode and
+  "3" for both.
+More information about those hacks can be found in the kernel-source
+tarball in the file Documentation/power/video.txt.
+
+There are machines that will not resume when using a framebuffer console.
+Recent Dell and HP models for example very often fall into this category.
+You can disable the framebuffer in your bootloader configuration by passing
+"vga=0" to the kernel.
+If your machine only works without framebuffer, please tell us about this in
+your report.
+
+Why s2ram?
+----------
+- vbetool usage for saving the VBE state is not easy: you have to dump the
+  state of the card to a temporary file, before suspend, and restore it from
+  there after resume. This can of course be put into a wrapper script, but
+  having it in one binary is even easier.
+- you need to know if your machine needs a workaround and which one it needs.
+  s2ram contains a database of known working machines and the workarounds
+  that these machines need, so if your machine is supported, suspending is
+  as easy as calling "s2ram". 
+
+
+How to use it?
+--------------
+"make install", then just call s2ram. If your machine is in the whitelist,
+it should suspend to RAM. Be careful though, some broken drivers need to be
+unloaded before suspend and reloaded after resume. If you just want to know
+if your machine is known and which workarounds (if any) will be used, call
+s2ram -n.
+
+My machine is not in the whitelist, what can i do?
+--------------------------------------------------
+Just find out which workaround is needed for your machine (if any), then
+get this knowledge to us, together with the output of "s2ram -i".
+The workarounds can be activated from the s2ram commandline:
+
+seife@susi:~> s2ram -h
+Usage: s2ram [-nhi] [-fsra]
+
+Options:
+    -h, --help:       this text.
+    -n, --test:       test if the machine is in the database.
+                      returns 0 if known and supported
+    -i, --identify:   prints a string that identifies the machine.
+    -f, --force:      force suspending, even on unknown machines.
+
+the following options are only available with --force:
+    -s, --vbe_save:   save VBE state before suspending and restore after resume.
+    -p, --vbe_post:   VBE POST the graphics card after resume
+    -r, --radeontool: turn off the backlight on radeons before suspending.
+    -a, --acpi_sleep: set the acpi_sleep parameter before suspend
+                      1=s3_bios, 2=s3_mode, 3=both
+
+The options should be mostly self-explaining. Note that you need to use the
+-f option on all unknown machines, then add the proper workarounds.
+Option -a needs an additional numeric argument from 1 to 3, specifying
+s3_bios, s3_mode or both.
+The best way to start investigation on an unknown machine is probably to
+boot with init=/bin/bash at the boot prompt into a minimal environment,
+then do:
+   mount /proc
+   mount /sys
+   s2ram -f
+
+if the first try already succeeds, everything is fine. Send us the output of
+"s2ram -i". If it doesn't, try the following variations:
+   s2ram -f -a 1
+   s2ram -f -a 2
+   s2ram -f -a 3
+   s2ram -f -p -s
+   s2ram -f -s
+   s2ram -f -p
+   s2ram -f -a 1 -s
+one of those should hopefully get your machine back to life (and the
+backlight back on). Once you have found a combination that works, send us
+that information together with the output of "s2ram -i". If you find several
+combinations that work (e.g. "s2ram -f -a 3" and "s2ram -f -p -s" both work
+on your machine), the in-kernel method ("-a") should be preferred over the
+userspace method ("-p" and "-s"). 
+
+
+My machine is in the whitelist but it does not work, what can i do?
+-------------------------------------------------------------------
+There are some wildcard matches in the whitelist, and it is possible that
+they might match on machines that are different than the originally tested
+ones. The procedure is about the same as with "My machine is not in the
+whitelist": find out which options your particular machine needs and send
+us this information together with the output of "s2ram -i", so we can update
+the whitelist accordingly.
+
+Note that there are some issues that might make suspend fail regardless of
+video, such as IDE drives not properly waking up (using the latest -mm kernel
+sometimes helps here) and APIC issues (booting with "noapic" to verify those
+is sometimes useful).
+
+How to contact the authors of s2ram?
+------------------------------------
+You can email me directly, seife@suse.de, or send a mail to the suspend-devel
+mailinglist at suspend-devel@lists.sourceforge.net.
+
+Any additions / corrections to this document are always welcome.
+There is also a similar document available online (which might even contain
+newer information) as http://en.opensuse.org/S2ram
+
+Have a lot of fun...
+
+    Stefan Seyfried
