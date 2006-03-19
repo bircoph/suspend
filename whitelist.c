@@ -21,6 +21,7 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "Dell Computer Corporation",  "Inspiron 5150*",       "",     "", VBE_POST|VBE_SAVE },
+	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", 0 },
 	/* The nx5000 still needs some verification, i pinged the known suspects */
@@ -64,7 +65,6 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Latitude D410*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D510*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D600*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Dell Inc.",			"Latitude D610*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D800*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D810*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude X1*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
@@ -81,7 +81,6 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",	"Latitude D410*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D510*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D600*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Dell Computer Corporation",	"Latitude D610*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D800*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D810*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude X1*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
