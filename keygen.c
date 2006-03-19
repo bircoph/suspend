@@ -54,12 +54,17 @@ int main(int argc, char *argv[])
 			sscanf(in_buffer, "%d", &len);
 	} while (len < MIN_KEY_BITS || len > MAX_KEY_BITS);
 
+Retry:
 	printf("Generating %d-bit RSA keys.\n", len);
 	rsa = RSA_generate_key(len, RSA_F4, NULL, NULL);
 	if (!rsa) {
 		fprintf(stderr, "Key generation failed.\n");
 		ret = EXIT_FAILURE;
 		goto Free_RSA;
+	}
+	if (RSA_check_key(rsa) <= 0) {
+		printf("RSA key test failed.  Retrying.\n");
+		goto Retry;
 	}
 
 	tcgetattr(0, &termios);
