@@ -736,33 +736,39 @@ Close_fd:
 	close(fd);
 }
 
-static inline int get_kernel_console_loglevel(int *printk_fd)
+static int printk_fd = -1;
+
+static inline void open_printk(void)
 {
-	int fd;
+	printk_fd = open("/proc/sys/kernel/printk", O_RDWR);
+}
+
+static inline int get_kernel_console_loglevel(void)
+{
 	FILE *file = NULL;
 	int level = -1;
 
-	fd = open("/proc/sys/kernel/printk", O_RDWR);
-	if (fd >= 0)
-		file = fdopen(fd, "r+");
-	if (file) {
+	if (printk_fd >= 0)
+		file = fdopen(printk_fd, "r+");
+	if (file)
 		fscanf(file, "%d", &level);
-	}
-	if (printk_fd)
-		*printk_fd = fd;
 	return level;
 }
 
-static inline void set_kernel_console_loglevel(int printk_fd, int level)
+static inline void set_kernel_console_loglevel(int level)
 {
 	FILE *file = NULL;
 
 	if (printk_fd >= 0)
 		file = fdopen(printk_fd, "w+");
-	if (file) {
+	if (file)
 		fprintf(file, "%d\n", level);
-		fclose(file);
-	}
+}
+
+static inline void close_printk(void)
+{
+	if (printk_fd >= 0)
+		close(printk_fd);
 }
 
 #ifdef CONFIG_ENCRYPT
@@ -824,8 +830,7 @@ int main(int argc, char *argv[])
 {
 	char *chroot_path = page_buffer;
 	struct stat stat_buf;
-	int resume_fd, snapshot_fd, vt_fd, printk_fd = -1;
-	int orig_vc = -1, suspend_vc = -1;
+	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
 	int orig_loglevel, ret = 0;
 
@@ -904,8 +909,9 @@ int main(int argc, char *argv[])
 		goto Close_snapshot_fd;
 	}
 
-	orig_loglevel = get_kernel_console_loglevel(&printk_fd);
-	set_kernel_console_loglevel(printk_fd, suspend_loglevel);
+	open_printk();
+	orig_loglevel = get_kernel_console_loglevel();
+	set_kernel_console_loglevel(suspend_loglevel);
 
 	sprintf(chroot_path, "/proc/%d", getpid());
 	if (!s2ram && chroot(chroot_path)) {
@@ -920,7 +926,8 @@ int main(int argc, char *argv[])
 	ret = suspend_system(snapshot_fd, resume_fd, vt_fd, suspend_vc);
 
 	if (orig_loglevel >= 0)
-		set_kernel_console_loglevel(printk_fd, orig_loglevel);
+		set_kernel_console_loglevel(orig_loglevel);
+	close_printk();
 
 Restore_console:
 	restore_console(vt_fd, orig_vc);
