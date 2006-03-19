@@ -430,7 +430,6 @@ static int mark_swap(int fd, loff_t start)
 		if (write(fd, &swsusp_header, PAGE_SIZE) < (ssize_t)PAGE_SIZE)
 			error = -EIO;
 	} else {
-		printf("suspend: Device is not a swap space.\n");
 		error = -ENODEV;
 	}
 	return error;
@@ -456,7 +455,7 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (error < (int)PAGE_SIZE)
 		return error < 0 ? error : -EFAULT;
 	printf("suspend: Image size: %lu kilobytes\n", header->size / 1024);
-	if (!enough_swap(snapshot_fd, header->size)) {
+	if (!enough_swap(snapshot_fd, header->size) && !compress) {
 		printf("suspend: Not enough free swap\n");
 		return -ENOSPC;
 	}
