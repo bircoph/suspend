@@ -735,39 +735,36 @@ Close_fd:
 	close(fd);
 }
 
-static int printk_fd = -1;
+static FILE *printk_file;
 
 static inline void open_printk(void)
 {
-	printk_fd = open("/proc/sys/kernel/printk", O_RDWR);
+	printk_file = fopen("/proc/sys/kernel/printk", "r+");
 }
 
 static inline int get_kernel_console_loglevel(void)
 {
-	FILE *file = NULL;
 	int level = -1;
 
-	if (printk_fd >= 0)
-		file = fdopen(printk_fd, "r+");
-	if (file)
-		fscanf(file, "%d", &level);
+	if (printk_file) {
+		rewind(printk_file);
+		fscanf(printk_file, "%d", &level);
+	}
 	return level;
 }
 
 static inline void set_kernel_console_loglevel(int level)
 {
-	FILE *file = NULL;
-
-	if (printk_fd >= 0)
-		file = fdopen(printk_fd, "w+");
-	if (file)
-		fprintf(file, "%d\n", level);
+	if (printk_file) {
+		rewind(printk_file);
+		fprintf(printk_file, "%d\n", level);
+	}
 }
 
 static inline void close_printk(void)
 {
-	if (printk_fd >= 0)
-		close(printk_fd);
+	if (printk_file)
+		fclose(printk_file);
 }
 
 #ifdef CONFIG_ENCRYPT
