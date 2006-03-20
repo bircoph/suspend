@@ -879,8 +879,10 @@ int main(int argc, char *argv[])
 		goto Close_resume_fd;
 	}
 
-	if (s2ram)
-		s2ram_prepare();
+	if (s2ram) {
+		/* if s2ram_prepare returned != 0, better not try to suspend to RAM */
+		s2ram = !s2ram_prepare();
+	}
 
 	if (!S_ISCHR(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid snapshot device\n");

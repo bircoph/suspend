@@ -13,7 +13,7 @@ void map_radeon_cntl_mem(void);
 void dmi_scan(void);
 
 /* from s2ram.c */
-void s2ram_prepare(void);
+int s2ram_prepare(void);
 int s2ram_do(void);
 void s2ram_resume(void);
 

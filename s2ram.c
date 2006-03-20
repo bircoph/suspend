@@ -23,6 +23,13 @@ static void *vbe_buffer;
 static int flags;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
+/* return codes for s2ram_prepare */
+#define S2RAM_OK	0
+#define S2RAM_FAIL	1
+#define S2RAM_NOFB	126
+#define S2RAM_UNKNOWN	127
+
+/* flags for the whitelist */
 #define S3_BIOS     0x01	/* machine needs acpi_sleep=s3_bios */
 #define S3_MODE     0x02	/* machine needs acpi_sleep=s3_mode */
 #define VBE_SAVE    0x04	/* machine needs "vbetool save / restore" */
@@ -75,16 +82,17 @@ static void machine_known(int i)
 	identify_machine();
 }
 
-static void set_acpi_video_mode(int mode)
+static int set_acpi_video_mode(int mode)
 {
 	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
 	if (!f) {
 		printf("/proc/sys/kernel/acpi_video_flags does not exist; you need a kernel >=2.6.16.\n");
-		exit(1);
+		return S2RAM_FAIL;
 	}
 	fprintf(f, "%d", mode);
 	fflush(f);
 	fclose(f);
+	return S2RAM_OK;
 }
 
 static int match(const char *t, const char *s)
@@ -119,10 +127,11 @@ static int machine_match(void)
 
 /* Code that can only be run on non-frozen system. It does not matter now
  * but will matter once we'll do suspend-to-both.
+ * returns 0 if everything went ok.
  */
-void s2ram_prepare(void)
+int s2ram_prepare(void)
 {
-	int i;
+	int i, ret = S2RAM_OK;
 
 	dmi_scan();
 	i = machine_match();
@@ -131,29 +140,27 @@ void s2ram_prepare(void)
 		if (i < 0) {
 			printf("Machine is unknown.\n");
 			identify_machine();
-			exit(127);
+			ret = S2RAM_UNKNOWN;
 		} else {
 			flags = whitelist[i].flags;
-			if ((flags & NOFB) && is_framebuffer() && !test_mode) {
+			if ((flags & NOFB) && is_framebuffer()) {
 				printf("This machine can only suspend without framebuffer.\n");
-				exit(126);
+				ret = S2RAM_NOFB;
+			}
+			if (test_mode) {
+				machine_known(i);
+				return ret;
 			}
 		}
 	}
 
-	/* force && test_mode are caught earlier, so i >= 0 here */
-	if (test_mode) {
-		machine_known(i);
-		if ((flags & NOFB) && is_framebuffer()) {
-			printf("This machine can only suspend without framebuffer.\n");
-			exit(126);
-		}
-		exit(0);
-	}
-
 	/* 0 means: don't touch what was set on kernel commandline */
-	if (flags & (S3_BIOS | S3_MODE))
-		set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
+	if (!ret && (flags & (S3_BIOS | S3_MODE)))
+		ret = set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
+
+	/* beyond here, we should not return unsuccessfully */
+	if (ret)
+		return ret;
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
@@ -171,6 +178,8 @@ void s2ram_prepare(void)
 		printf("Calling radeon_cmd_light\n");
 		radeon_cmd_light(0);
 	}
+
+	return ret;
 }
 
 /* Actually enter the suspend. May be ran on frozen system. */
@@ -299,7 +308,9 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
-	s2ram_prepare();
+	i = s2ram_prepare();
+	if (i || test_mode)
+		return i;
 	i = s2ram_do();
 	s2ram_resume();
 	return i;
