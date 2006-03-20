@@ -35,8 +35,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	/* X40 confirmed by Christian Deckelmann */
 	{ "IBM",			"2371*",	"ThinkPad X40",	"", S3_BIOS|S3_MODE },
-	/* T42p confirmed by Joe Shaw */
-	{ "IBM",			"2373*",	"ThinkPad T42p","", S3_BIOS|S3_MODE },
+	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
+	{ "IBM",			"2373*",		"",	"", S3_BIOS|S3_MODE },
 	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
