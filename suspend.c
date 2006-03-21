@@ -603,23 +603,24 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 				if (!s2ram) {
 					power_off();
 					/* Signature is on disk, it is very dangerous now.
-					   We'd do resume with stale caches on next boot. */
-					printf("Powerdown failed. Thats impossible.\n");
+					 * We'd do resume with stale caches on next boot. */
+					printf("Powerdown failed. That's impossible.\n");
 					while(1);
 				} else {
-					/* FIXME: will restart tasks twice, loose cpus on
-					   SMP, and cause other related badness.
-
-					   If we die (and allow system to continue) between
-					   now and reset_signature(), very bad things will
-					   happen.
-					*/
-					s2ram_do();
+					/* If we die (and allow system to continue) between
+                                         * now and reset_signature(), very bad things will
+                                         * happen. */
+					error = ioctl(snapshot_fd, SNAPSHOT_S2RAM);
+					if (error) {
+						power_off();
+						printf("Powerdown failed. That's impossible.\n");
+						while(1);
+					}
 					reset_signature(resume_fd);
 					free_swap_pages(snapshot_fd);
 					free_snapshot(snapshot_fd);
 					s2ram_resume();
-					return EDOM;
+					goto Unfreeze;
 				}
 			} else {
 				free_swap_pages(snapshot_fd);

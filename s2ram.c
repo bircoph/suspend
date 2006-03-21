@@ -72,7 +72,6 @@ static void machine_known(int i)
 	       (flags & S3_BIOS) ? "S3_BIOS " : "",
 	       (flags & S3_MODE) ? "S3_MODE " : "",
 	       (flags & NOFB) ? "NOFB " : "");
-	printf("Database date: " WLDATE "\n\n");
 	if (flags & UNSURE)
 		printf("Machine is in the whitelist but perhaps using "
 		       "vbetool unnecessarily.\n"
