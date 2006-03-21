@@ -65,13 +65,14 @@ static void machine_known(int i)
 	       "    bios_version = '%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: 0x%x  %s%s%s%s%s%s\n\n", flags,
+	printf("Fixes: 0x%x  %s%s%s%s%s%s\n", flags,
 	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
 	       (flags & VBE_POST) ? "VBE_POST " : "",
 	       (flags & RADEON_OFF) ? "RADEON_OFF " : "",
 	       (flags & S3_BIOS) ? "S3_BIOS " : "",
 	       (flags & S3_MODE) ? "S3_MODE " : "",
 	       (flags & NOFB) ? "NOFB " : "");
+	printf("Database date: " WLDATE "\n\n");
 	if (flags & UNSURE)
 		printf("Machine is in the whitelist but perhaps using "
 		       "vbetool unnecessarily.\n"

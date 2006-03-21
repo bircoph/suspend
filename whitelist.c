@@ -37,6 +37,8 @@ struct machine_entry whitelist[] = {
 	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
 	{ "IBM",			"2373*",		"",	"", S3_BIOS|S3_MODE },
 	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
+	/* G40 confirmed by David H"ademan */
+	{ "IBM",			"2388*",		"",	"", VBE_SAVE },
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */

@@ -30,11 +30,13 @@ ifeq ($(ARCH), x86_64)
 S2RAMOBJ=vt.o vbetool/thunk.o vbetool/x86-common.o vbetool/vbetool.o vbetool/x86emu/libx86emu.a radeontool.o dmidecode.o
 endif
 
+WL_DATE = $(shell TZ=UTC date +%F-%R -r whitelist.c)
+
 clean:
 	rm -f suspend suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
-	gcc -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+	gcc -DWLDATE="\"$(WL_DATE)\"" -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
 
 vbetool/vbetool.o:	vbetool/vbetool.c
 	gcc -Wall -O2 -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o
