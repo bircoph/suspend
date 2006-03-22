@@ -175,7 +175,7 @@ int s2ram_prepare(void)
 	}
 	if (flags & RADEON_OFF) {
 		map_radeon_cntl_mem();
-		printf("Calling radeon_cmd_light\n");
+		printf("Calling radeon_cmd_light(0)\n");
 		radeon_cmd_light(0);
 	}
 
@@ -217,6 +217,11 @@ void s2ram_resume(void)
 		vbetool_init();
 		printf("Calling restore_state_from\n");
 		restore_state_from(vbe_buffer);
+	}
+
+	if (flags & RADEON_OFF) {
+		printf("Calling radeon_cmd_light(1)\n");
+		radeon_cmd_light(1);
 	}
 
 	/* if we switched consoles before suspend, switch back */
