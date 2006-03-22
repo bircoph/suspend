@@ -15,8 +15,10 @@ struct machine_entry
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_POST|VBE_SAVE },
-	{ "Acer            ",	"Extensa 4150                    ", "",	"", S3_BIOS|S3_MODE },
-	{ "Acer           ",	"TravelMate C300",		"",	"", VBE_SAVE },
+	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
+	{ "Acer           ",		"TravelMate C300",	"",	"", VBE_SAVE },
+	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
@@ -32,13 +34,22 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
+	/* T30 */
+	{ "IBM",			"2366*",		"",	"", RADEON_OFF },
 	/* X40 confirmed by Christian Deckelmann */
 	{ "IBM",			"2371*",	"ThinkPad X40",	"", S3_BIOS|S3_MODE },
 	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
 	{ "IBM",			"2373*",		"",	"", S3_BIOS|S3_MODE },
+	/* T41p, Stefan Gerber */
+	{ "IBM",			"2374*",		"",	"", S3_BIOS|S3_MODE },
 	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
 	/* G40 confirmed by David H"ademan */
 	{ "IBM",			"2388*",		"",	"", VBE_SAVE },
+	/* R32 */
+	{ "IBM",			"2658*",		"",	"", 0 },
+	/* R40 */
+	{ "IBM",			"2722*",		"",	"", 0 },
+
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */
@@ -117,7 +128,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2696*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2698*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2699*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2722*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2723*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2724*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2897*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
@@ -148,7 +158,6 @@ struct machine_entry whitelist[] = {
 	// T23
 	{ "IBM",			"475S*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// T40/T41/T42/p
-	{ "IBM",			"2374*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2375*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2376*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2378*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
