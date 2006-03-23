@@ -17,6 +17,7 @@
 #include <sys/vt.h>
 #include <sys/wait.h>
 #include <linux/kd.h>
+#include <linux/tiocl.h>
 #include <syscall.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -661,6 +662,12 @@ static inline int console_fd(const char *fname)
 	return fd;
 }
 
+#ifndef TIOCL_GETKMSGREDIRECT
+#define TIOCL_GETKMSGREDIRECT	17
+#endif
+
+static int kmsg_redirect = -1;
+
 /**
  *	prepare_console - find a spare virtual terminal, open it and attach
  *	the standard streams to it.  The number of the currently active
@@ -672,6 +679,7 @@ static int prepare_console(int *orig_vc, int *new_vc)
 	int fd, error, vt = -1;
 	char *vt_name = page_buffer;
 	struct vt_stat vtstat;
+	char tiocl[2];
 
 	fd = console_fd("/dev/console");
 	if (fd < 0)
@@ -706,6 +714,17 @@ static int prepare_console(int *orig_vc, int *new_vc)
 	dup2(fd, 1);
 	dup2(fd, 2);
 	*new_vc = vt;
+	tiocl[0] = TIOCL_GETKMSGREDIRECT;
+	if (!ioctl(fd, TIOCLINUX, tiocl)) {
+		kmsg_redirect = tiocl[0];
+		tiocl[0] = TIOCL_SETKMSGREDIRECT;
+		tiocl[1] = vt;
+		if (ioctl(fd, TIOCLINUX, tiocl)) {
+			fprintf(stderr, "Failed to redirect kernel messages to VT %d\n"
+					"Reason: %s\n", vt, strerror(errno));
+			fflush(stderr);
+		}
+	}
 	return fd;
 Close_fd:
 	close(fd);
@@ -731,6 +750,13 @@ static void restore_console(int fd, int orig_vc)
 	if (error) {
 		fprintf(stderr, "VT %d activation failed\n", orig_vc);
 		fflush(stderr);
+	}
+	if (kmsg_redirect >= 0) {
+		char tiocl[2];
+
+		tiocl[0] = TIOCL_SETKMSGREDIRECT;
+		tiocl[1] = kmsg_redirect;
+		ioctl(fd, TIOCLINUX, tiocl);
 	}
 Close_fd:
 	close(fd);
@@ -759,6 +785,7 @@ static inline void set_kernel_console_loglevel(int level)
 	if (printk_file) {
 		rewind(printk_file);
 		fprintf(printk_file, "%d\n", level);
+		fflush(printk_file);
 	}
 }
 
