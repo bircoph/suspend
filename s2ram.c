@@ -16,11 +16,9 @@
 #include "vt.h"
 #include "s2ram.h"
 
-static int test_mode, force;
-static int active_console;
 static void *vbe_buffer;
 /* Flags set from whitelist */
-static int flags;
+static int flags, id;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 /* return codes for s2ram_prepare */
@@ -56,8 +54,13 @@ static void identify_machine(void)
 	       "above.\n");
 }
 
-static void machine_known(int i)
+void machine_known(int i)
 {
+	if (i < 0) {
+		printf("Internal error: machine_known, i<0. Please report.\n");
+		return;
+	}
+
 	printf("Machine matched entry %d:\n"
 	       "    sys_vendor   = '%s'\n"
 	       "    sys_product  = '%s'\n"
@@ -129,43 +132,36 @@ static int machine_match(void)
  * but will matter once we'll do suspend-to-both.
  * returns 0 if everything went ok.
  */
-int s2ram_prepare(void)
+int s2ram_check(void)
 {
-	int i, ret = S2RAM_OK;
+	int ret = S2RAM_OK;
 
 	dmi_scan();
-	i = machine_match();
+	id = machine_match();
 
-	if (!force) {
-		if (i < 0) {
-			printf("Machine is unknown.\n");
-			identify_machine();
-			ret = S2RAM_UNKNOWN;
-		} else {
-			flags = whitelist[i].flags;
-			if ((flags & NOFB) && is_framebuffer()) {
-				printf("This machine can only suspend without framebuffer.\n");
-				ret = S2RAM_NOFB;
-			}
-			if (test_mode) {
-				machine_known(i);
-				return ret;
-			}
+	if (id < 0) {
+		ret = S2RAM_UNKNOWN;
+	} else {
+		flags = whitelist[id].flags;
+		if ((flags & NOFB) && is_framebuffer()) {
+			ret = S2RAM_NOFB;
 		}
 	}
 
+	return ret;
+}
+
+/* warning: we have to be on a text console when calling this */
+int s2ram_hacks(void)
+{
+	int ret = 0;
+
 	/* 0 means: don't touch what was set on kernel commandline */
-	if (!ret && (flags & (S3_BIOS | S3_MODE)))
+	if (flags & (S3_BIOS | S3_MODE))
 		ret = set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
 
-	/* beyond here, we should not return unsuccessfully */
 	if (ret)
 		return ret;
-
-	/* switch to console 1 first, since we might be in X */
-	active_console = fgconsole();
-	printf ("Switching from vt%d to vt1\n", active_console);
-	chvt(1);
 
 	if (flags & VBE_SAVE) {
 		int size;
@@ -178,6 +174,20 @@ int s2ram_prepare(void)
 		printf("Calling radeon_cmd_light(0)\n");
 		radeon_cmd_light(0);
 	}
+
+	return 0;
+}
+
+int s2ram_prepare(void)
+{
+	int ret;
+
+	ret = s2ram_check();
+
+	if (ret)
+		return ret;
+
+	ret = s2ram_hacks();
 
 	return ret;
 }
@@ -223,12 +233,6 @@ void s2ram_resume(void)
 		printf("Calling radeon_cmd_light(1)\n");
 		radeon_cmd_light(1);
 	}
-
-	/* if we switched consoles before suspend, switch back */
-	if (active_console > 0) {
-		printf("switching back to vt%d\n", active_console);
-		chvt(active_console);
-	}
 }
 
 #ifndef CONFIG_BOTH
@@ -258,7 +262,8 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
-	int i;
+	int i, ret, test_mode = 0, force = 0;
+	int active_console = -1;
 	struct option options[] = {
 		{ "test",	no_argument,		NULL, 'n'},
 		{ "help",	no_argument,		NULL, 'h'},
@@ -313,11 +318,42 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
-	i = s2ram_prepare();
-	if (i || test_mode)
-		return i;
-	i = s2ram_do();
+	ret = s2ram_check();
+
+	if (!force && ret == S2RAM_UNKNOWN) {
+		printf("Machine is unknown.\n");
+		identify_machine();
+		goto out;
+	}
+
+	if (ret == S2RAM_NOFB)
+		printf("This machine can only suspend without framebuffer.\n");
+
+	if (test_mode) {
+		machine_known(id);
+		goto out;
+	}
+
+	if (ret)
+		goto out;
+
+	/* switch to console 1 first, since we might be in X */
+	active_console = fgconsole();
+	printf("Switching from vt%d to vt1\n", active_console);
+	chvt(1);
+
+	ret = s2ram_hacks();
+	if (ret)
+		goto out;
+	ret = s2ram_do();
 	s2ram_resume();
-	return i;
+
+ out:
+	/* if we switched consoles before suspend, switch back */
+	if (active_console > 0) {
+		printf("switching back to vt%d\n", active_console);
+		chvt(active_console);
+	}
+	return ret;
 }
 #endif
