@@ -8,10 +8,10 @@ This program is released under the terms of the GNU General Public License,
 version 2
 */
 
+#include <stdlib.h>
 #include <pci/pci.h>
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
