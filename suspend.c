@@ -892,8 +892,9 @@ int main(int argc, char *argv[])
 	setvbuf(stderr, NULL, _IONBF, 0);
 
 	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
+		ret = errno;
 		fprintf(stderr, "suspend: Could not lock myself\n");
-		return errno;
+		return ret;
 	}
 
 	if (stat(resume_dev_name, &stat_buf)) {
@@ -906,8 +907,9 @@ int main(int argc, char *argv[])
 	}
 	resume_fd = open(resume_dev_name, O_RDWR);
 	if (resume_fd < 0) {
+		ret = errno;
 		fprintf(stderr, "suspend: Could not open the resume device\n");
-		return errno;
+		return ret;
 	}
 	resume_dev = stat_buf.st_rdev;
 
@@ -930,22 +932,22 @@ int main(int argc, char *argv[])
 	}
 	snapshot_fd = open(snapshot_dev_name, O_RDONLY);
 	if (snapshot_fd < 0) {
-		fprintf(stderr, "suspend: Could not open the snapshot device\n");
 		ret = errno;
+		fprintf(stderr, "suspend: Could not open the snapshot device\n");
 		goto Close_resume_fd;
 	}
 
 	if (set_swap_file(snapshot_fd, resume_dev)) {
+		ret = errno;
 		fprintf(stderr, "suspend: Could not use the resume device "
 			"(try swapon -a)\n");
-		ret = errno;
 		goto Close_snapshot_fd;
 	}
 
 	vt_fd = prepare_console(&orig_vc, &suspend_vc);
 	if (vt_fd < 0) {
-		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
 		ret = errno;
+		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
 		goto Close_snapshot_fd;
 	}
 
@@ -955,8 +957,8 @@ int main(int argc, char *argv[])
 
 	sprintf(chroot_path, "/proc/%d", getpid());
 	if (!s2ram && chroot(chroot_path)) {
-		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
 		ret = errno;
+		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
 		goto Restore_console;
 	}
 	chdir("/");

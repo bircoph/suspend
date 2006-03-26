@@ -382,8 +382,9 @@ static int read_image(int dev, char *resume_dev_name)
 
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
+		ret = -errno;
 		printf("resume: Could not open the resume device\n");
-		return -errno;
+		return ret;
 	}
 	memset(&swsusp_header, 0, sizeof(swsusp_header));
 	ret = read(fd, &swsusp_header, PAGE_SIZE);
@@ -483,8 +484,8 @@ static int read_image(int dev, char *resume_dev_name)
 		if (!ret)
 			ret = write(fd, &swsusp_header, PAGE_SIZE);
 		if (ret < (int)PAGE_SIZE) {
-			fprintf(stderr, "resume: Could not restore the partition header\n");
 			error = ret < 0 ? -errno : -EIO;
+			fprintf(stderr, "resume: Could not restore the partition header\n");
 		}
 	}
 	fsync(fd);
@@ -563,8 +564,8 @@ int main(int argc, char *argv[])
 		goto Close;
 	}
 	if (freeze(dev)) {
-		fprintf(stderr, "resume: Could not freeze processes\n");
 		error = errno;
+		fprintf(stderr, "resume: Could not freeze processes\n");
 		goto Close;
 	}
 	atomic_restore(dev);
