@@ -562,6 +562,15 @@ static int reset_signature(int fd)
 	return error;
 }
 
+static void shutdown(void)
+{
+	power_off();
+	/* Signature is on disk, it is very dangerous to continue now.
+	 * We'd do resume with stale caches on next boot. */
+	printf("Powerdown failed. That's impossible.\n");
+	while(1);
+}
+
 #define switch_vt_mode(fd, vt, ioc1, ioc2)	ioctl(fd, KDSKBMODE, ioc1); \
 						ioctl(fd, VT_ACTIVATE, vt); \
 						ioctl(fd, VT_WAITACTIVE, vt); \
@@ -602,21 +611,14 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 			error = write_image(snapshot_fd, resume_fd);
 			if (!error) {
 				if (!s2ram) {
-					power_off();
-					/* Signature is on disk, it is very dangerous now.
-					 * We'd do resume with stale caches on next boot. */
-					printf("Powerdown failed. That's impossible.\n");
-					while(1);
+					shutdown();
 				} else {
 					/* If we die (and allow system to continue) between
                                          * now and reset_signature(), very bad things will
                                          * happen. */
-					error = ioctl(snapshot_fd, SNAPSHOT_S2RAM);
-					if (error) {
-						power_off();
-						printf("Powerdown failed. That's impossible.\n");
-						while(1);
-					}
+					error = suspend_to_ram(snapshot_fd);
+					if (error)
+						shutdown();
 					reset_signature(resume_fd);
 					free_swap_pages(snapshot_fd);
 					free_snapshot(snapshot_fd);
@@ -920,11 +922,6 @@ int main(int argc, char *argv[])
 		goto Close_resume_fd;
 	}
 
-	if (s2ram) {
-		/* if s2ram_prepare returned != 0, better not try to suspend to RAM */
-		s2ram = !s2ram_prepare();
-	}
-
 	if (!S_ISCHR(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid snapshot device\n");
 		ret = EINVAL;
@@ -949,6 +946,11 @@ int main(int argc, char *argv[])
 		ret = errno;
 		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
 		goto Close_snapshot_fd;
+	}
+
+	if (s2ram) {
+		/* If s2ram_prepare returns != 0, better not try to suspend to RAM */
+		s2ram = !s2ram_prepare();
 	}
 
 	open_printk();

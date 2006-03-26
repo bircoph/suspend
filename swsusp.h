@@ -109,6 +109,11 @@ static inline int set_image_size(int dev, unsigned int size)
 	return ioctl(dev, SNAPSHOT_SET_IMAGE_SIZE, size);
 }
 
+static inline int suspend_to_ram(int dev)
+{
+	return ioctl(dev, SNAPSHOT_S2RAM, 0);
+}
+
 static inline void reboot(void)
 {
 	syscall(SYS_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
