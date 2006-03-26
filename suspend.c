@@ -856,7 +856,20 @@ int main(int argc, char *argv[])
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
-	int orig_loglevel, ret = 0;
+	int orig_loglevel, ret;
+
+	/* Make sure the 0, 1, 2 descriptors are open before opening the
+	 * snapshot and resume devices
+	 */
+	do {
+		ret = open("/dev/null", O_RDWR);
+		if (ret < 0) {
+			ret = errno;
+			fprintf(stderr, "suspend: Could not open /dev/null\n");
+			return ret;
+		}
+	} while (ret < 3);
+	close(ret);
 
 	if (get_config("suspend", argc, argv, PARAM_NO, parameters, resume_dev_name))
 		return EINVAL;
@@ -898,6 +911,7 @@ int main(int argc, char *argv[])
 	}
 	resume_dev = stat_buf.st_rdev;
 
+	ret = 0;
 	if (stat(snapshot_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
 		ret = ENODEV;
