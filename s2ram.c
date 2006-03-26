@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
-	if (ret)
+	if (!force && ret)
 		goto out;
 
 	/* switch to console 1 first, since we might be in X */
