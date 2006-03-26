@@ -44,16 +44,16 @@ sys.o
 all: $(TARGETLIB)
 
 $(TARGETLIB): $(OBJS)
-	ar rv $(TARGETLIB) $(OBJS)
+	$(AR) rv $(TARGETLIB) $(OBJS)
 
 INCS   = -I. -Ix86emu -I../../include -I../x86emu_include
 CFLAGS = -D__DRIVER__ -DFORCE_POST -D_CEXPORT= -DNO_LONG_LONG -DDEBUG
 
 .c.o:
-	gcc -g -O -Wall -c $(CFLAGS) $(INCS) $*.c
+	$(CC) -g -O -Wall -c $(CFLAGS) $(INCS) $*.c
 
 .cpp.o:
-	gcc -c $(CFLAGS) $(INCS) $*.cpp
+	$(CC) -c $(CFLAGS) $(INCS) $*.cpp
 
 distclean: clean
 

@@ -34,50 +34,50 @@ clean:
 	rm -f suspend suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
-	gcc -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+	$(CC) -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
 
 vbetool/vbetool.o:	vbetool/vbetool.c
-	gcc -Wall -O2 -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o
+	$(CC) -Wall -O2 -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o
 
 vbetool/lrmi.o:	vbetool/lrmi.c
-	gcc -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o
+	$(CC) -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o
 
 vbetool/x86-common.o:	vbetool/x86-common.c
-	gcc -Wall -O2 -c vbetool/x86-common.c -o vbetool/x86-common.o
+	$(CC) -Wall -O2 -c vbetool/x86-common.c -o vbetool/x86-common.o
 
 vbetool/x86emu/libx86emu.a:
 	make -C vbetool/x86emu -f makefile.linux
 
 vbetool/thunk.o:	vbetool/thunk.c
-	gcc -Wall -O2 -c vbetool/thunk.c -o vbetool/thunk.o
+	$(CC) -Wall -O2 -c vbetool/thunk.c -o vbetool/thunk.o
 
 dmidecode.o:	dmidecode.c
-	gcc -Wall -O2 -DS2RAM -c dmidecode.c -o dmidecode.o
+	$(CC) -Wall -O2 -DS2RAM -c dmidecode.c -o dmidecode.o
 
 radeontool.o:	radeontool.c
-	gcc -Wall -O2 -DS2RAM -c radeontool.c -o radeontool.o
+	$(CC) -Wall -O2 -DS2RAM -c radeontool.c -o radeontool.o
 
 md5.o:	md5.c md5.h
-	gcc -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c
+	$(CC) -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c
 
 encrypt.o:	encrypt.c encrypt.h md5.h
-	gcc -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) -c encrypt.c
+	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) -c encrypt.c
 
 config.o:	config.c config.h
-	gcc -Wall $(CC_FLAGS) -c config.c
+	$(CC) -Wall $(CC_FLAGS) -c config.c
 
 vt.o:	vt.c vt.h
-	gcc -Wall -c vt.c
+	$(CC) -Wall -c vt.c
 
 suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
-	gcc -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o suspend $(S2RAMOBJ) $(LD_FLAGS) -lpci 
+	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o suspend $(S2RAMOBJ) $(LD_FLAGS) -lpci
 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h
-	gcc -Wall $(CC_FLAGS) md5.o encrypt.o config.o resume.c -static -o resume $(LD_FLAGS)
+	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o resume.c -static -o resume $(LD_FLAGS)
 
 ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o encrypt.o keygen.c encrypt.h md5.h
-	gcc -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H -DCONFIG_ENCRYPT md5.o keygen.c -o suspend-keygen -lcrypto
+	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H -DCONFIG_ENCRYPT md5.o keygen.c -o suspend-keygen -lcrypto
 
 install-suspend:	suspend suspend-keygen conf/suspend.conf
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
