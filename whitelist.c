@@ -50,6 +50,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2658*",		"",	"", 0 },
 	/* R40 */
 	{ "IBM",			"2722*",		"",	"", 0 },
+	/* Z60m, reported by Arkadiusz Miskiewicz */
+	{ "IBM",			"2529*",		"",	"", S3_BIOS|S3_MODE },
 
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
@@ -108,8 +110,6 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S6120*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "FUJITSU SIEMENS",		"LIFEBOOK P7010*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc4200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Hewlett-Packard",		"HP Compaq nc4200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Hewlett-Packard",		"HP Compaq nc6000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nx6110*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc6120*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc6220*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
