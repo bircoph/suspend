@@ -18,7 +18,7 @@
 
 static void *vbe_buffer;
 /* Flags set from whitelist */
-static int flags, id;
+static int flags;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 /* return codes for s2ram_prepare */
@@ -128,16 +128,9 @@ static int machine_match(void)
 	return -1;
 }
 
-/* Code that can only be run on non-frozen system. It does not matter now
- * but will matter once we'll do suspend-to-both.
- * returns 0 if everything went ok.
- */
-int s2ram_check(void)
+int s2ram_check(int id)
 {
 	int ret = S2RAM_OK;
-
-	dmi_scan();
-	id = machine_match();
 
 	if (id < 0) {
 		ret = S2RAM_UNKNOWN;
@@ -180,9 +173,11 @@ int s2ram_hacks(void)
 
 int s2ram_prepare(void)
 {
-	int ret;
+	int ret, id;
 
-	ret = s2ram_check();
+	dmi_scan();
+	id = machine_match();
+	ret = s2ram_check(id);
 
 	if (ret)
 		return ret;
@@ -262,7 +257,7 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
-	int i, ret, test_mode = 0, force = 0;
+	int i, id = -1, ret = 0, test_mode = 0, force = 0;
 	int active_console = -1;
 	struct option options[] = {
 		{ "test",	no_argument,		NULL, 'n'},
@@ -318,9 +313,13 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
-	ret = s2ram_check();
+	if (!force) {
+		dmi_scan();
+		id = machine_match();
+		ret = s2ram_check(id);
+	}
 
-	if (!force && ret == S2RAM_UNKNOWN) {
+	if (ret == S2RAM_UNKNOWN) {
 		printf("Machine is unknown.\n");
 		identify_machine();
 		goto out;
@@ -334,7 +333,7 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
-	if (!force && ret)
+	if (ret)
 		goto out;
 
 	/* switch to console 1 first, since we might be in X */

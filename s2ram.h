@@ -13,11 +13,8 @@ void map_radeon_cntl_mem(void);
 void dmi_scan(void);
 
 /* from s2ram.c */
-int s2ram_check(void);
+int s2ram_check(int id);
 int s2ram_hacks(void);
 int s2ram_prepare(void);
 int s2ram_do(void);
 void s2ram_resume(void);
-
-
-
