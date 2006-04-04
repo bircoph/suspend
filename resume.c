@@ -166,6 +166,8 @@ static int fill_buffer(struct swap_map_handle *handle)
 	int error;
 
 	handle->area_size = handle->areas[handle->k].size;
+	if (handle->area_size > buffer_size)
+		return -ENOMEM;
 #ifdef CONFIG_ENCRYPT
 	if (decrypt)
 		dst = handle->decrypt_buffer;
