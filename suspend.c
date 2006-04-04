@@ -57,6 +57,8 @@ static char key_name[MAX_STR_LEN] = KEY_FILE;
 #endif
 static char s2ram;
 
+static int suspend_swappiness = SUSPEND_SWAPPINESS;
+
 static struct config_par parameters[PARAM_NO] = {
 	{
 		.name = "snapshot device",
@@ -842,6 +844,39 @@ static inline void close_printk(void)
 		fclose(printk_file);
 }
 
+static FILE *swappiness_file;
+
+static inline void open_swappiness(void)
+{
+	swappiness_file = fopen("/proc/sys/vm/swappiness", "r+");
+}
+
+static inline int get_swappiness(void)
+{
+	int swappiness = -1;
+
+	if (swappiness_file) {
+		rewind(swappiness_file);
+		fscanf(swappiness_file, "%d", &swappiness);
+	}
+	return swappiness;
+}
+
+static inline void set_swappiness(int swappiness)
+{
+	if (swappiness_file) {
+		rewind(swappiness_file);
+		fprintf(swappiness_file, "%d\n", swappiness);
+		fflush(swappiness_file);
+	}
+}
+
+static inline void close_swappiness(void)
+{
+	if (swappiness_file)
+		fclose(swappiness_file);
+}
+
 #ifdef CONFIG_ENCRYPT
 static void generate_key(void)
 {
@@ -904,7 +939,7 @@ int main(int argc, char *argv[])
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
-	int orig_loglevel, ret;
+	int orig_loglevel, orig_swappiness, ret;
 
 	/* Make sure the 0, 1, 2 descriptors are open before opening the
 	 * snapshot and resume devices
@@ -1023,6 +1058,10 @@ int main(int argc, char *argv[])
 	orig_loglevel = get_kernel_console_loglevel();
 	set_kernel_console_loglevel(suspend_loglevel);
 
+	open_swappiness();
+	orig_swappiness = get_swappiness();
+	set_swappiness(suspend_swappiness);
+
 	chroot_path = mem_pool;
 	sprintf(chroot_path, "/proc/%d", getpid());
 	if (!s2ram && chroot(chroot_path)) {
@@ -1039,6 +1078,10 @@ int main(int argc, char *argv[])
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
 	close_printk();
+
+	if(orig_swappiness >= 0)
+		set_swappiness(orig_swappiness);
+	close_swappiness();
 
 Restore_console:
 	restore_console(vt_fd, orig_vc);

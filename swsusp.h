@@ -145,6 +145,8 @@ struct buf_block {
 #define SUSPEND_LOGLEVEL	1
 #define MAX_LOGLEVEL		8
 
+#define SUSPEND_SWAPPINESS	100
+
 #define GEN_PARAM	7
 
 #ifdef CONFIG_COMPRESS
