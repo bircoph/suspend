@@ -693,7 +693,7 @@ static inline int console_fd(const char *fname)
 #define TIOCL_GETKMSGREDIRECT	17
 #endif
 
-static int kmsg_redirect = -1;
+static int set_kmsg_redirect;
 
 /**
  *	prepare_console - find a spare virtual terminal, open it and attach
@@ -706,19 +706,33 @@ static int prepare_console(int *orig_vc, int *new_vc)
 	int fd, error, vt = -1;
 	char *vt_name = mem_pool;
 	struct vt_stat vtstat;
-	char tiocl[2];
+	char clear_vt, tiocl[2];
 
 	fd = console_fd("/dev/console");
 	if (fd < 0)
 		return fd;
+
+	tiocl[0] = TIOCL_GETKMSGREDIRECT;
+	if (!ioctl(fd, TIOCLINUX, tiocl)) {
+		if (tiocl[0] > 0)
+			vt = tiocl[0];
+	}
+
+	clear_vt = 0;
 	error = ioctl(fd, VT_GETSTATE, &vtstat);
 	if (!error) {
 		*orig_vc = vtstat.v_active;
-		error = ioctl(fd, VT_OPENQRY, &vt);
+		if (vt < 0) {
+			clear_vt = 1;
+			error = ioctl(fd, VT_OPENQRY, &vt);
+		}
 	}
+
 	close(fd);
+
 	if (error || vt < 0)
 		return -1;
+
 	sprintf(vt_name, "/dev/tty%d", vt);
 	fd = open(vt_name, O_RDWR);
 	if (fd < 0)
@@ -735,23 +749,29 @@ static int prepare_console(int *orig_vc, int *new_vc)
 		fflush(stderr);
 		goto Close_fd;
 	}
-	char *msg = "\33[H\33[J";
-	write(fd, msg, strlen(msg));
+
+	if (clear_vt) {
+		char *msg = "\33[H\33[J";
+		write(fd, msg, strlen(msg));
+	}
+
 	dup2(fd, 0);
 	dup2(fd, 1);
 	dup2(fd, 2);
 	*new_vc = vt;
-	tiocl[0] = TIOCL_GETKMSGREDIRECT;
-	if (!ioctl(fd, TIOCLINUX, tiocl)) {
-		kmsg_redirect = tiocl[0];
+
+	set_kmsg_redirect = !tiocl[0];
+	if (set_kmsg_redirect) {
 		tiocl[0] = TIOCL_SETKMSGREDIRECT;
 		tiocl[1] = vt;
 		if (ioctl(fd, TIOCLINUX, tiocl)) {
 			fprintf(stderr, "Failed to redirect kernel messages to VT %d\n"
 					"Reason: %s\n", vt, strerror(errno));
 			fflush(stderr);
+			set_kmsg_redirect = 0;
 		}
 	}
+
 	return fd;
 Close_fd:
 	close(fd);
@@ -778,11 +798,11 @@ static void restore_console(int fd, int orig_vc)
 		fprintf(stderr, "VT %d activation failed\n", orig_vc);
 		fflush(stderr);
 	}
-	if (kmsg_redirect >= 0) {
+	if (set_kmsg_redirect) {
 		char tiocl[2];
 
 		tiocl[0] = TIOCL_SETKMSGREDIRECT;
-		tiocl[1] = kmsg_redirect;
+		tiocl[1] = 0;
 		ioctl(fd, TIOCLINUX, tiocl);
 	}
 Close_fd:
