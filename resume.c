@@ -101,8 +101,9 @@ static struct config_par parameters[PARAM_NO] = {
 #endif
 };
 
-static char page_buffer[PAGE_SIZE];
-static struct swsusp_header swsusp_header;
+static unsigned int page_size;
+static unsigned int buffer_size;
+static void *mem_pool;
 
 /**
  *	read_area - Read data from a swap location.
@@ -130,24 +131,24 @@ static int read_area(int fd, void *buf, loff_t offset, unsigned int size)
 	return res;
 }
 
-static char read_buffer[BUFFER_SIZE];
-#ifdef CONFIG_ENCRYPT
-static char decrypt_buffer[BUFFER_SIZE];
-#endif
-
 /*
  *	The swap_map_handle structure is used for handling the swap map in
  *	a file-alike way
  */
 
 struct swap_map_handle {
-	struct swap_map_page cur;
+	char *page_buffer;
+	char *read_buffer;
+	struct swap_area *areas;
+	unsigned short areas_per_page;
+	loff_t *next_swap;
 	unsigned int area_size;
 	unsigned int cur_size;
 	unsigned int k;
 	int fd;
 	struct md5_ctx ctx;
 #ifdef CONFIG_ENCRYPT
+	char *decrypt_buffer;
 	BF_KEY key;
 	unsigned char ivec[IVEC_SIZE];
 	int num;
@@ -161,33 +162,42 @@ struct swap_map_handle {
 
 static int fill_buffer(struct swap_map_handle *handle)
 {
-	void *dst = read_buffer;
+	void *dst = handle->read_buffer;
 	int error;
 
-	handle->area_size = handle->cur.entries[handle->k].size;
+	handle->area_size = handle->areas[handle->k].size;
 #ifdef CONFIG_ENCRYPT
 	if (decrypt)
-		dst = decrypt_buffer;
+		dst = handle->decrypt_buffer;
 #endif
 	error = read_area(handle->fd, dst,
-			handle->cur.entries[handle->k].offset,
+			handle->areas[handle->k].offset,
 			handle->area_size);
 #ifdef CONFIG_ENCRYPT
 	if (!error && decrypt)
-		BF_cfb64_encrypt(dst, (unsigned char *)read_buffer,
+		BF_cfb64_encrypt(dst, (unsigned char *)handle->read_buffer,
 			handle->area_size, &handle->key, handle->ivec,
 			&handle->num, BF_DECRYPT);
 #endif
 	return error;
 }
 
-static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start)
+static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start, void *buf)
 {
 	int error;
 
-	if (!start)
+	if (!start || !buf)
 		return -EINVAL;
-	error = read_area(fd, &handle->cur, start, sizeof(struct swap_map_page));
+	handle->areas = buf;
+	handle->areas_per_page = (page_size - sizeof(loff_t)) /
+			sizeof(struct swap_area);
+	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
+	handle->page_buffer = (char *)buf + page_size;
+	handle->read_buffer = handle->page_buffer + page_size;
+#ifdef CONFIG_ENCRYPT
+	handle->decrypt_buffer = handle->read_buffer + buffer_size;
+#endif
+	error = read_area(fd, handle->areas, start, page_size);
 	if (error)
 		return error;
 	handle->fd = fd;
@@ -201,18 +211,20 @@ static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start
 	return 0;
 }
 
-static int restore(void *buf, int disp)
+static int restore(struct swap_map_handle *handle, int disp)
 {
-	struct buf_block *block = (struct buf_block *)(read_buffer + disp);
+	struct buf_block *block;
+	void *buf = handle->page_buffer;
 
+	block = (struct buf_block *)(handle->read_buffer + disp);
 	if (decompress) {
 		unsigned short cnt = block->size;
 
-		if (cnt == PAGE_SIZE) {
-			memcpy(buf, block->data, PAGE_SIZE);
-		} else if (cnt < PAGE_SIZE) {
-			cnt = lzf_decompress(block->data, cnt, buf, PAGE_SIZE);
-			if (cnt != PAGE_SIZE)
+		if (cnt == page_size) {
+			memcpy(buf, block->data, page_size);
+		} else if (cnt < page_size) {
+			cnt = lzf_decompress(block->data, cnt, buf, page_size);
+			if (cnt != page_size)
 				return -ENODATA;
 		} else {
 			return -EINVAL;
@@ -220,11 +232,11 @@ static int restore(void *buf, int disp)
 		block->size += sizeof(short);
 		return block->size;
 	}
-	memcpy(buf, block, PAGE_SIZE);
-	return PAGE_SIZE;
+	memcpy(buf, block, page_size);
+	return page_size;
 }
 
-static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
+static inline int swap_read_page(struct swap_map_handle *handle)
 {
 	loff_t offset;
 	size_t size;
@@ -232,7 +244,7 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 
 	if (handle->cur_size < handle->area_size) {
 		/* Get the data from the read buffer */
-		size = restore(buf, handle->cur_size);
+		size = restore(handle, handle->cur_size);
 		if (size < 0)
 			return size;
 		handle->cur_size += size;
@@ -240,12 +252,11 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 	}
 
 	/* There are no more data in the read buffer.  Read more */
-	if (++handle->k >= MAP_PAGE_ENTRIES) {
+	if (++handle->k >= handle->areas_per_page) {
 		handle->k = 0;
-		offset = handle->cur.next_swap;
+		offset = *handle->next_swap;
 		if (offset)
-			error = read_area(handle->fd, &handle->cur, offset,
-				sizeof(struct swap_map_page));
+			error = read_area(handle->fd, handle->areas, offset, page_size);
 		else
 			error = -EINVAL;
 	}
@@ -254,14 +265,14 @@ static inline int swap_read_page(struct swap_map_handle *handle, void *buf)
 	if (error)
 		return error;
 
-	size = restore(buf, 0);
+	size = restore(handle, 0);
 	if (size < 0)
 		return size;
 	handle->cur_size = size;
 
 MD5:
 	if (verify_checksum)
-		md5_process_block(buf, PAGE_SIZE, &handle->ctx);
+		md5_process_block(handle->page_buffer, page_size, &handle->ctx);
 
 	return 0;
 }
@@ -285,11 +296,11 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 		m = 1;
 	n = 0;
 	do {
-		error = swap_read_page(handle, page_buffer);
+		error = swap_read_page(handle);
 		if (error)
 			break;
-		ret = write(dev, page_buffer, PAGE_SIZE);
-		if (ret < (int)PAGE_SIZE) {
+		ret = write(dev, handle->page_buffer, page_size);
+		if (ret < (int)page_size) {
 			error = ret < 0 ? -errno : -ENOSPC;
 			break;
 		}
@@ -311,7 +322,8 @@ static inline void print_checksum(unsigned char *checksum)
 }
 
 #ifdef CONFIG_ENCRYPT
-static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *ivec)
+static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *ivec,
+	void *buffer)
 {
 	RSA *rsa;
 	unsigned char *buf, *out, *key_buf;
@@ -331,8 +343,8 @@ static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *i
 	rsa->e = BN_mpi2bn(buf, rsa_data->e_size, NULL);
 	buf += rsa_data->e_size;
 
-	pass_buf = read_buffer;
-	key_buf = (unsigned char *)read_buffer + PASS_SIZE;
+	pass_buf = buffer;
+	key_buf = (unsigned char *)pass_buf + PASS_SIZE;
 	do {
 		read_password(pass_buf, 0);
 		memset(ivec, 0, IVEC_SIZE);
@@ -347,7 +359,7 @@ static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *i
 			printf("resume: Wrong passphrase, try again.\n");
 	} while (ret);
 
-	out = (unsigned char *)decrypt_buffer;
+	out = key_buf + KEY_SIZE;
 	BF_cfb64_encrypt(buf, out, rsa_data->d_size, key, ivec, &n, BF_DECRYPT);
 	rsa->d = BN_mpi2bn(out, rsa_data->d_size, NULL);
 	if (!rsa->n || !rsa->e || !rsa->d) {
@@ -373,11 +385,15 @@ Free_rsa:
 
 static int read_image(int dev, char *resume_dev_name)
 {
+	static struct swsusp_header swsusp_header;
 	static struct swap_map_handle handle;
 	static unsigned char orig_checksum[16], checksum[16];
 	int fd, ret, error = 0;
-	struct swsusp_info *header;
+	struct swsusp_info *header = mem_pool;
+	char *buffer = (char *)mem_pool + page_size;
 	unsigned int nr_pages;
+	unsigned int size = sizeof(struct swsusp_header);
+	unsigned int shift = page_size - size;
 	char c;
 
 	fd = open(resume_dev_name, O_RDWR);
@@ -386,18 +402,18 @@ static int read_image(int dev, char *resume_dev_name)
 		printf("resume: Could not open the resume device\n");
 		return ret;
 	}
-	memset(&swsusp_header, 0, sizeof(swsusp_header));
-	ret = read(fd, &swsusp_header, PAGE_SIZE);
-	if (ret == PAGE_SIZE) {
+	if (lseek(fd, shift, SEEK_SET) != shift)
+		return -EIO;
+	ret = read(fd, &swsusp_header, size);
+	if (ret == size) {
 		if (memcmp(SWSUSP_SIG, swsusp_header.sig, 10))
 			return -EINVAL;
 	} else {
 		error = ret < 0 ? ret : -EIO;
 	}
 	if (!error)
-		error = read_area(fd, page_buffer, swsusp_header.image, PAGE_SIZE);
+		error = read_area(fd, header, swsusp_header.image, page_size);
 	if (!error) {
-		header = (struct swsusp_info *)page_buffer;
 		if(header->image_flags & IMAGE_CHECKSUM) {
 			memcpy(orig_checksum, header->checksum, 16);
 			printf("resume: MD5 checksum ");
@@ -418,13 +434,14 @@ static int read_image(int dev, char *resume_dev_name)
 #ifdef CONFIG_ENCRYPT
 			if (header->image_flags & IMAGE_USE_RSA) {
 				handle.num = 0;
-				error = decrypt_key(header, &handle.key, handle.ivec);
+				error = decrypt_key(header, &handle.key,
+						handle.ivec, buffer);
 			} else {
 				int j;
 
 				printf("resume: Encrypted image\n");
 				encrypt_init(&handle.key, handle.ivec, &handle.num,
-						read_buffer, decrypt_buffer, 0);
+						buffer, buffer + page_size, 0);
 				for (j = 0; j < IVEC_SIZE; j++)
 					handle.ivec[j] ^= header->salt[j];
 			}
@@ -436,10 +453,11 @@ static int read_image(int dev, char *resume_dev_name)
 #endif
 		}
 		if (!error) {
-			error = init_swap_reader(&handle, fd, header->map_start);
+			error = init_swap_reader(&handle, fd,
+					header->map_start, buffer);
 			nr_pages = header->pages - 1;
-			ret = write(dev, header, PAGE_SIZE);
-			if (ret < (int)PAGE_SIZE)
+			ret = write(dev, header, page_size);
+			if (ret < (int)page_size)
 				error = ret < 0 ? ret : -EIO;
 		}
 		if (!error)
@@ -480,12 +498,15 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 		/* Reset swap signature now */
 		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
-		ret = lseek(fd, 0, SEEK_SET);
-		if (!ret)
-			ret = write(fd, &swsusp_header, PAGE_SIZE);
-		if (ret < (int)PAGE_SIZE) {
-			error = ret < 0 ? -errno : -EIO;
-			fprintf(stderr, "resume: Could not restore the partition header\n");
+		if (lseek(fd, shift, SEEK_SET) != shift) {
+			error = -EIO;
+		} else {
+			ret = write(fd, &swsusp_header, size);
+			if (ret != size) {
+				error = ret < 0 ? -errno : -EIO;
+				fprintf(stderr,
+					"resume: Could not restore the partition header\n");
+			}
 		}
 	}
 	fsync(fd);
@@ -525,9 +546,25 @@ static void set_kernel_console_loglevel(int level)
 
 int main(int argc, char *argv[])
 {
+	unsigned int mem_size;
 	struct stat stat_buf;
 	int dev;
 	int n, error = 0;
+
+	page_size = getpagesize();
+	buffer_size = BUFFER_PAGES * page_size;
+
+#ifdef CONFIG_ENCRYPT
+	mem_size = 3 * page_size + 2 * buffer_size;
+#else
+	mem_size = 3 * page_size + buffer_size;
+#endif
+	mem_pool = malloc(mem_size);
+	if (!mem_pool) {
+		error = errno;
+		fprintf(stderr, "resume: Could not allocate memory\n");
+		return error;
+	}
 
 	if (get_config("resume", argc, argv, PARAM_NO, parameters, resume_dev_name))
 		return EINVAL;
@@ -574,6 +611,8 @@ Close:
 	close(dev);
 
 	set_kernel_console_loglevel(max_loglevel);
+
+	free(mem_pool);
 
 	return error;
 }

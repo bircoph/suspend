@@ -117,8 +117,14 @@ static struct config_par parameters[PARAM_NO] = {
 	},
 };
 
-static char page_buffer[PAGE_SIZE];
-static struct swsusp_header swsusp_header;
+static unsigned int page_size;
+/* This MUST NOT be less than page_size */
+static unsigned int max_block_size;
+static unsigned int buffer_size;
+static void *mem_pool;
+#ifdef CONFIG_ENCRYPT
+struct key_data *key_data;
+#endif
 
 static inline loff_t check_free_swap(int dev)
 {
@@ -178,20 +184,17 @@ static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
 	return res;
 }
 
-static char write_buffer[BUFFER_SIZE];
-/* This MUST NOT be less than PAGE_SIZE */
-static unsigned int max_block_size = PAGE_SIZE;
-#ifdef CONFIG_ENCRYPT
-static unsigned char encrypt_buffer[BUFFER_SIZE];
-#endif
-
 /*
  *	The swap_map_handle structure is used for handling swap in
  *	a file-alike way
  */
 
 struct swap_map_handle {
-	struct swap_map_page cur;
+	char *page_buffer;
+	char *write_buffer;
+	struct swap_area *areas;
+	unsigned short areas_per_page;
+	loff_t *next_swap;
 	struct swap_area cur_area;
 	unsigned int cur_alloc;
 	loff_t cur_swap;
@@ -199,15 +202,28 @@ struct swap_map_handle {
 	int dev, fd;
 	struct md5_ctx ctx;
 #ifdef CONFIG_ENCRYPT
+	unsigned char *encrypt_buffer;
 	BF_KEY key;
 	unsigned char ivec[IVEC_SIZE];
 	int num;
 #endif
 };
 
-static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
+static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 {
-	memset(&handle->cur, 0, sizeof(struct swap_map_page));
+	if (!buf)
+		return -EINVAL;
+	handle->areas = buf;
+	handle->areas_per_page = (page_size - sizeof(loff_t)) /
+			sizeof(struct swap_area);
+	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
+	handle->page_buffer = (char *)buf + page_size;
+	handle->write_buffer = handle->page_buffer + page_size;
+#ifdef CONFIG_ENCRYPT
+	handle->encrypt_buffer = (unsigned char *)(handle->write_buffer +
+				buffer_size);
+#endif
+	memset(handle->areas, 0, page_size);
 	handle->cur_swap = get_swap_page(dev);
 	if (!handle->cur_swap)
 		return -ENOSPC;
@@ -215,7 +231,7 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 	if (!handle->cur_area.offset)
 		return -ENOSPC;
 	handle->cur_area.size = 0;
-	handle->cur_alloc = PAGE_SIZE;
+	handle->cur_alloc = page_size;
 	handle->k = 0;
 	handle->dev = dev;
 	handle->fd = fd;
@@ -224,28 +240,30 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 	return 0;
 }
 
-static int prepare(void *buf, int disp)
+static int prepare(struct swap_map_handle *handle, int disp)
 {
-	struct buf_block *block = (struct buf_block *)(write_buffer + disp);
+	struct buf_block *block;
+	void *buf = handle->page_buffer;
 
+	block = (struct buf_block *)(handle->write_buffer + disp);
 	if (compress) {
 		unsigned short cnt;
 
-		cnt = lzf_compress(buf, PAGE_SIZE,
-				block->data, PAGE_SIZE - sizeof(short));
+		cnt = lzf_compress(buf, page_size,
+				block->data, page_size - sizeof(short));
 		if (!cnt) {
-			memcpy(block->data, buf, PAGE_SIZE);
-			cnt = PAGE_SIZE;
+			memcpy(block->data, buf, page_size);
+			cnt = page_size;
 		} else {
-			compr_diff += PAGE_SIZE - cnt;
+			compr_diff += page_size - cnt;
 		}
 		compr_diff -= sizeof(short);
 		block->size = cnt;
 		cnt += sizeof(short);
 		return cnt;
 	}
-	memcpy(block, buf, PAGE_SIZE);
-	return PAGE_SIZE;
+	memcpy(block, buf, page_size);
+	return page_size;
 }
 
 static int try_get_more_swap(struct swap_map_handle *handle)
@@ -257,10 +275,10 @@ static int try_get_more_swap(struct swap_map_handle *handle)
 		if (!offset)
 			return -ENOSPC;
 		if (offset == handle->cur_area.offset + handle->cur_alloc) {
-			handle->cur_alloc += PAGE_SIZE;
+			handle->cur_alloc += page_size;
 		} else {
 			handle->cur_area.offset = offset;
-			handle->cur_alloc = PAGE_SIZE;
+			handle->cur_alloc = page_size;
 		}
 	}
 	return 0;
@@ -268,50 +286,50 @@ static int try_get_more_swap(struct swap_map_handle *handle)
 
 static int flush_buffer(struct swap_map_handle *handle)
 {
-	void *src = write_buffer;
+	void *src = handle->write_buffer;
 	int error;
 
 #ifdef CONFIG_ENCRYPT
 	if (encrypt) {
-		BF_cfb64_encrypt(src, encrypt_buffer, handle->cur_area.size,
+		BF_cfb64_encrypt(src, handle->encrypt_buffer, handle->cur_area.size,
 			&handle->key, handle->ivec, &handle->num, BF_ENCRYPT);
-		src = encrypt_buffer;
+		src = handle->encrypt_buffer;
 	}
 #endif
 	error = write_area(handle->fd, src, handle->cur_area.offset,
 			handle->cur_area.size);
 	if (error)
 		return error;
-	handle->cur.entries[handle->k].offset = handle->cur_area.offset;
-	handle->cur.entries[handle->k].size = handle->cur_area.size;
+	handle->areas[handle->k].offset = handle->cur_area.offset;
+	handle->areas[handle->k].size = handle->cur_area.size;
 	return 0;
 }
 
-static int swap_write_page(struct swap_map_handle *handle, void *buf)
+static int swap_write_page(struct swap_map_handle *handle)
 {
 	loff_t offset = 0;
 	int error;
 
 	if (compute_checksum)
-		md5_process_block(buf, PAGE_SIZE, &handle->ctx);
+		md5_process_block(handle->page_buffer, page_size, &handle->ctx);
 
 	if (!handle->cur_area.size) {
 		/* No data in the write buffer */
-		handle->cur_area.size = prepare(buf, 0);
+		handle->cur_area.size = prepare(handle, 0);
 		return try_get_more_swap(handle);
 	}
 
-	if (handle->cur_alloc + max_block_size <= BUFFER_SIZE) {
+	if (handle->cur_alloc + max_block_size <= buffer_size) {
 		if (handle->cur_area.size + max_block_size <= handle->cur_alloc) {
-			handle->cur_area.size += prepare(buf, handle->cur_area.size);
+			handle->cur_area.size += prepare(handle, handle->cur_area.size);
 			return 0;
 		}
 		offset = get_swap_page(handle->dev);
 		if (!offset)
 			return -ENOSPC;
 		if (offset == handle->cur_area.offset + handle->cur_alloc) {
-			handle->cur_alloc += PAGE_SIZE;
-			handle->cur_area.size += prepare(buf, handle->cur_area.size);
+			handle->cur_alloc += page_size;
+			handle->cur_area.size += prepare(handle, handle->cur_area.size);
 			return try_get_more_swap(handle);
 		}
 	}
@@ -328,21 +346,21 @@ static int swap_write_page(struct swap_map_handle *handle, void *buf)
 			return -ENOSPC;
 	}
 	handle->cur_area.offset = offset;
-	handle->cur_alloc = PAGE_SIZE;
-	handle->cur_area.size = prepare(buf, 0);
+	handle->cur_alloc = page_size;
+	handle->cur_area.size = prepare(handle, 0);
 	error = try_get_more_swap(handle);
 	if (error)
 		return error;
-	if (++handle->k >= MAP_PAGE_ENTRIES) {
+	if (++handle->k >= handle->areas_per_page) {
 		offset = get_swap_page(handle->dev);
 		if (!offset)
 			return -ENOSPC;
-		handle->cur.next_swap = offset;
-		error = write_area(handle->fd, &handle->cur, handle->cur_swap,
-				sizeof(struct swap_map_page));
+		*handle->next_swap = offset;
+		error = write_area(handle->fd, handle->areas, handle->cur_swap,
+				page_size);
 		if (error)
 			return error;
-		memset(&handle->cur, 0, sizeof(struct swap_map_page));
+		memset(handle->areas, 0, page_size);
 		handle->cur_swap = offset;
 		handle->k = 0;
 	}
@@ -360,8 +378,8 @@ static inline int flush_swap_writer(struct swap_map_handle *handle)
 	error = flush_buffer(handle);
 	if (!error)
 		/* Save the last swap map page */
-		error = write_area(handle->fd, &handle->cur, handle->cur_swap,
-				sizeof(struct swap_map_page));
+		error = write_area(handle->fd, handle->areas, handle->cur_swap,
+				page_size);
 
 	return error;
 }
@@ -383,9 +401,9 @@ static int save_image(struct swap_map_handle *handle,
 		m = 1;
 	nr_pages = 0;
 	do {
-		ret = read(handle->dev, page_buffer, PAGE_SIZE);
+		ret = read(handle->dev, handle->page_buffer, page_size);
 		if (ret > 0) {
-			error = swap_write_page(handle, page_buffer);
+			error = swap_write_page(handle);
 			if (error)
 				break;
 			if (!(nr_pages % m))
@@ -415,20 +433,26 @@ static int enough_swap(int dev, unsigned long size)
 	return free_swap > size;
 }
 
+static struct swsusp_header swsusp_header;
+
 static int mark_swap(int fd, loff_t start)
 {
 	int error = 0;
+	unsigned int size = sizeof(struct swsusp_header);
+	unsigned int shift = page_size - size;
 
-	lseek(fd, 0, SEEK_SET);
-	if (read(fd, &swsusp_header, PAGE_SIZE) < (ssize_t)PAGE_SIZE)
+	if (lseek(fd, shift, SEEK_SET) != shift)
+		return -EIO;
+	if (read(fd, &swsusp_header, size) < size)
 		return -EIO;
 	if (!memcmp("SWAP-SPACE", swsusp_header.sig, 10) ||
 	    !memcmp("SWAPSPACE2", swsusp_header.sig, 10)) {
 		memcpy(swsusp_header.orig_sig, swsusp_header.sig, 10);
 		memcpy(swsusp_header.sig, SWSUSP_SIG, 10);
 		swsusp_header.image = start;
-		lseek(fd, 0, SEEK_SET);
-		if (write(fd, &swsusp_header, PAGE_SIZE) < (ssize_t)PAGE_SIZE)
+		if (lseek(fd, shift, SEEK_SET) != shift)
+			return -EIO;
+		if (write(fd, &swsusp_header, size) < size)
 			error = -EIO;
 	} else {
 		error = -ENODEV;
@@ -443,8 +467,7 @@ static int mark_swap(int fd, loff_t start)
 int write_image(int snapshot_fd, int resume_fd)
 {
 	static struct swap_map_handle handle;
-	static char header_buffer[PAGE_SIZE];
-	struct swsusp_info *header = (struct swsusp_info *)header_buffer;
+	struct swsusp_info *header = mem_pool;
 	loff_t start;
 	int error;
 
@@ -452,44 +475,43 @@ int write_image(int snapshot_fd, int resume_fd)
 	start = get_swap_page(snapshot_fd);
 	if (!start)
 		return -ENOSPC;
-	error = read(snapshot_fd, header_buffer, PAGE_SIZE);
-	if (error < (int)PAGE_SIZE)
+	error = read(snapshot_fd, header, page_size);
+	if (error < (int)page_size)
 		return error < 0 ? error : -EFAULT;
 	printf("suspend: Image size: %lu kilobytes\n", header->size / 1024);
 	if (!enough_swap(snapshot_fd, header->size) && !compress) {
 		printf("suspend: Not enough free swap\n");
 		return -ENOSPC;
 	}
-	error = init_swap_writer(&handle, snapshot_fd, resume_fd);
+	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
+			(char *)mem_pool + page_size);
 	if (!error) {
 		header->map_start = handle.cur_swap;
 		header->image_flags = 0;
+		max_block_size = page_size;
 		if (compute_checksum)
 			header->image_flags |= IMAGE_CHECKSUM;
 		if (compress) {
 			header->image_flags |= IMAGE_COMPRESSED;
-			max_block_size = sizeof(struct buf_block);
+			max_block_size += sizeof(short);
 		}
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
 			if (use_RSA) {
-				struct key_data *key_data;
-
-				key_data = (struct key_data *)encrypt_buffer;
 				BF_set_key(&handle.key, KEY_SIZE, key_data->key);
 				memcpy(handle.ivec, key_data->ivec, IVEC_SIZE);
 				handle.num = 0;
 				header->image_flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
 				memcpy(&header->rsa_data, &key_data->rsa_data,
 					sizeof(struct RSA_data));
-				memcpy(&header->key_data,
-					encrypt_buffer + sizeof(struct key_data),
+				memcpy(&header->key_data, key_data + 1,
 					sizeof(struct encrypted_key));
 			} else {
 				int j;
 
 				encrypt_init(&handle.key, handle.ivec, &handle.num,
-						write_buffer, encrypt_buffer, 1);
+						handle.write_buffer,
+						handle.encrypt_buffer, 1);
 				get_random_salt(header->salt, IVEC_SIZE);
 				for (j = 0; j < IVEC_SIZE; j++)
 					handle.ivec[j] ^= header->salt[j];
@@ -505,7 +527,7 @@ int write_image(int snapshot_fd, int resume_fd)
 			md5_finish_ctx(&handle.ctx, header->checksum);
 	}
 	if (!error)
-		error = write_area(resume_fd, header, start, PAGE_SIZE);
+		error = write_area(resume_fd, header, start, page_size);
 	if (!error) {
 		if (compress) {
 			double delta = header->size - compr_diff;
@@ -526,30 +548,33 @@ int write_image(int snapshot_fd, int resume_fd)
 static int reset_signature(int fd)
 {
 	int ret, error = 0;
+	unsigned int size = sizeof(struct swsusp_header);
+	unsigned int shift = page_size - size;
 
-	error = lseek(fd, 0, SEEK_SET);
+	if (lseek(fd, shift, SEEK_SET) != shift)
+		return -EIO;
 
-	if (!error) {
-		memset(&swsusp_header, 0, sizeof(swsusp_header));
-		ret = read(fd, &swsusp_header, PAGE_SIZE);
-		if (ret == PAGE_SIZE) {
-			if (memcmp(SWSUSP_SIG, swsusp_header.sig, 10)) {
-				/* Impossible? We wrote signature and it is not there?! */
-				error = -EINVAL;
-			}
-		} else {
-			error = ret < 0 ? ret : -EIO;
+	memset(&swsusp_header, 0, size);
+	ret = read(fd, &swsusp_header, size);
+	if (ret == size) {
+		if (memcmp(SWSUSP_SIG, swsusp_header.sig, 10)) {
+			/* Impossible? We wrote signature and it is not there?! */
+			error = -EINVAL;
 		}
+	} else {
+		error = ret < 0 ? ret : -EIO;
 	}
 
 	if (!error) {
 		/* Reset swap signature now */
 		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
-		error = lseek(fd, 0, SEEK_SET);
-	}
-	if (!error) {
-		ret = write(fd, &swsusp_header, PAGE_SIZE);
-		error = (ret != PAGE_SIZE);
+		if (lseek(fd, shift, SEEK_SET) == shift) {
+			ret = write(fd, &swsusp_header, size);
+			if (ret != size)
+				error = ret < 0 ? ret : -EIO;
+		} else {
+			error = -EIO;
+		}
 	}
 	fsync(fd);
 	if (error) {
@@ -679,7 +704,7 @@ static int kmsg_redirect = -1;
 static int prepare_console(int *orig_vc, int *new_vc)
 {
 	int fd, error, vt = -1;
-	char *vt_name = page_buffer;
+	char *vt_name = mem_pool;
 	struct vt_stat vtstat;
 	char tiocl[2];
 
@@ -802,9 +827,11 @@ static void generate_key(void)
 {
 	RSA *rsa;
 	int fd, rnd_fd;
-	struct key_data *key_data;
 	struct RSA_data *rsa_data;
 	unsigned char *buf;
+
+	if (!key_data)
+		return;
 
 	fd = open(key_name, O_RDONLY);
 	if (fd < 0)
@@ -814,7 +841,6 @@ static void generate_key(void)
 	if (!rsa)
 		goto Close;
 
-	key_data = (struct key_data *)encrypt_buffer;
 	rsa_data = &key_data->rsa_data;
 	if (read(fd, rsa_data, sizeof(struct RSA_data)) <= 0)
 		goto Free_rsa;
@@ -834,8 +860,7 @@ static void generate_key(void)
 			struct encrypted_key *enc_key;
 			int ret;
 
-			enc_key = (struct encrypted_key *)(encrypt_buffer
-					+ sizeof(struct key_data));
+			enc_key = (struct encrypted_key *)(key_data + 1);
 			ret = RSA_public_encrypt(size, key_data->key,
 					enc_key->data, rsa, RSA_PKCS1_PADDING);
 			if (ret > 0) {
@@ -854,7 +879,8 @@ Close:
 
 int main(int argc, char *argv[])
 {
-	char *chroot_path = page_buffer;
+	unsigned int mem_size;
+	char *chroot_path;
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
@@ -882,13 +908,33 @@ int main(int argc, char *argv[])
 		compress = 0;
 #endif
 #ifdef CONFIG_ENCRYPT
-	if (encrypt == 'y' || encrypt == 'Y')
-		generate_key();
-	else
+	if (encrypt != 'y' && encrypt != 'Y')
 		encrypt = 0;
 #endif
 	if (s2ram != 'y' && s2ram != 'Y')
 		s2ram = 0;
+
+	page_size = getpagesize();
+	buffer_size = BUFFER_PAGES * page_size;
+
+	mem_size = 3 * page_size + buffer_size;
+#ifdef CONFIG_ENCRYPT
+	if (encrypt)
+		mem_size += buffer_size;
+#endif
+	mem_pool = malloc(mem_size);
+	if (!mem_pool) {
+		ret = errno;
+		fprintf(stderr, "suspend: Could not allocate memory\n");
+		return ret;
+	}
+#ifdef CONFIG_ENCRYPT
+	if (encrypt) {
+		mem_size -= buffer_size;
+		key_data = (struct key_data *)((char *)mem_pool + mem_size);
+		generate_key();
+	}
+#endif
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -957,6 +1003,7 @@ int main(int argc, char *argv[])
 	orig_loglevel = get_kernel_console_loglevel();
 	set_kernel_console_loglevel(suspend_loglevel);
 
+	chroot_path = mem_pool;
 	sprintf(chroot_path, "/proc/%d", getpid());
 	if (!s2ram && chroot(chroot_path)) {
 		ret = errno;
@@ -979,6 +1026,8 @@ Close_snapshot_fd:
 	close(snapshot_fd);
 Close_resume_fd:
 	close(resume_fd);
+
+	free(mem_pool);
 
 	return ret;
 }

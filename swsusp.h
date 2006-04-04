@@ -9,7 +9,6 @@
  *
  */
 
-#include <asm/page.h>
 #include <stdint.h>
 
 #include "encrypt.h"
@@ -63,7 +62,7 @@ struct swsusp_info {
 	struct RSA_data		rsa_data;
 	struct encrypted_key	key_data;
 #endif
-} __attribute__((aligned(PAGE_SIZE)));
+};
 
 #define IMAGE_CHECKSUM		0x0001
 #define IMAGE_COMPRESSED	0x0002
@@ -73,11 +72,10 @@ struct swsusp_info {
 #define SWSUSP_SIG	"ULSUSPEND"
 
 struct swsusp_header {
-	char reserved[PAGE_SIZE - 20 - sizeof(loff_t)];
 	loff_t image;
 	char	orig_sig[10];
 	char	sig[10];
-} __attribute__((packed, aligned(PAGE_SIZE)));
+} __attribute__((packed));
 
 static inline int freeze(int dev)
 {
@@ -126,41 +124,18 @@ static inline void power_off(void)
 		LINUX_REBOOT_CMD_POWER_OFF, 0);
 }
 
-/*
- *	The swap map is a data structure used for keeping track of each page
- *	written to a swap partition.  It consists of many swap_map_page
- *	structures that contain each an array of MAP_PAGE_SIZE swap area
- *	descriptiors.
- *
- *	These structures are stored on the swap and linked together with the
- *	help of the .next_swap member.
- *
- *	The swap map is created during suspend.  The swap map pages are
- *	allocated and populated one at a time, so we only need one memory
- *	page to set up the entire structure.
- *
- *	During resume we also only need to use one swap_map_page structure
- *	at a time.
- */
-
 struct swap_area {
 	loff_t offset;
 	unsigned int size;
 };
 
-#define MAP_PAGE_ENTRIES	((PAGE_SIZE - sizeof(loff_t)) / sizeof(struct swap_area))
-
-struct swap_map_page {
-	struct swap_area entries[MAP_PAGE_ENTRIES];
-	loff_t next_swap;
-};
-
+/* The number 4096 below is arbitrary.  The actual size of data[] is variable */
 struct buf_block {
 	unsigned short size;
-	char data[PAGE_SIZE];
-};
+	char data[4096];
+} __attribute__((packed));
 
-#define BUFFER_SIZE	0x20000
+#define BUFFER_PAGES	32
 
 #define SNAPSHOT_DEVICE	"/dev/snapshot"
 #define RESUME_DEVICE ""
