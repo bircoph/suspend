@@ -1,6 +1,8 @@
 #CONFIG_COMPRESS=yes
 #CONFIG_ENCRYPT=yes
 
+ARCH:=$(shell uname -m)
+
 CC_FLAGS=-I/usr/local/include
 LD_FLAGS=-L/usr/local/lib
 
