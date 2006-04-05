@@ -19,6 +19,7 @@ struct machine_entry whitelist[] = {
 	{ "Acer           ",		"TravelMate C300",	"",	"", VBE_SAVE },
 	/* Norbert Preining */
 	{ "Acer",			"TravelMate 650",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
