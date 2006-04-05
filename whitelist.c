@@ -63,7 +63,10 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2529*",		"",	"", S3_BIOS|S3_MODE },
 	/* A21m, Raymund Will */
 	{ "IBM",			"2628*",		"",	"", 0 },
+	/* T60p */
+	{ "LENOVO",			"2007*",		"",	"", S3_BIOS|S3_MODE },
 
+	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_SAVE },
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
