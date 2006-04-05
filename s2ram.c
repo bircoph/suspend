@@ -136,9 +136,8 @@ int s2ram_check(int id)
 		ret = S2RAM_UNKNOWN;
 	} else {
 		flags = whitelist[id].flags;
-		if ((flags & NOFB) && is_framebuffer()) {
+		if ((flags & NOFB) && is_framebuffer())
 			ret = S2RAM_NOFB;
-		}
 	}
 
 	return ret;
