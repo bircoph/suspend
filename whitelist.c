@@ -31,6 +31,7 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",  "Inspiron 5150*",       "",     "", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Dell e1505, Alexander Antoniades */
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
@@ -97,7 +98,6 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Latitude 110L*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D410*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D510*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Dell Inc.",			"Latitude D800*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D810*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude X1*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude X300*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
@@ -112,7 +112,6 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",	"Latitude 110L*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D410*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D510*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Dell Computer Corporation",	"Latitude D800*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude D810*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude X1*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Computer Corporation",	"Latitude X300*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
