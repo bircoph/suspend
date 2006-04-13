@@ -9,6 +9,7 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -155,6 +156,8 @@ struct swap_map_handle {
 #endif
 };
 
+#define READ_AHEAD_SIZE (8*1024*1024)
+
 /**
  *	The following functions allow us to read data using a swap map
  *	in a file-alike way
@@ -164,6 +167,32 @@ static int fill_buffer(struct swap_map_handle *handle)
 {
 	void *dst = handle->read_buffer;
 	int error;
+
+	int read_ahead_areas = READ_AHEAD_SIZE/buffer_size;
+	int advise_first, advise_last, i;
+
+	if (!handle->k) {
+		/* we've got a new map page */
+		advise_first = 0;
+		advise_last  = read_ahead_areas;
+	} else {
+		advise_first = handle->k + read_ahead_areas;
+		advise_last  = advise_first;
+	}
+
+	for (i = advise_first;
+	i <= advise_last && i < handle->areas_per_page;
+	i++) {
+		if (handle->areas[i].offset == 0)
+			break;
+
+		error = posix_fadvise(handle->fd, handle->areas[i].offset,
+				handle->areas[i].size, POSIX_FADV_NOREUSE);
+		if (error) {
+			perror("posix_fadvise");
+			break;
+		}
+	}
 
 	handle->area_size = handle->areas[handle->k].size;
 	if (handle->area_size > buffer_size)
