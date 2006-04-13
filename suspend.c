@@ -431,7 +431,8 @@ static int enough_swap(int dev, unsigned long size)
 {
 	loff_t free_swap = check_free_swap(dev);
 
-	printf("suspend: Free swap: %lu bytes\n", (unsigned long) free_swap);
+	printf("suspend: Free swap: %lu kilobytes\n",
+		(unsigned long)free_swap / 1024);
 	return free_swap > size;
 }
 
