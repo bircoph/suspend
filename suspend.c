@@ -634,8 +634,10 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 			break;
 		}
 		if (!atomic_snapshot(snapshot_fd, &in_suspend)) {
-			if (!in_suspend)
+			if (!in_suspend) {
+				free_snapshot(snapshot_fd);
 				break;
+			}
 			error = write_image(snapshot_fd, resume_fd);
 			if (!error) {
 				if (!s2ram) {
