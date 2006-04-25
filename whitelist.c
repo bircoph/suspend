@@ -28,7 +28,8 @@ struct machine_entry whitelist[] = {
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
-	{ "Dell Computer Corporation",  "Inspiron 5150*",       "",     "", VBE_POST|VBE_SAVE },
+	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
@@ -47,6 +48,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	/* T30 */
 	{ "IBM",			"2366*",		"",	"", RADEON_OFF },
+	/* X31, confirmed by Bjoern Jacke */
+	{ "IBM",			"2672*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X40 confirmed by Christian Deckelmann */
 	{ "IBM",			"2371*",	"ThinkPad X40",	"", S3_BIOS|S3_MODE },
 	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
@@ -193,7 +196,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2686*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2687*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// X30
-	{ "IBM",			"2672*",		"",	"", VBE_POST|VBE_SAVE|UNSURE|RADEON_OFF },
 	{ "IBM",			"2673*",		"",	"", VBE_POST|VBE_SAVE|UNSURE|RADEON_OFF },
 	{ "IBM",			"2884*",		"",	"", VBE_POST|VBE_SAVE|UNSURE|RADEON_OFF },
 	{ "IBM",			"2885*",		"",	"", VBE_POST|VBE_SAVE|UNSURE|RADEON_OFF },
