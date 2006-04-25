@@ -100,6 +100,16 @@ static struct config_par parameters[PARAM_NO] = {
 		.ptr = NULL,
 	},
 #endif
+	{
+		.name = "suspend to both",
+		.fmt = "%c",
+		.ptr = NULL,
+	},
+	{
+		.name = "early writeout",
+		.fmt = "%c",
+		.ptr = NULL,
+	},
 };
 
 static unsigned int page_size;

@@ -124,6 +124,27 @@ static inline void power_off(void)
 		LINUX_REBOOT_CMD_POWER_OFF, 0);
 }
 
+#ifndef SYS_sync_file_range
+ #ifdef __i386__
+  #define SYS_sync_file_range	314
+ #endif
+ #ifdef __x86_64__
+  #define SYS_sync_file_range	277
+ #endif
+ #define SYNC_FILE_RANGE_WRITE	2
+#endif
+
+static inline int start_writeout(int fd)
+{
+#ifdef SYS_sync_file_range
+	return syscall(SYS_sync_file_range, fd,
+			(loff_t)0, (loff_t)0, SYNC_FILE_RANGE_WRITE);
+#else
+	errno = ENOSYS;
+	return -1;
+#endif
+}
+
 struct swap_area {
 	loff_t offset;
 	unsigned int size;
@@ -147,7 +168,7 @@ struct buf_block {
 
 #define SUSPEND_SWAPPINESS	100
 
-#define GEN_PARAM	7
+#define GEN_PARAM	8
 
 #ifdef CONFIG_COMPRESS
 #define COMPRESS_PARAM	1

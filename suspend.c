@@ -56,6 +56,7 @@ static char key_name[MAX_STR_LEN] = KEY_FILE;
 #define key_name NULL
 #endif
 static char s2ram;
+static char early_writeout;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
 
@@ -116,6 +117,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "suspend to both",
 		.fmt = "%c",
 		.ptr = &s2ram,
+	},
+	{
+		.name = "early writeout",
+		.fmt = "%c",
+		.ptr = &early_writeout,
 	},
 };
 
@@ -393,7 +399,7 @@ static inline int flush_swap_writer(struct swap_map_handle *handle)
 static int save_image(struct swap_map_handle *handle,
                       unsigned int nr_pages)
 {
-	unsigned int m;
+	unsigned int m, writeout_rate;
 	int ret;
 	int error = 0;
 
@@ -401,6 +407,9 @@ static int save_image(struct swap_map_handle *handle,
 	m = nr_pages / 100;
 	if (!m)
 		m = 1;
+	writeout_rate = nr_pages / 5;
+	if (!writeout_rate || !early_writeout)
+		writeout_rate = nr_pages;
 	nr_pages = 0;
 	do {
 		ret = read(handle->dev, handle->page_buffer, page_size);
@@ -410,6 +419,8 @@ static int save_image(struct swap_map_handle *handle,
 				break;
 			if (!(nr_pages % m))
 				printf("\b\b\b\b%3d%%", nr_pages / m);
+			if (!(nr_pages % writeout_rate))
+				start_writeout(handle->fd);
 			nr_pages++;
 		}
 	} while (ret > 0);
@@ -971,6 +982,8 @@ int main(int argc, char *argv[])
 #endif
 	if (s2ram != 'y' && s2ram != 'Y')
 		s2ram = 0;
+	if (early_writeout != 'y' && early_writeout != 'Y')
+		early_writeout = 0;
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
