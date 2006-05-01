@@ -31,6 +31,7 @@
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
+#include "splash.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -47,6 +48,9 @@ static char decrypt;
 #else
 #define decrypt 0
 #endif
+static char splash_param;
+
+static struct splash splash;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -109,6 +113,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "early writeout",
 		.fmt = "%c",
 		.ptr = NULL,
+	},
+	{
+		.name = "splash",
+		.fmt = "%c",
+		.ptr = &splash_param,
 	},
 };
 
@@ -345,8 +354,11 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 			error = ret < 0 ? -errno : -ENOSPC;
 			break;
 		}
-		if (!(n % m))
+		if (!(n % m)) {
 			printf("\b\b\b\b%3d%%", n / m);
+			if (n / m > 15)
+				splash.progress(n / m);
+		}
 		n++;
 	} while (n < nr_pages);
 	if (!error)
@@ -462,6 +474,7 @@ static int read_image(int dev, char *resume_dev_name)
 			printf("\n");
 			verify_checksum = 1;
 		}
+		splash.progress(10);
 		if (header->image_flags & IMAGE_COMPRESSED) {
 			printf("resume: Compressed image\n");
 #ifdef CONFIG_COMPRESS
@@ -481,8 +494,11 @@ static int read_image(int dev, char *resume_dev_name)
 				int j;
 
 				printf("resume: Encrypted image\n");
+				splash.to_verbose();
 				encrypt_init(&handle.key, handle.ivec, &handle.num,
 						buffer, buffer + page_size, 0);
+				splash.to_silent();
+				splash.progress(15);
 				for (j = 0; j < IVEC_SIZE; j++)
 					handle.ivec[j] ^= header->salt[j];
 			}
@@ -610,6 +626,9 @@ int main(int argc, char *argv[])
 	if (get_config("resume", argc, argv, PARAM_NO, parameters, resume_dev_name))
 		return EINVAL;
 
+	if (splash_param != 'y' && splash_param != 'Y')
+		splash_param = 0;
+
 	while (stat(resume_dev_name, &stat_buf)) {
 		printf("resume: Could not stat the resume device file.\n"
 			"\tPlease type in the file name to try again"
@@ -632,6 +651,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	splash_prepare(&splash, splash_param);
+	splash.progress(5);
+
 	dev = open(snapshot_dev_name, O_WRONLY);
 	if (dev < 0)
 		return ENOENT;
@@ -648,6 +670,7 @@ int main(int argc, char *argv[])
 	}
 	atomic_restore(dev);
 	unfreeze(dev);
+	splash.finish();
 Close:
 	close(dev);
 

@@ -32,6 +32,8 @@ ifeq ($(ARCH), x86_64)
 S2RAMOBJ=vt.o vbetool/thunk.o vbetool/x86-common.o vbetool/vbetool.o vbetool/x86emu/libx86emu.a radeontool.o dmidecode.o
 endif
 
+SPLASHOBJ = splash.o bootsplash.o
+
 clean:
 	rm -f suspend suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
@@ -71,11 +73,17 @@ config.o:	config.c config.h
 vt.o:	vt.c vt.h
 	$(CC) -Wall -c vt.c
 
-suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
-	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o suspend $(S2RAMOBJ) $(LD_FLAGS) -lpci
+bootsplash.o: bootsplash.h bootsplash.c
+	$(CC) -g -Wall $(CC_FLAGS) -c bootsplash.c -o bootsplash.o
 
-resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h
-	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o resume.c -static -o resume $(LD_FLAGS)
+splash.o: splash.h splash.c bootsplash.o vt.o
+	$(CC) -g -Wall $(CC_FLAGS) -c splash.c -o splash.o
+
+suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
+	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o suspend $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
+
+resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
+	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
 
 ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o encrypt.o keygen.c encrypt.h md5.h

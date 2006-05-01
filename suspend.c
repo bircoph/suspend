@@ -35,6 +35,8 @@
 #include "config.h"
 #include "md5.h"
 #include "s2ram.h"
+#include "splash.h"
+#include "vt.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -57,8 +59,10 @@ static char key_name[MAX_STR_LEN] = KEY_FILE;
 #endif
 static char s2ram;
 static char early_writeout;
+static char splash_param;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
+static struct splash splash;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -122,6 +126,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "early writeout",
 		.fmt = "%c",
 		.ptr = &early_writeout,
+	},
+	{
+		.name = "splash",
+		.fmt = "%c",
+		.ptr = &splash_param,
 	},
 };
 
@@ -417,8 +426,11 @@ static int save_image(struct swap_map_handle *handle,
 			error = swap_write_page(handle);
 			if (error)
 				break;
-			if (!(nr_pages % m))
+			if (!(nr_pages % m)) {
 				printf("\b\b\b\b%3d%%", nr_pages / m);
+				if ((nr_pages / m) >= 20 && (nr_pages / m) <= 95)
+					splash.progress(nr_pages / m);
+			}
 			if (!(nr_pages % writeout_rate))
 				start_writeout(handle->fd);
 			nr_pages++;
@@ -478,7 +490,7 @@ static int mark_swap(int fd, loff_t start)
  *	write_image - Write entire image and metadata.
  */
 
-int write_image(int snapshot_fd, int resume_fd)
+int write_image(int snapshot_fd, int resume_fd, int vt_no)
 {
 	static struct swap_map_handle handle;
 	struct swsusp_info *header = mem_pool;
@@ -523,9 +535,12 @@ int write_image(int snapshot_fd, int resume_fd)
 			} else {
 				int j;
 
+				chvt(vt_no);
 				encrypt_init(&handle.key, handle.ivec, &handle.num,
 						handle.write_buffer,
 						handle.encrypt_buffer, 1);
+				splash.switch_to();
+				splash.progress(20);
 				get_random_salt(header->salt, IVEC_SIZE);
 				for (j = 0; j < IVEC_SIZE; j++)
 					handle.ivec[j] ^= header->salt[j];
@@ -634,6 +649,10 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 	switch_vt_mode(vt_fd, vt_no, K_MEDIUMRAW, KD_GRAPHICS);
 	error = freeze(snapshot_fd);
 	switch_vt_mode(vt_fd, vt_no, KD_TEXT, K_XLATE);
+
+	splash.switch_to();
+	splash.progress(15);
+
 	if (error)
 		goto Unfreeze;
 
@@ -649,8 +668,9 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 				free_snapshot(snapshot_fd);
 				break;
 			}
-			error = write_image(snapshot_fd, resume_fd);
+			error = write_image(snapshot_fd, resume_fd, vt_no);
 			if (!error) {
+				splash.progress(100);
 				if (!s2ram) {
 					shutdown();
 				} else {
@@ -980,6 +1000,9 @@ int main(int argc, char *argv[])
 	if (encrypt != 'y' && encrypt != 'Y')
 		encrypt = 0;
 #endif
+	if (splash_param != 'y' && splash_param != 'Y')
+		splash_param = 0;
+
 	if (s2ram != 'y' && s2ram != 'Y')
 		s2ram = 0;
 	if (early_writeout != 'y' && early_writeout != 'Y')
@@ -1058,12 +1081,16 @@ int main(int argc, char *argv[])
 		goto Close_snapshot_fd;
 	}
 
+	splash_prepare(&splash, splash_param);
+
 	vt_fd = prepare_console(&orig_vc, &suspend_vc);
 	if (vt_fd < 0) {
 		ret = errno;
 		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
 		goto Close_snapshot_fd;
 	}
+
+	splash.progress(5);
 
 	if (s2ram) {
 		/* If s2ram_prepare returns != 0, better not try to suspend to RAM */
@@ -1089,6 +1116,8 @@ int main(int argc, char *argv[])
 
 	sync();
 
+	splash.progress(10);
+
 	ret = suspend_system(snapshot_fd, resume_fd, vt_fd, suspend_vc);
 
 	if (orig_loglevel >= 0)
@@ -1101,6 +1130,7 @@ int main(int argc, char *argv[])
 
 Restore_console:
 	restore_console(vt_fd, orig_vc);
+	splash.finish();
 Close_snapshot_fd:
 	close(snapshot_fd);
 Close_resume_fd:
