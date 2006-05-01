@@ -1,20 +1,20 @@
-Suspend-to-disk HOWTO
+Suspend to disk HOWTO
 ~~~~~~~~~~~~~~~~~~~~~
 Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
 Copyright (C) 2006 Rafael J. Wysocki <rjw@sisk.pl>
 
 I. Quick start
 
-You'll need an -mm kernel for now.  It has to be configured to support
-software suspend.  It is also recommended to configure it to support RAM disks,
-initial RAM disks, loopback block devices, and the ext2 filesystem.
+You'll need the 2.6.17-rc1 kernel or above, or a recent -mm kernel.  It has to
+be configured to support software suspend.  It is also recommended to configure it to
+support RAM disks, initial RAM disks, loopback block devices, and the ext2 filesystem.
 
 You'll also need /dev/snapshot for the suspend tool to work:
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
 For compression, you'll additionally need the Marc Lehmann's libLZF library
-to be installed on your system and for encyption you'll need OpenSSL.
+to be installed on your system, and for encyption you'll need OpenSSL.
 
 First, edit Makefile and the conf/suspend.conf file to reflect the
 configuration of your system.  The value of the RESUME_DEVICE constant in Makefile
@@ -22,8 +22,9 @@ must be the same as the value of the "resume device" parameter in the configurat
 file and it must be the full path of your suspend swap partition device file.
 
 There should be just one resume partition, for now. You'll need at most 1/2 of
-your RAM of free space on it, but it may be smaller, too.  The suspend tool will
-do its best to create the system snapshot image that fits the resume partition.
+your RAM of free space on it, but in some cases it may be smaller, too.  The suspend
+tool may be configured to create quite small snapshot images but then some contents
+of the RAM will have to be swapped out before suspend.
 
 Next, build the userspace tools in the usual way:
 
@@ -70,8 +71,7 @@ Suspend is easy, resume is slightly harder. Resume application has to
 be run without any filesystems mounted rw, and without any journalling
 filesystems mounted at all, preferably from initrd (but read-only ext2
 should do the trick, too).  However, if you have followed the instructions above,
-the resume tool should be started automatically when the kernel boots, but you
-should pass the "noresume" command line argument to the kernel.
+the resume tool should be started automatically when the kernel boots.
 
 If you prefer to run resume manually, it is also easy
 
@@ -98,7 +98,7 @@ Next, become root and run
 into /usr/local/lib, and the lzf binary into /usr/local/bin.]
 
 For encryption you'll need the OpenSSL library, but it should be installed on your
-system.  If it is not (highly unlikely), please refer to the documentation at
+system anyway.  If it is not (highly unlikely), please refer to the documentation at
 http://www.openssl.org for installation instructions.
 
 2) You'll need to compile the suspend and resume tools.  To do this run
@@ -130,7 +130,11 @@ suspend loglevel = <kernel_console_loglevel_during_suspend>
 compute checksum = <y/n>
 compress = <y/n>
 encrypt = <y/n>
+RSA key file = <path>
 max loglevel = <ignored>
+suspend to both = <y/n>
+early writeout = <y/n>
+splash = <y/n>
 
 The "image size" parameter may be used to limit the size of the system
 snapshot image created by the suspend tool, but it's not mandatory. Namely,
@@ -146,18 +150,39 @@ If the "compress" parameter is set to 'y', the suspend and resume tools will
 use the LZF compression algorithm to compress/decompress the image.
 
 If the "encrypt" parameter is set to 'y', the suspend and resume tools will
-use the Blowfish encryption algorithm to encrypt/decrypt the image.
+use the Blowfish encryption algorithm to encrypt/decrypt the image.  If the
+"RSA key file" option is also used, the suspend tool will generate a random
+key for the Blowfish encryption that will be passed to the resume tool
+within the image header with the help of the RSA cipher.  However, for this
+purpose you'll need an additional RSA key file the path to which should
+be the value of "RSA key file".  For more details refer to section "IV. Advanced
+encryption" in this document.
 
-It is sufficient to set "compute checksum = y" and/or "compress = y",
-and/or "encrypt = y" for the suspend tool which will put the appropriate
-information for the resume tool in the image header.
+If the "suspend to both" parameter is set to 'y', the suspend tool will suspend
+the box to RAM after the suspend image has been saved to disk.  Then, upon
+resume, if there's some battery power remaining, the box will be resumed
+from RAM and the saved image will be discarded.  However, for this to work
+the box must be in the suspend to RAM whitelist provided along with the tools.
+
+If the "early writeout" parameter is set to 'y' is specified, the suspend
+utility will start syncing the resume device early in the process of writing
+the image to it.  [This has been reported to speed up the suspend on some
+boxes and eliminates the "fast progress meter and long fsync wait" effect.]
+
+The "splash" parameter is used to make suspend and/or resume use a splash system
+(when set to 'y').  Currently the bootsplash.org's splash system is supported.
 
 The resume tool can use the same configuration file that is used by the
-suspend tool, but it will ignore the "image size", "compute checksum", "compress",
-and "encrypt" parameters.  It will use the value of "suspend loglevel" as
-the kernel console loglevel during resume. Additionally it will use the
-value of "max loglevel" as the kernel console loglevel to switch to in
+suspend tool, but it will ignore most of the above parameters.  It will use the
+value of "suspend loglevel" as the kernel console loglevel during resume. Additionally
+it will use the value of "max loglevel" as the kernel console loglevel to switch to in
 case the resume fails (this parameter is ignored by the suspend tool).
+
+It is not necessary to set "compute checksum = y" and/or "compress = y",
+and/or "encrypt = y" for the resume tool.  The appropriate information related to
+these options will be passed to it in the image header by the suspend tool.
+However, the resume tool will only use the splash system if "splash = y" is set for it
+explicitly.
 
 4) You'll need to create the snapshot device file:
 
@@ -282,3 +307,28 @@ the problem.
 
 Finally, you can start X and try to suspend from an xterm.  If this works, you're
 done.
+
+IV. Advanced encryption
+
+If the suspend and resume tools are compiled with the encryption support, the
+RSA cipher may be used to pass the Blowfish encryption key from the suspend
+tool to the resume tool within the suspend image.  This way the suspend tool
+need not ask the user for a passphrase.
+
+For this purpose you need to generate the RSA key pair using the suspend-keygen tool
+provided along with the suspend and resume tools.  The output file of suspend-keygen
+should be saved as /etc/suspend.key (or something else pointed to by the
+"RSA key file =" configuration  parameter of suspend).  This file contains the public
+modulus (n), public exponent (e) and the Blowfish-encrypted private exponent (d) of
+the RSA key pair.  The RSA private exponent (d) is encrypted with a user-provided
+passphrase.
+
+Then, the suspend utility will load the contents of this file, generate a random
+session key (k) and initialization vector (i) for the image encryption and use
+(n, e) to encrypt these values with RSA.  The encrypted (k, i) as well as the
+contents of the RSA key file will be saved in the image header.
+
+The resume utility will read (n, e) and (encrypted) d as well as (encrypted) (k, i)
+from the image header.  Then it will ask the user for a passphrase and will
+try to decrypt (d) using it.  Next, it will use (n, e, d) to decrypt (k, i) needed
+for decrypting the image.

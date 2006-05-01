@@ -3,20 +3,35 @@ Userland support for software suspend
 Copyright (C) 2005 Rafael J. Wysocki <rjw@sisk.pl>
 Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
 
+The package contains the suspend and resume tools that make
+it possible to use the kernel software suspend userland interface
+(available in the 2.6.17-rc1 kernel and above).
+
 You'll need /dev/snapshot for these to work:
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
-(see HOWTO file for more details).
+(see the HOWTO file for more details).
 
-Suspending to RAM should be done from the C program (not a
-script). This will allow us to do suspend-to-both-RAM-and-disk in
-future.
+The suspend tool now supports the "suspend to both" option which
+means the box may be suspended to RAM after the suspend to disk
+image has been created instead of being powered off.  Then, if
+there's enough battery power, you can resume from RAM and
+discard the saved image.  However, this is only possible if your
+box is explicitly whitelisted.
 
-For debugging, see http://www.opensuse.org/ACPI_Suspend_debugging .
+The s2ram utility is also provided allowing you to suspend to RAM
+or just check if the box is on the whitelist.  The utility contains
+the code out of vbetool and radeontool needed for handling quite a lot
+of graphics cards after resume from RAM.
+
+For debugging, see http://www.opensuse.org/ACPI_Suspend_debugging and
+http://en.opensuse.org/S2ram .
 
 acpi-support package from Ubuntu has *very* long whitelist of machines: 
 http://packages.ubuntu.org.cn/dapper/admin/acpi-support .
 
-vbetool is based on vbetool-0.5-1 from Debian. pciutils-dev package is
-needed to compile vbetool.
+The vbetool code is based on vbetool-0.5-1 from Debian.
+
+pciutils-dev package is needed to compile the vbetool code, so it's needed
+to compile the suspend and s2ram tools.
