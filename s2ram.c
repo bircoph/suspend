@@ -46,9 +46,7 @@ static void identify_machine(void)
 	       "    sys_version  = \"%s\"\n"
 	       "    bios_version = \"%s\"\n",
 	       sys_vendor, sys_product, sys_version, bios_version);
-	printf("See /usr/src/linux/Doc*/power/video.txt for details,\n"
-	       "then reimplement neccessary steps here and mail patch to\n"
-	       "pavel@suse.cz. Good luck!\n"
+	printf("See http://en.opensuse.org/S2ram for details.\n"
 	       "\n"
 	       "If you report a problem, please include the complete output "
 	       "above.\n");
