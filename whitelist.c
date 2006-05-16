@@ -30,6 +30,8 @@ struct machine_entry whitelist[] = {
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
+	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
@@ -46,6 +48,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
+	/* R52, reported by Joscha Arenz */
+	{ "IBM",			"1860*",		"",	"", S3_BIOS|S3_MODE },
 	/* T30 */
 	{ "IBM",			"2366*",		"",	"", RADEON_OFF },
 	/* X31, confirmed by Bjoern Jacke */
@@ -67,6 +71,9 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2529*",		"",	"", S3_BIOS|S3_MODE },
 	/* A21m, Raymund Will */
 	{ "IBM",			"2628*",		"",	"", 0 },
+	/* X60 / X60s */
+	{ "LENOVO",			"1702*",		"",	"", S3_BIOS|S3_MODE },
+	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
 	/* T60p */
 	{ "LENOVO",			"2007*",		"",	"", S3_BIOS|S3_MODE },
 
@@ -99,7 +106,6 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Inspiron 8600*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 9300*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude 110L*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Dell Inc.",			"Latitude D410*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D510*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude D810*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Latitude X1*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
