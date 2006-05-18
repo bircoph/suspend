@@ -25,6 +25,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
+	/* ASUS V6V, Johannes Engel <j-engel@gmx.de> */
+	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
