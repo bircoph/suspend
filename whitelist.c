@@ -25,11 +25,14 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
+	/* M6VA, seraphim@glockenbach.net */
+	{ "ASUSTeK Computer Inc.        ",	"M6VA      ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS V6V, Johannes Engel <j-engel@gmx.de> */
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
+	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
 	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
@@ -41,6 +44,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
+	/* This is a desktop with onboard i810 video */
+	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
@@ -68,6 +73,7 @@ struct machine_entry whitelist[] = {
 	/* R32 */
 	{ "IBM",			"2658*",		"",	"", 0 },
 	/* R40 */
+	{ "IBM",			"2681*",		"",	"", 0 },
 	{ "IBM",			"2722*",		"",	"", 0 },
 	/* Z60m, reported by Arkadiusz Miskiewicz */
 	{ "IBM",			"2529*",		"",	"", S3_BIOS|S3_MODE },
@@ -87,10 +93,14 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
 	{ "TOSHIBA",			"Satellite A30",	"",	"", VBE_SAVE },
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_SAVE },
+	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
+	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
+	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
+	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
 
 	// entries below are imported from acpi-support 0.59 and though "half known".
 	{ "ASUSTeK Computer Inc.",	"L7000G series Notebook PC*", "","", VBE_POST|VBE_SAVE|UNSURE },
@@ -147,7 +157,6 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Tablet PC TR1105*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"Pavilion zd7000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// R40
-	{ "IBM",			"2681*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2682*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2683*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2692*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
