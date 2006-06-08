@@ -81,6 +81,7 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2628*",		"",	"", 0 },
 	/* X60 / X60s */
 	{ "LENOVO",			"1702*",		"",	"", S3_BIOS|S3_MODE },
+	{ "LENOVO",			"1704*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
 	/* T60p */
 	{ "LENOVO",			"2007*",		"",	"", S3_BIOS|S3_MODE },
