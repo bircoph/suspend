@@ -67,6 +67,9 @@ To suspend-to-disk, run
 
 ./suspend
 
+[Warning: some shells have "suspend" built in command, so specifing
+exact path like ./suspend is more important than usual.]
+
 Suspend is easy, resume is slightly harder. Resume application has to
 be run without any filesystems mounted rw, and without any journalling
 filesystems mounted at all, preferably from initrd (but read-only ext2
@@ -113,7 +116,7 @@ is /etc/suspend.conf, but this can be customized by changing CONFIG_FILE
 in config.h. It is also possible to specify the configuration file name
 from the command line, by using the -f option, eg.
 
-# suspend -f <config_file>
+# ./suspend -f <config_file>
 
 The configuration file must contain the resume device specification, eg.
 
