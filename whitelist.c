@@ -17,6 +17,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer           ",		"TravelMate C300",	"",	"", VBE_SAVE },
+	/* TravelMate 630Lci	Tim Dijkstra <tim@famdijkstra.org> */
+	{ "Acer           ",		"TravelMate 630 ",	"",	"", S3_BIOS|S3_MODE },
 	/* Norbert Preining */
 	{ "Acer",			"TravelMate 650",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
@@ -44,6 +46,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Dell e1505, Alexander Antoniades */
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
+	/* Dell inspiron 1300, Tim Dijkstra <tim@famdijkstra.org> */
+	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
