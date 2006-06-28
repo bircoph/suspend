@@ -20,10 +20,14 @@ CONFIG_DIR=/etc
 RESUME_DEVICE=<path_to_resume_device_file>
 BOOT_DIR=/boot
 
+S2BOTH=s2both
+S2DISK=s2disk
+CONFIGFILE=uswsusp.conf
+
 ifdef CONFIG_ENCRYPT
-all: suspend suspend-keygen resume s2ram
+all: $(S2DISK) suspend-keygen resume s2ram
 else
-all: suspend resume s2ram
+all: $(S2DISK) resume s2ram
 endif
 
 S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o vbetool/vbetool.o radeontool.o dmidecode.o
@@ -35,7 +39,7 @@ endif
 SPLASHOBJ = splash.o bootsplash.o
 
 clean:
-	rm -f suspend suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
+	rm -f $(S2DISK) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
 	$(CC) -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
@@ -79,8 +83,8 @@ bootsplash.o: bootsplash.h bootsplash.c
 splash.o: splash.h splash.c bootsplash.o vt.o
 	$(CC) -g -Wall $(CC_FLAGS) -c splash.c -o splash.o
 
-suspend:	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
-	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o suspend $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
+$(S2DISK):	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
+	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
 	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
@@ -89,20 +93,24 @@ ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o encrypt.o keygen.c encrypt.h md5.h
 	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H -DCONFIG_ENCRYPT md5.o keygen.c -o suspend-keygen -lcrypto
 
-install-suspend:	suspend suspend-keygen conf/suspend.conf
+install-suspend:	$(S2DISK) suspend-keygen conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
-	install --mode=755 suspend-keygen $(SUSPEND_DIR)
-	install --mode=755 suspend $(SUSPEND_DIR)
-	install --mode=644 conf/suspend.conf $(CONFIG_DIR)
+	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)
+	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
+	(cd  $(DESTDIR)$(SUSPEND_DIR); ln -s $(S2DISK) $(S2BOTH))
 else
-install-suspend:	suspend conf/suspend.conf
+install-suspend:	$(S2DISK) conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
-	install --mode=755 suspend $(SUSPEND_DIR)
-	install --mode=644 conf/suspend.conf $(CONFIG_DIR)
+	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)
+	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
+	(cd  $(DESTDIR)$(SUSPEND_DIR); ln -s $(S2DISK) $(S2BOTH))
 endif
 
-install-resume-initrd:	resume conf/suspend.conf
-	BOOT_DIR=$(BOOT_DIR) ./scripts/create-resume-initrd.sh $(RESUME_DEVICE)
+install-resume-initrd:	resume conf/$(CONFIGFILE)
+	BOOT_DIR=$(DESTDIR)$(BOOT_DIR) ./scripts/create-resume-initrd.sh $(RESUME_DEVICE)
 
 install-resume:		resume 
 	./scripts/install-resume.sh

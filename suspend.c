@@ -118,11 +118,6 @@ static struct config_par parameters[PARAM_NO] = {
 	},
 #endif
 	{
-		.name = "suspend to both",
-		.fmt = "%c",
-		.ptr = &s2ram,
-	},
-	{
 		.name = "early writeout",
 		.fmt = "%c",
 		.ptr = &early_writeout,
@@ -974,6 +969,7 @@ int main(int argc, char *argv[])
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
 	int orig_loglevel, orig_swappiness, ret;
+	char *our_name;
 
 	/* Make sure the 0, 1, 2 descriptors are open before opening the
 	 * snapshot and resume devices
@@ -1003,8 +999,16 @@ int main(int argc, char *argv[])
 	if (splash_param != 'y' && splash_param != 'Y')
 		splash_param = 0;
 
-	if (s2ram != 'y' && s2ram != 'Y')
-		s2ram = 0;
+	if ((our_name = strrchr(argv[0], '/')) != NULL) 
+	    our_name++;
+	else
+	    our_name = argv[0];
+		
+	if (!strcmp(our_name, S2BOTH_NAME))
+	    s2ram = 'y';
+	else 
+	    s2ram = 0;
+	
 	if (early_writeout != 'y' && early_writeout != 'Y')
 		early_writeout = 0;
 

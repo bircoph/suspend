@@ -27,3 +27,4 @@ int get_config(char *my_name,
                char *special);
 
 #define CONFIG_FILE	"/etc/suspend.conf"
+#define S2BOTH_NAME	"s2both"
