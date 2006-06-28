@@ -22,7 +22,7 @@ BOOT_DIR=/boot
 
 S2BOTH=s2both
 S2DISK=s2disk
-CONFIGFILE=uswsusp.conf
+CONFIGFILE=suspend.conf
 
 ifdef CONFIG_ENCRYPT
 all: $(S2DISK) suspend-keygen resume s2ram
