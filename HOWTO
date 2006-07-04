@@ -36,9 +36,9 @@ To install the suspend tool, become root and run:
 # make install-suspend
 
 The installation procedure for the resume tool depends on whether you use an initrd
-or not.
+or an initramfs, or nothing.
 
-If you don't use an initrd, you'll need one to run the resume tool.  It's not
+If you don't use either, you'll need an initrd to run the resume tool.  It's not
 anything to worry about, though.  Become root, run:
 
 # make install-resume-initrd
@@ -62,6 +62,10 @@ initrd files.
 If you use an initrd already, you should know how to put the resume binary into it.
 Also, you ought to have a linuxrc script or binary on the initrd, so you'll need to
 make it execute the resume binary at the very end.
+
+If you use an initramfs, it depends on whether you use initramfs-tools or yaird. 
+Again, you need to put the resume binary in it and ensure the initialisation script 
+executes it.  For yaird, instructions and a patch are given at the end of section II.
 
 To suspend-to-disk, run
 
@@ -187,7 +191,7 @@ these options will be passed to it in the image header by the suspend tool.
 However, the resume tool will only use the splash system if "splash = y" is set for it
 explicitly.
 
-4) You'll need to create the snapshot device file:
+4) You may need to create the snapshot device file:
 
 # mknod /dev/snapshot c 10 231
 
@@ -202,7 +206,8 @@ Now you should be able to use the suspend tool. It is recommended, however,
 to put the tool into a directory located directly on the root filesystem,
 for safe testing.
 
-5) It is recommended to place the resume tool on an initrd.  It may be done
+5) It is recommended to place the resume tool on an initrd or an initramfs.  For the 
+latter, see instructions for yaird under (6) below.  For an initrd, this  may be done
 using "make install-resume-initrd", but I'll describe the full procedure in case
 you want to do something in a different way.  For simplicity I will only cover the
 fastest method of setting it up that will allow you to get the resume tool up and
@@ -270,10 +275,46 @@ newly installed kernel, eg.
 
 (if you use LILO, please refer to its documentation).
 
-6. If you already have the resume initrd file which is called resume-initrd
+(l) If you already have the resume initrd file which is called resume-initrd
 and located in the /boot directory, you can install the resume tool on it
 by using "make install-resume".
 
+(6) For an initramfs made by yaird, you can yaird let load the resume binary.
+For this purpose, edit /etc/yaird/Templates.cfg, and find "Template RESUME"
+The first few lines should read as follows:
+	TEMPLATE resume
+	BEGIN
+		FILE "/usr/local/sbin/resume"
+		FILE "/etc/suspend.conf"
+		SCRIPT "/init"
+		BEGIN
+			!if [ -z "$noresume" ]
+			!then
+			!  # for suspend2 (>= 2.2-rc8)
+			!  if [ -w /proc/suspend2/do_resume ]; then
+			!    echo > /proc/suspend2/do_resume
+			!  fi
+			!  # for suspend2 (< 2.2-rc8)
+			!  if [ -w /proc/software_suspend/do_resume ]; then
+			!    echo > /proc/software_suspend/do_resume
+			!  fi
+			!  if [ -x /usr/local/sbin/resume ]
+			!  then
+			!    mkcdev /dev/snapshot misc/snapshot
+			!    /usr/local/sbin/resume
+			!  fi
+Here, the two "FILE" lines and the last if-then statement are new.
+
+Furthermore, yaird needs to know what the resume partition is.  You can either edit
+/etc/yaird/Default.cfg and add that to the RESUME goal, or add an option "resume"
+to your swap partition in /etc/fstab, as follows
+/dev/hda3	none		swap	sw,resume		0	0
+
+Finally, resume needs to be where you say it is in Templates.cfg, so do
+install --mode=755 resume /usr/local/sbin/
+
+With all the above done, run yaird (or if you are a lazy Debian user, just reinstall 
+linux-image-2.6.17-...).
 
 III. Testing
 
