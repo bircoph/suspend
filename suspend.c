@@ -34,9 +34,11 @@
 #include "swsusp.h"
 #include "config.h"
 #include "md5.h"
-#include "s2ram.h"
 #include "splash.h"
 #include "vt.h"
+#ifdef CONFIG_BOTH
+#include "s2ram.h"
+#endif
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -569,6 +571,7 @@ int write_image(int snapshot_fd, int resume_fd, int vt_no)
 	return error;
 }
 
+#ifdef CONFIG_BOTH
 static int reset_signature(int fd)
 {
 	int ret, error = 0;
@@ -610,6 +613,7 @@ static int reset_signature(int fd)
 	}
 	return error;
 }
+#endif
 
 static void shutdown(void)
 {
@@ -667,6 +671,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 			error = write_image(snapshot_fd, resume_fd, vt_no);
 			if (!error) {
 				splash.progress(100);
+#ifdef CONFIG_BOTH
 				if (!s2ram) {
 					shutdown();
 				} else {
@@ -682,6 +687,9 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 					s2ram_resume();
 					goto Unfreeze;
 				}
+#else
+				shutdown();
+#endif
 			} else {
 				free_swap_pages(snapshot_fd);
 				free_snapshot(snapshot_fd);
@@ -970,7 +978,6 @@ int main(int argc, char *argv[])
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
 	int orig_loglevel, orig_swappiness, ret;
-	char *our_name;
 
 	/* Make sure the 0, 1, 2 descriptors are open before opening the
 	 * snapshot and resume devices
@@ -1000,16 +1007,6 @@ int main(int argc, char *argv[])
 	if (splash_param != 'y' && splash_param != 'Y')
 		splash_param = 0;
 
-	if ((our_name = strrchr(argv[0], '/')) != NULL) 
-	    our_name++;
-	else
-	    our_name = argv[0];
-		
-	if (!strcmp(our_name, S2BOTH_NAME))
-	    s2ram = 'y';
-	else 
-	    s2ram = 0;
-	
 	if (early_writeout != 'y' && early_writeout != 'Y')
 		early_writeout = 0;
 
@@ -1097,10 +1094,10 @@ int main(int argc, char *argv[])
 
 	splash.progress(5);
 
-	if (s2ram) {
-		/* If s2ram_prepare returns != 0, better not try to suspend to RAM */
-		s2ram = !s2ram_prepare();
-	}
+#ifdef CONFIG_BOTH
+	/* If s2ram_prepare returns != 0, better not try to suspend to RAM */
+	s2ram = !s2ram_prepare();
+#endif
 
 	open_printk();
 	orig_loglevel = get_kernel_console_loglevel();
