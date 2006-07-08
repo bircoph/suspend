@@ -620,11 +620,6 @@ static void shutdown(void)
 	while(1);
 }
 
-#define switch_vt_mode(fd, vt, ioc1, ioc2)	ioctl(fd, KDSKBMODE, ioc1); \
-						ioctl(fd, VT_ACTIVATE, vt); \
-						ioctl(fd, VT_WAITACTIVE, vt); \
-						ioctl(fd, KDSKBMODE, ioc2);
-
 int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 {
 	loff_t avail_swap;
@@ -641,9 +636,15 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 		return ENOSPC;
 	}
 
-	switch_vt_mode(vt_fd, vt_no, K_MEDIUMRAW, KD_GRAPHICS);
+	ioctl(vt_fd, KDSKBMODE, K_MEDIUMRAW);
+	ioctl(vt_fd, VT_ACTIVATE, vt_no);
+	ioctl(vt_fd, VT_WAITACTIVE, vt_no);
+	ioctl(vt_fd, KDSETMODE, KD_GRAPHICS);
 	error = freeze(snapshot_fd);
-	switch_vt_mode(vt_fd, vt_no, KD_TEXT, K_XLATE);
+	ioctl(vt_fd, KDSETMODE, KD_TEXT);
+	ioctl(vt_fd, KDSKBMODE, K_XLATE);
+	ioctl(vt_fd, VT_ACTIVATE, vt_no);
+	ioctl(vt_fd, VT_WAITACTIVE, vt_no);
 
 	splash.switch_to();
 	splash.progress(15);
