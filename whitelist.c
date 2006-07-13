@@ -28,9 +28,12 @@ struct machine_entry whitelist[] = {
 	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
+	{ "ASUSTeK Computer Inc.        ",	"M6N       ",	"",	"", S3_MODE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
 	/* M6VA, seraphim@glockenbach.net */
 	{ "ASUSTeK Computer Inc.        ",	"M6VA      ",	"",	"", S3_BIOS|S3_MODE },
+	/* M7N, Xavier Douville <s2ram-sourceforge@douville.org> */
+	{ "ASUSTeK Computer Inc.        ",	"M7A       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS V6V, Johannes Engel <j-engel@gmx.de> */
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
@@ -65,6 +68,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"1860*",		"",	"", S3_BIOS|S3_MODE },
 	/* T30 */
 	{ "IBM",			"2366*",		"",	"", RADEON_OFF },
+	/* X22, confirmed by Richard Neill */
+	{ "IBM",			"2662*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X31, confirmed by Bjoern Jacke */
 	{ "IBM",			"2672*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X40 confirmed by Christian Deckelmann */
