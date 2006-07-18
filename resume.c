@@ -481,6 +481,8 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 		if (!error && (header->image_flags & IMAGE_ENCRYPTED)) {
 #ifdef CONFIG_ENCRYPT
+			printf("resume: Encrypted image\n");
+			splash.to_verbose();
 			if (header->image_flags & IMAGE_USE_RSA) {
 				handle.num = 0;
 				error = decrypt_key(header, &handle.key,
@@ -488,15 +490,13 @@ static int read_image(int dev, char *resume_dev_name)
 			} else {
 				int j;
 
-				printf("resume: Encrypted image\n");
-				splash.to_verbose();
 				encrypt_init(&handle.key, handle.ivec, &handle.num,
 						buffer, buffer + page_size, 0);
-				splash.to_silent();
-				splash.progress(15);
 				for (j = 0; j < IVEC_SIZE; j++)
 					handle.ivec[j] ^= header->salt[j];
 			}
+			splash.to_silent();
+			splash.progress(15);
 			if (!error)
 				decrypt = 1;
 #else
