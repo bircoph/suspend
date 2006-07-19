@@ -379,6 +379,68 @@ int do_set_mode (int mode, int vga) {
 	return 0;
 }
 
+int do_get_panel_brightness() {
+	reg_frame regs;
+	int error;
+
+	memset(&regs, 0, sizeof(regs));
+
+	error = do_vbe_service(0x4f11, 0x05, &regs);
+
+	if (error<0) {
+		return error;
+	}
+
+	printf("%d\n",regs.ecx);
+
+	return 0;
+}
+
+int do_invert_panel() {
+	reg_frame regs;
+	int error;
+
+	memset(&regs, 0, sizeof(regs));
+
+	error = do_vbe_service(0x4f11, 0x02, &regs);
+
+	if (error<0) {
+		return error;
+	}
+
+	if ((regs.ebx & 0xff) == 0)
+		regs.ecx = 3;
+	else
+		regs.ecx = 0;
+
+	error = do_vbe_service(0x4f11, 0x0102, &regs);
+
+	if (error<0) {
+		return error;
+	}
+
+	return 0;
+}
+
+int do_set_panel_brightness(int brightness) {
+	reg_frame regs;
+	int error;
+
+	memset(&regs, 0, sizeof(regs));
+
+	regs.ecx = brightness;
+
+	error = do_vbe_service(0x4f11, 0x0105, &regs);
+
+	if (error<0) {
+		return error;
+	}
+
+	printf("%d\n",regs.ecx);
+
+	return 0;
+}
+
 int do_get_mode() {
 	reg_frame regs;
 	int error;
@@ -429,4 +491,66 @@ int disable_vga() {
 	outb(~0x08 & inb(0x46e8), 0x46e8);
 	outb(~0x01 & inb(0x102),  0x102);
 	return 0;
+}
+
+/* Based on xserver-xorg-driver-i810/src/i830_driver.c */
+struct panel_id {
+  int hsize:16, vsize:16;
+  int fptype:16;
+  int redbpp:8, greenbpp:8, bluebpp:8, reservedbpp:8;
+  int rsvdoffscrnmemsize:32, rsvdoffscrnmemptr:32;
+  char reserved[14];
+} __attribute__((packed));
+
+int do_get_panel_id(int just_dimensions)
+{
+  reg_frame r = {
+    .eax = 0x4f11,
+    .ebx = 0x0001
+  };
+  struct panel_id *id = LRMI_alloc_real(sizeof(struct panel_id));
+  r.es = (unsigned short)(((int)(id-LRMI_base_addr()) >> 4) & 0xffff);
+  r.edi = (unsigned long)(id-LRMI_base_addr()) & 0xf;
+
+  if(sizeof(struct panel_id) != 32)
+    return fprintf(stderr, "oops: panel_id, sizeof struct panel_id != 32, it's %d...\n", sizeof(struct panel_id)), 7;
+
+  if(real_mode_int(0x10, &r))
+    return fprintf(stderr, "Can't get panel id (vm86 failure)\n"), 8;
+
+  if((r.eax & 0xff) != 0x4f)
+    return fprintf(stderr, "Panel id function not supported\n"), 9;
+
+  if(r.eax & 0xff00)
+    {
+      if((r.eax & 0xff00) == 0x100)
+	fprintf(stderr, "Panel id read failed\n");
+      else
+	fprintf(stderr, "Panel id function not successful\n");
+      return 10;
+    }
+
+  if(!just_dimensions)
+    printf("size:\t%d %d\n"
+	   "type:\t%d\n"
+	   "bpp:\t%d %d %d %d\n",
+	   id->hsize, id->vsize,
+	   id->fptype,
+	   id->redbpp, id->greenbpp, id->bluebpp, id->reservedbpp);
+  else
+    printf("%dx%d\n", id->hsize, id->vsize);
+
+#if 0
+
+  /* Don't have a use for these and they don't seem to be documented.
+   * 320 appears to be 320kB of mapped memory and the following
+   * pointer is 0x1ffb8000 which is kernel mapping + 0xb8000 offset.
+   */
+  printf("ram:\t%dkB\n"
+	 "offset:\t%p\n",
+	 id->rsvdoffscrnmemsize,
+	 (void *)id->rsvdoffscrnmemptr);
+#endif
+
+  return 0;
 }
