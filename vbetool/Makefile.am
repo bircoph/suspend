@@ -6,10 +6,11 @@ SUBDIRS = x86emu
 
 if WITH_X86EMU
 x86 = thunk.c x86-common.c
-vbetool_LDADD = x86emu/libx86emu.a
+vbetool_LDADD = x86emu/libx86emu.a /usr/lib/libpci.a
 else
 x86 = lrmi.c x86-common.c
 x86lib = ""
+vbetool_LDADD = /usr/lib/libpci.a
 endif
 
 man_MANS = vbetool.1
@@ -22,4 +23,4 @@ maintainer-clean-local:
 	$(RM) Makefile.in aclocal.m4 config.h.in stamp-h.in configure
 
 AM_CFLAGS = -g -Wall -pedantic -std=gnu99
-AM_LDFLAGS = -lpci
+AM_LDFLAGS = 

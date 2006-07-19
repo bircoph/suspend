@@ -3,7 +3,7 @@
 vbetool - run real-mode video BIOS code to alter hardware state
 
 .SH SYNOPSIS
-.B "vbetool [[vbestate save|restore]|[vbemode set|get]|[vgamode]|[dpms on|off|standby|suspend|reduced]|[post]|[vbestate on|off]]"
+.B "vbetool [[vbestate save|restore]|[vbemode set|get]|[vgamode]|[dpms on|off|standby|suspend|reduced]|[post]|[vgastate on|off]|[vbefp panelid|panelsize|getbrightness|setbrightness|invert]]"
 
 .SH DESCRIPTION
 .B vbetool
@@ -54,6 +54,20 @@ will enable or disable the current video card. On most hardware, disabling
 will cause the hardware to stop responding until it is reenabled. You
 probably don't want to do this if you're using a framebuffer.
 
+.IP "vbefp"
+.B vbetool
+will execute a VESA flat panel interface call.
+.IP
+panelid will provide information about the panel
+.IP
+panelsize will provide the size of the panel
+.IP 
+getbrightness will provide the current screen brightness as an integer
+.IP
+setbrightness accepts an integer as an argument and will set the screen brightness to that
+.IP
+invert will invert the colours of the screen
+
 .SH BUGS
 Switching dpms modes may interact badly with X on some systems.
 .PP
@@ -66,6 +80,10 @@ used to be.
 The VESA specification does not require that "vbemode get" provides
 the correct mode if the current mode was set via some means other than
 the VESA BIOS extensions.
+.PP
+The VESA flat panel interface ceased development at the proposal stage.
+panelid and panelsize will work on many machines, but the other arguments are
+unlikely to be implemented on available hardware.
 
 .SH AUTHOR
 vbetool was written by Matthew Garrett <mjg59@srcf.ucam.org>, based on

@@ -39,7 +39,7 @@ static struct pci_access *pacc;
 void vbetool_init(void)
 {
 	if (!LRMI_init()) {
-		fprintf(stderr, "Failed to initialise LRMI.\n");
+		fprintf(stderr, "Failed to initialise LRMI (Linux Real-Mode Interface).\n");
 		exit(1);
 	}
 
@@ -54,10 +54,10 @@ void vbetool_init(void)
 #ifndef S2RAM
 int main(int argc, char *argv[])
 {
-	vbetool_init();
-	if (argc < 2) {
+	if (argc < 2)
 		goto usage;
-	} else if (!strcmp(argv[1], "vbestate")) {
+	vbetool_init();
+	if (!strcmp(argv[1], "vbestate")) {
 		/* VBE save/restore tends to break when done underneath X */
 		int err = check_console();
 
@@ -116,10 +116,24 @@ int main(int argc, char *argv[])
 		} else {
 			return disable_vga();
 		}
+	} else if (!strcmp(argv[1], "vbefp")) {
+		if (!strcmp(argv[2], "id")) {
+			return do_get_panel_id(0);
+		} else if (!strcmp(argv[2], "panelsize")) {
+			return do_get_panel_id(1);
+		} else if (!strcmp(argv[2], "getbrightness")) {
+			return do_get_panel_brightness();
+		} else if (!strcmp(argv[2], "setbrightness")) {
+			return do_set_panel_brightness(atoi(argv[3]));
+		} else if (!strcmp(argv[2], "invert")) {
+			return do_invert_panel();
+		} else {
+			return 1;
+		}
 	} else {
 	      usage:
 		fprintf(stderr,
-			"%s: Usage %s [[vbestate save|restore]|[vbemode set|get]|[vgamode]|[dpms on|off|standby|suspend|reduced]|[post]|[vgastate on|off]]\n",
+			"%s: Usage %s [[vbestate save|restore]|[vbemode set|get]|[vgamode]|[dpms on|off|standby|suspend|reduced]|[post]|[vgastate on|off]|[vbefp panelid|panelsize|getbrightness|setbrightness|invert]]\n",
 			argv[0], argv[0]);
 		return 1;
 	}
@@ -149,10 +163,15 @@ int do_vbe_service(unsigned int AX, unsigned int BX, reg_frame * regs)
 	function_sup = ((AX & 0xff) == 0x4f);
 	success = ((AX & 0xff00) == 0);
 
-	if (!success)
+	if (!success) {
+		fprintf(stderr, "Real mode call failed\n");
 		return -2;
-	if (!function_sup)
+	}
+
+	if (!function_sup) {
+		fprintf(stderr, "Function not supported\n");
 		return -3;
+	}
 
 	return access_ptr_register(regs, ebx);
 }
