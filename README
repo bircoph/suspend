@@ -31,7 +31,7 @@ http://en.opensuse.org/S2ram .
 acpi-support package from Ubuntu has *very* long whitelist of machines: 
 http://packages.ubuntu.org.cn/dapper/admin/acpi-support .
 
-The vbetool code is based on vbetool-0.5-1 from Debian.
+The vbetool code is based on vbetool-0.6-1.1 from Debian.
 
 pciutils-dev package is needed to compile the vbetool code, so it's needed
 to compile the suspend and s2ram tools.
