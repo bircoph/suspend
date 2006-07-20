@@ -25,9 +25,9 @@ S2DISK=s2disk
 CONFIGFILE=suspend.conf
 
 ifdef CONFIG_ENCRYPT
-all: $(S2DISK) suspend-keygen resume s2ram
+all: $(S2DISK) $(S2BOTH) suspend-keygen resume s2ram
 else
-all: $(S2DISK) resume s2ram
+all: $(S2DISK) $(S2BOTH) resume s2ram
 endif
 
 S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o vbetool/vbetool.o radeontool.o dmidecode.o
@@ -89,9 +89,6 @@ $(S2DISK):	vt.o md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h m
 $(S2BOTH):	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
 	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
 
-suspend:	$(S2DISK) $(S2BOTH)
-	
-
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
 	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
 
@@ -99,7 +96,7 @@ ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o encrypt.o keygen.c encrypt.h md5.h
 	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H -DCONFIG_ENCRYPT md5.o keygen.c -o suspend-keygen -lcrypto
 
-install-suspend:	suspend suspend-keygen conf/$(CONFIGFILE)
+install-suspend: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
@@ -107,7 +104,7 @@ install-suspend:	suspend suspend-keygen conf/$(CONFIGFILE)
 	install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 else
-install-suspend:	suspend conf/$(CONFIGFILE)
+install-suspend: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
