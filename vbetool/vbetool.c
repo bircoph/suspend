@@ -379,6 +379,11 @@ int do_set_mode (int mode, int vga) {
 	return 0;
 }
 
+void set_vbe_mode(int mode)
+{
+	do_set_mode(mode, 0);
+}
+
 int do_get_panel_brightness() {
 	reg_frame regs;
 	int error;
@@ -441,12 +446,18 @@ int do_set_panel_brightness(int brightness) {
 	return 0;
 }
 
-int do_get_mode() {
+int __get_mode()
+{
 	reg_frame regs;
 	int error;
 
 	memset(&regs, 0, sizeof(regs));
 	error = do_vbe_service(0x4f03, 0, &regs);
+	return error;
+}
+
+int do_get_mode() {
+	int error = __get_mode();
 
 	if (error<0) {
 		return error;

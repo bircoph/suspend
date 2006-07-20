@@ -18,7 +18,7 @@
 
 static void *vbe_buffer;
 /* Flags set from whitelist */
-static int flags;
+static int flags, vbe_mode = -1;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 /* return codes for s2ram_prepare */
@@ -31,10 +31,11 @@ char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define S3_BIOS     0x01	/* machine needs acpi_sleep=s3_bios */
 #define S3_MODE     0x02	/* machine needs acpi_sleep=s3_mode */
 #define VBE_SAVE    0x04	/* machine needs "vbetool save / restore" */
-#define VBE_POST    0x08	/* machine does not need / may not use "vbetool post" */
+#define VBE_POST    0x08	/* machine needs "vbetool post" */
 #define RADEON_OFF  0x10	/* machine needs "radeontool light off" */
 #define UNSURE      0x20	/* unverified entries from acpi-support 0.59 */
 #define NOFB        0x40	/* must not use a frame buffer */
+#define VBE_MODE    0x80	/* machine needs "vbetool vbemode get / set" */
 
 #include "whitelist.c"
 
@@ -66,9 +67,10 @@ void machine_known(int i)
 	       "    bios_version = '%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: 0x%x  %s%s%s%s%s%s\n", flags,
+	printf("Fixes: 0x%x  %s%s%s%s%s%s%s\n", flags,
 	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
 	       (flags & VBE_POST) ? "VBE_POST " : "",
+	       (flags & VBE_MODE) ? "VBE_MODE " : "",
 	       (flags & RADEON_OFF) ? "RADEON_OFF " : "",
 	       (flags & S3_BIOS) ? "S3_BIOS " : "",
 	       (flags & S3_MODE) ? "S3_MODE " : "",
@@ -159,6 +161,11 @@ int s2ram_hacks(void)
 		printf("Calling save_state\n");
 		vbe_buffer = __save_state(&size);
 	}
+	if (flags & VBE_MODE) {
+		vbetool_init();
+		printf("Calling get_mode\n");
+		vbe_mode = __get_mode();
+	}
 	if (flags & RADEON_OFF) {
 		map_radeon_cntl_mem();
 		printf("Calling radeon_cmd_light(0)\n");
@@ -220,7 +227,11 @@ void s2ram_resume(void)
 		printf("Calling restore_state_from\n");
 		restore_state_from(vbe_buffer);
 	}
-
+	if (vbe_mode >= 0) {
+		vbetool_init();
+		printf("Calling set_vbe_mode\n");
+		set_vbe_mode(vbe_mode);
+	}
 	if (flags & RADEON_OFF) {
 		printf("Calling radeon_cmd_light(1)\n");
 		radeon_cmd_light(1);
@@ -243,6 +254,7 @@ static void usage(void)
 	       "    -s, --vbe_save:   save VBE state before suspending and "
 				       "restore after resume.\n"
 	       "    -p, --vbe_post:   VBE POST the graphics card after resume\n"
+	       "    -m, --vbe_mode:   get VBE mode before suspend and set it after resume\n"
 	       "    -r, --radeontool: turn off the backlight on radeons "
 				       "before suspending.\n"
 	       "    -a, --acpi_sleep: set the acpi_sleep parameter before "
@@ -262,13 +274,14 @@ int main(int argc, char *argv[])
 		{ "force",	no_argument,		NULL, 'f'},
 		{ "vbe_save",	no_argument,		NULL, 's'},
 		{ "vbe_post",	no_argument,		NULL, 'p'},
+		{ "vbe_mode",	no_argument,		NULL, 'm'},
 		{ "radeontool",	no_argument,		NULL, 'r'},
 		{ "identify",	no_argument,		NULL, 'i'},
 		{ "acpi_sleep",	required_argument,	NULL, 'a'},
 		{ NULL,		0,			NULL,  0 }
 	};
 
-	while ((i = getopt_long(argc, argv, "nhfspria:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, "nhfspmria:", options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage();
@@ -288,6 +301,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'p':
 			flags |= VBE_POST;
+			break;
+		case 'm':
+			flags |= VBE_MODE;
 			break;
 		case 'r':
 			flags |= RADEON_OFF;
