@@ -15,7 +15,10 @@ struct machine_entry
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_POST|VBE_SAVE },
+	/* Alexander Wirt */
+	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
+	{ "Acer           ",		"TravelMate 240 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer           ",		"TravelMate C300",	"",	"", VBE_SAVE },
 	/* TravelMate 630Lci	Tim Dijkstra <tim@famdijkstra.org> */
 	{ "Acer           ",		"TravelMate 630 ",	"",	"", S3_BIOS|S3_MODE },
@@ -30,6 +33,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "ASUSTeK Computer Inc.        ",	"M6N       ",	"",	"", S3_MODE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
+	/* Charles de Miramon */
+	{ "ASUSTeK Computer Inc.        ",	"M5N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* M6VA, seraphim@glockenbach.net */
 	{ "ASUSTeK Computer Inc.        ",	"M6VA      ",	"",	"", S3_BIOS|S3_MODE },
 	/* M7N, Xavier Douville <s2ram-sourceforge@douville.org> */
@@ -51,6 +56,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
 	/* Dell inspiron 1300, Tim Dijkstra <tim@famdijkstra.org> */
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
+	/* Andi Kleen, reported to work in 64bit mode */
+	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
@@ -62,6 +69,7 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
+	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"", S3_BIOS },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	/* R52, reported by Joscha Arenz */
@@ -99,6 +107,8 @@ struct machine_entry whitelist[] = {
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_SAVE },
+	/* Hugo Costelha */
+	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */
