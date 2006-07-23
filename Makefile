@@ -99,19 +99,30 @@ ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o keygen.c encrypt.h md5.h
 	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
 
+install-s2disk: $(S2DISK) suspend-keygen conf/$(CONFIGFILE)
+	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
+
 install-suspend: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
-	install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 else
+install-s2disk: $(S2DISK) conf/$(CONFIGFILE)
+	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
+
 install-suspend: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
-	install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 endif
 
