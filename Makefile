@@ -11,8 +11,11 @@ CC_FLAGS	+= -DCONFIG_COMPRESS
 LD_FLAGS	+= -llzf
 endif
 ifdef CONFIG_ENCRYPT
+GCRYPT_CC_FLAGS := $(shell libgcrypt-config --cflags)
+GCRYPT_LD_FLAGS := $(shell libgcrypt-config --libs)
 CC_FLAGS	+= -DCONFIG_ENCRYPT
-LD_FLAGS	+= -lcrypto
+CC_FLAGS	+= $(GCRYPT_CC_FLAGS)
+LD_FLAGS	+= $(GCRYPT_LD_FLAGS)
 endif
 
 SUSPEND_DIR=/usr/local/sbin
@@ -93,8 +96,8 @@ resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SP
 	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
 
 ifdef CONFIG_ENCRYPT
-suspend-keygen:	md5.o encrypt.o keygen.c encrypt.h md5.h
-	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H -DCONFIG_ENCRYPT md5.o keygen.c -o suspend-keygen -lcrypto
+suspend-keygen:	md5.o keygen.c encrypt.h md5.h
+	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
 
 install-suspend: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi

@@ -14,8 +14,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <openssl/blowfish.h>
-#include <openssl/rsa.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,25 +24,38 @@
 
 #define MIN_KEY_BITS	1024
 #define MAX_KEY_BITS	4096
-#define MAX_OUT_SIZE	1200
+#define MAX_OUT_SIZE	(sizeof(struct RSA_data))
 #define MAX_STR_LEN	256
-#define IVEC_SIZE	8
 #define DEFAULT_FILE	"suspend.key"
 
 static char in_buffer[MAX_STR_LEN];
 static char pass_buf[MAX_STR_LEN];
-static struct RSA_data rsa_data;
+static struct RSA_data rsa;
 static unsigned char encrypt_buffer[RSA_DATA_SIZE];
 
 int main(int argc, char *argv[])
 {
-	RSA *rsa;
+	gcry_ac_data_t rsa_data_set;
+	gcry_ac_handle_t rsa_hd;
+	gcry_ac_key_t rsa_priv;
+	gcry_ac_key_pair_t rsa_key_pair;
+	gcry_mpi_t mpi;
+	size_t offset;
 	int len = MIN_KEY_BITS, ret = EXIT_SUCCESS;
-	unsigned char *buf;
 	struct termios termios;
 	char *vrfy_buf;
+	struct md5_ctx ctx;
+	unsigned char key_buf[PK_KEY_SIZE];
+	gcry_cipher_hd_t sym_hd;
+	unsigned char ivec[PK_CIPHER_BLOCK];
 	unsigned short size;
-	int fd;
+	int j, fd;
+
+	printf("libgcrypt version: %s\n", gcry_check_version(NULL));
+	gcry_control(GCRYCTL_INIT_SECMEM, 4096, 0);
+	ret = gcry_ac_open(&rsa_hd, GCRY_AC_RSA, 0);
+	if (ret)
+		return ret;
 
 	do {
 		printf("Key bits (between %d and %d inclusive) [%d]: ",
@@ -55,16 +66,49 @@ int main(int argc, char *argv[])
 	} while (len < MIN_KEY_BITS || len > MAX_KEY_BITS);
 
 Retry:
-	printf("Generating %d-bit RSA keys.\n", len);
-	rsa = RSA_generate_key(len, RSA_F4, NULL, NULL);
-	if (!rsa) {
-		fprintf(stderr, "Key generation failed.\n");
+	printf("Generating %d-bit RSA keys.  Please wait.\n", len);
+	ret = gcry_ac_key_pair_generate(rsa_hd, len, NULL, &rsa_key_pair, NULL);
+	if (ret) {
+		fprintf(stderr, "Key generation failed: %s\n", gcry_strerror(ret));
 		ret = EXIT_FAILURE;
-		goto Free_RSA;
+		goto Close_RSA;
 	}
-	if (RSA_check_key(rsa) <= 0) {
+	printf("Testing the private key.  Please wait.\n");
+	rsa_priv = gcry_ac_key_pair_extract(rsa_key_pair, GCRY_AC_KEY_SECRET);
+	ret = gcry_ac_key_test(rsa_hd, rsa_priv);
+	if (ret) {
 		printf("RSA key test failed.  Retrying.\n");
 		goto Retry;
+	}
+
+	rsa_data_set = gcry_ac_key_data_get(rsa_priv);
+	if (gcry_ac_data_length(rsa_data_set) != RSA_FIELDS) {
+		fprintf(stderr, "Wrong number of key fields\n");
+		ret = -EINVAL;
+		goto Free_RSA;
+	}
+
+	/* Convert the key length into bytes */
+	size = (len + 7) >> 3;
+	/* Copy the public key components to struct RSA_data */
+	offset = 0;
+	for (j = 0; j < RSA_FIELDS_PUB; j++) {
+		char *str;
+		size_t s;
+
+		if (offset + size >= RSA_DATA_SIZE)
+			goto Free_RSA;
+
+		gcry_ac_data_get_index(rsa_data_set, GCRY_AC_FLAG_COPY, j,
+					(const char **)&str, &mpi);
+		gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
+					size, &s, mpi);
+		rsa.field[j][0] = str[0];
+		rsa.field[j][1] = '\0';
+		rsa.size[j] = s;
+		offset += s;
+		gcry_mpi_release(mpi);
+		gcry_free(str);
 	}
 
 	tcgetattr(0, &termios);
@@ -88,42 +132,70 @@ Retry:
 	termios.c_lflag |= ECHO;
 	tcsetattr(0, TCSANOW, &termios);
 
-	buf = rsa_data.data;
-	size = BN_bn2mpi(rsa->n, NULL);
-	if (size <= RSA_DATA_SIZE) {
-		rsa_data.n_size = BN_bn2mpi(rsa->n, buf);
-		buf += rsa_data.n_size;
-	}
-	size += BN_bn2mpi(rsa->e, NULL);
-	if (size <= RSA_DATA_SIZE) {
-		rsa_data.e_size = BN_bn2mpi(rsa->e, buf);
-		buf += rsa_data.e_size;
-	}
-	size += BN_bn2mpi(rsa->d, NULL);
-	if (size <= RSA_DATA_SIZE) {
-		struct md5_ctx ctx;
-		unsigned char key_buf[KEY_SIZE];
-		BF_KEY key;
-		unsigned char ivec[IVEC_SIZE];
-		int n = 0;
+	memset(ivec, 0, PK_CIPHER_BLOCK);
+	strncpy((char *)ivec, pass_buf, PK_CIPHER_BLOCK);
+	md5_init_ctx(&ctx);
+	md5_process_bytes(pass_buf, strlen(pass_buf), &ctx);
+	md5_finish_ctx(&ctx, key_buf);
 
-		memset(ivec, 0, IVEC_SIZE);
-		strncpy((char *)ivec, pass_buf, IVEC_SIZE);
-		md5_init_ctx(&ctx);
-		md5_process_bytes(pass_buf, strlen(pass_buf), &ctx);
-		md5_finish_ctx(&ctx, key_buf);
-		BF_set_key(&key, KEY_SIZE, key_buf);
-		BF_ecb_encrypt(KEY_TEST_DATA, rsa_data.key_test, &key, BF_ENCRYPT);
-		rsa_data.d_size = BN_bn2mpi(rsa->d, encrypt_buffer);
-		BF_cfb64_encrypt(encrypt_buffer, buf, rsa_data.d_size,
-				&key, ivec, &n, BF_ENCRYPT);
-	}
-	if (size > RSA_DATA_SIZE) {
-		fprintf(stderr, "Buffer is too small.  Giving up.\n");
-		ret = EXIT_FAILURE;
+	/* First, we encrypt the key test */
+	ret = gcry_cipher_open(&sym_hd, PK_CIPHER, GCRY_CIPHER_MODE_CFB,
+				GCRY_CIPHER_SECURE);
+	if (ret)
 		goto Free_RSA;
+
+	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
+	if (!ret)
+		ret = gcry_cipher_setiv(sym_hd, ivec, PK_CIPHER_BLOCK);
+
+	if (!ret)
+		ret = gcry_cipher_encrypt(sym_hd, rsa.key_test, KEY_TEST_SIZE,
+					KEY_TEST_DATA, KEY_TEST_SIZE);
+
+	gcry_cipher_close(sym_hd);
+	if (ret)
+		goto Free_RSA;
+
+	/* Now, we can encrypt the private RSA key */
+	ret = gcry_cipher_open(&sym_hd, PK_CIPHER, GCRY_CIPHER_MODE_CFB,
+				GCRY_CIPHER_SECURE);
+	if (ret)
+		goto Free_RSA;
+
+	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
+	if (!ret)
+		ret = gcry_cipher_setiv(sym_hd, ivec, PK_CIPHER_BLOCK);
+
+	if (ret)
+		goto Free_sym;
+
+	/* Copy the private key components (encrypted) to struct RSA_data */
+	for (j = RSA_FIELDS_PUB; j < RSA_FIELDS; j++) {
+		char *str;
+		size_t s;
+
+		if (offset + size >= RSA_DATA_SIZE)
+			goto Free_sym;
+
+		gcry_ac_data_get_index(rsa_data_set, GCRY_AC_FLAG_COPY, j,
+					(const char **)&str, &mpi);
+		gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
+					size, &s, mpi);
+
+		/* We encrypt the data in place */
+		ret = gcry_cipher_encrypt(sym_hd, rsa.data + offset, s, NULL, 0);
+		if (ret)
+			goto Free_sym;
+
+		rsa.field[j][0] = str[0];
+		rsa.field[j][1] = '\0';
+		rsa.size[j] = s;
+		offset += s;
+		gcry_mpi_release(mpi);
+		gcry_free(str);
 	}
-	size += 3 * sizeof(short) + KEY_TEST_SIZE;
+
+	size = offset + sizeof(struct RSA_data) - RSA_DATA_SIZE;
 
 	printf("File name [%s]: ", DEFAULT_FILE);
 	fgets(in_buffer, MAX_STR_LEN, stdin);
@@ -133,15 +205,18 @@ Retry:
 		in_buffer[strlen(in_buffer)-1] = '\0';
 	fd = open(in_buffer, O_RDWR | O_CREAT | O_TRUNC, 00600);
 	if (fd >= 0) {
-		write(fd, &rsa_data, size);
+		write(fd, &rsa, size);
 		close(fd);
 	} else {
 		fprintf(stderr, "Could not open the file %s\n", in_buffer);
 		ret = EXIT_FAILURE;
 	}
-
+Free_sym:
+	gcry_cipher_close(sym_hd);
 Free_RSA:
-	RSA_free(rsa);
+	gcry_ac_data_destroy(rsa_data_set);
+Close_RSA:
+	gcry_ac_close(rsa_hd);
 
 	return ret;
 }

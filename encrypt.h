@@ -11,29 +11,35 @@
  */
 
 #ifdef CONFIG_ENCRYPT
-#include <openssl/blowfish.h>
-#include <openssl/rsa.h>
+#include <gcrypt.h>
 
+/* Maximum length of a passphrase, in characters */
 #define PASS_SIZE	128
+/* Symmetric cipher used for image encryption, the size of its key and its
+ * block, in bytes
+ */
+#define IMAGE_CIPHER	GCRY_CIPHER_BLOWFISH
 #define KEY_SIZE	16
-#define IVEC_SIZE	8
-#define RSA_DATA_SIZE	1200
-#define KEY_DATA_SIZE	800
+#define CIPHER_BLOCK	8
+/* Symmetric cipher used for encrypting RSA private keys, the size of its key
+ * and its block, in bytes
+ */
+#define PK_CIPHER	GCRY_CIPHER_AES
+#define PK_KEY_SIZE	16
+#define PK_CIPHER_BLOCK	16
+/* Auxiliary constants */
+#define RSA_DATA_SIZE	2000
+#define KEY_DATA_SIZE	1000
+#define RSA_FIELDS	6
+#define RSA_FIELDS_PUB	2
 #define KEY_TEST_SIZE	8
 #define KEY_TEST_DATA	(unsigned char *)"12345678"
 
 struct RSA_data {
-	unsigned short	n_size;
-	unsigned short	e_size;
-	unsigned short	d_size;
+	char		field[RSA_FIELDS][2];
+	unsigned short	size[RSA_FIELDS];
 	unsigned char	key_test[KEY_TEST_SIZE];
 	unsigned char	data[RSA_DATA_SIZE];
-};
-
-struct key_data {
-	unsigned char	key[KEY_SIZE];
-	unsigned char	ivec[IVEC_SIZE];
-	struct RSA_data	rsa_data;
 };
 
 struct encrypted_key {
@@ -41,10 +47,16 @@ struct encrypted_key {
 	unsigned char	data[KEY_DATA_SIZE];
 };
 
-void read_password(char *pass_buf, int vrfy);
-void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
-		char *pass_buf, void *key_buf, int vrfy);
-void get_random_salt(char *salt, size_t size);
+struct key_data {
+	unsigned char	key[KEY_SIZE];
+	unsigned char	ivec[CIPHER_BLOCK];
+	struct RSA_data	rsa;
+	struct encrypted_key	encrypted_key;
+};
 
-#define KEY_FILE	"/etc/suspend.key"
+void read_password(char *pass_buf, int vrfy);
+void encrypt_init(unsigned char *, unsigned char *, char *, int);
+void get_random_salt(unsigned char *salt, size_t size);
+
+#define KEY_FILE	""
 #endif

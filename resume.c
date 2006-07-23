@@ -164,9 +164,7 @@ struct swap_map_handle {
 	struct md5_ctx ctx;
 #ifdef CONFIG_ENCRYPT
 	char *decrypt_buffer;
-	BF_KEY key;
-	unsigned char ivec[IVEC_SIZE];
-	int num;
+	gcry_cipher_hd_t cipher_handle;
 #endif
 };
 
@@ -220,9 +218,9 @@ static int fill_buffer(struct swap_map_handle *handle)
 			handle->area_size);
 #ifdef CONFIG_ENCRYPT
 	if (!error && decrypt)
-		BF_cfb64_encrypt(dst, (unsigned char *)handle->read_buffer,
-			handle->area_size, &handle->key, handle->ivec,
-			&handle->num, BF_DECRYPT);
+		error = gcry_cipher_decrypt(handle->cipher_handle,
+				(void *)handle->read_buffer, handle->area_size,
+				dst, handle->area_size);
 #endif
 	return error;
 }
@@ -370,63 +368,147 @@ static inline void print_checksum(unsigned char *checksum)
 }
 
 #ifdef CONFIG_ENCRYPT
-static int decrypt_key(struct swsusp_info *header, BF_KEY *key, unsigned char *ivec,
-	void *buffer)
+static int decrypt_key(struct swsusp_info *header, unsigned char *key,
+			unsigned char *ivec, void *buffer)
 {
-	RSA *rsa;
-	unsigned char *buf, *out, *key_buf;
+	gcry_ac_handle_t rsa_hd;
+	gcry_ac_data_t rsa_data_set, key_set;
+	gcry_ac_key_t rsa_priv;
+	gcry_mpi_t mpi;
+	unsigned char *buf, *out, *key_buf, *ivec_buf;
 	char *pass_buf;
 	struct md5_ctx ctx;
-	struct RSA_data *rsa_data;
-	int n = 0, ret = 0;
+	struct RSA_data *rsa;
+	gcry_cipher_hd_t sym_hd;
+	int j, ret = 0;
 
-	rsa = RSA_new();
-	if (!rsa)
-		return -ENOMEM;
+	rsa = &header->rsa;
 
-	rsa_data = &header->rsa_data;
-	buf = rsa_data->data;
-	rsa->n = BN_mpi2bn(buf, rsa_data->n_size, NULL);
-	buf += rsa_data->n_size;
-	rsa->e = BN_mpi2bn(buf, rsa_data->e_size, NULL);
-	buf += rsa_data->e_size;
+	ret = gcry_ac_open(&rsa_hd, GCRY_AC_RSA, 0);
+	if (ret)
+		return ret;
+
+	if (!ret)
+		ret = gcry_cipher_open(&sym_hd, PK_CIPHER,
+				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
+
+	if (ret)
+		goto Free_rsa;
 
 	pass_buf = buffer;
 	key_buf = (unsigned char *)pass_buf + PASS_SIZE;
+	ivec_buf = key_buf + PK_KEY_SIZE;
+	out = ivec_buf + PK_CIPHER_BLOCK;
 	do {
 		read_password(pass_buf, 0);
-		memset(ivec, 0, IVEC_SIZE);
-		strncpy((char *)ivec, pass_buf, IVEC_SIZE);
+		memset(ivec_buf, 0, PK_CIPHER_BLOCK);
+		strncpy((char *)ivec_buf, pass_buf, PK_CIPHER_BLOCK);
 		md5_init_ctx(&ctx);
 		md5_process_bytes(pass_buf, strlen(pass_buf), &ctx);
 		md5_finish_ctx(&ctx, key_buf);
-		BF_set_key(key, KEY_SIZE, key_buf);
-		BF_ecb_encrypt(KEY_TEST_DATA, key_buf, key, BF_ENCRYPT);
-		ret = memcmp(key_buf, rsa_data->key_test, KEY_TEST_SIZE);
+		ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
+		if (!ret)
+			ret = gcry_cipher_setiv(sym_hd, ivec_buf,
+						PK_CIPHER_BLOCK);
+
+		if (!ret)
+			ret = gcry_cipher_encrypt(sym_hd,
+					out, KEY_TEST_SIZE,
+					KEY_TEST_DATA, KEY_TEST_SIZE);
+
+		if (ret)
+			break;
+
+		ret = memcmp(out, rsa->key_test, KEY_TEST_SIZE);
+
 		if (ret)
 			printf("resume: Wrong passphrase, try again.\n");
 	} while (ret);
 
-	out = key_buf + KEY_SIZE;
-	BF_cfb64_encrypt(buf, out, rsa_data->d_size, key, ivec, &n, BF_DECRYPT);
-	rsa->d = BN_mpi2bn(out, rsa_data->d_size, NULL);
-	if (!rsa->n || !rsa->e || !rsa->d) {
-		ret = -EFAULT;
+	gcry_cipher_close(sym_hd);
+	if (!ret)
+		ret = gcry_cipher_open(&sym_hd, PK_CIPHER,
+				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
+
+	if (ret)
+		goto Free_rsa;
+
+	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
+	if (!ret)
+		ret = gcry_cipher_setiv(sym_hd, ivec_buf, PK_CIPHER_BLOCK);
+
+	if (!ret)
+		ret = gcry_ac_data_new(&rsa_data_set);
+
+	if (ret) {
+		gcry_cipher_close(sym_hd);
 		goto Free_rsa;
 	}
 
-	ret = RSA_private_decrypt(header->key_data.size, header->key_data.data,
-			out, rsa, RSA_PKCS1_PADDING);
-	if (ret != (int)(KEY_SIZE + IVEC_SIZE)) {
-		ret = -ENODATA;
+	buf = rsa->data;
+	for (j = 0; j < RSA_FIELDS; j++) {
+		size_t s = rsa->size[j];
+
+		/* We need to decrypt some components */
+		if (j >= RSA_FIELDS_PUB) {
+			/* We use the in-place decryption */
+			ret = gcry_cipher_decrypt(sym_hd, buf, s, NULL, 0);
+			if (ret)
+				break;
+		}
+
+		gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, buf, s, NULL);
+		ret = gcry_ac_data_set(rsa_data_set, GCRY_AC_FLAG_COPY,
+					rsa->field[j], mpi);
+		gcry_mpi_release(mpi);
+		if (ret)
+			break;
+
+		buf += s;
+	}
+	if (!ret)
+		ret = gcry_ac_key_init(&rsa_priv, rsa_hd,
+					GCRY_AC_KEY_SECRET, rsa_data_set);
+
+	if (!ret) {
+		ret = gcry_ac_data_new(&key_set);
+		if (!ret) {
+			gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, header->key.data,
+					header->key.size, NULL);
+			ret = gcry_ac_data_set(key_set, GCRY_AC_FLAG_COPY,
+						"a", mpi);
+			if (!ret) {
+				gcry_mpi_release(mpi);
+				ret = gcry_ac_data_decrypt(rsa_hd, 0, rsa_priv,
+						&mpi, key_set);
+			}
+			if (!ret) {
+				unsigned char *res;
+				size_t s;
+
+				gcry_mpi_aprint(GCRYMPI_FMT_USG, &res, &s, mpi);
+				if (s == KEY_SIZE + CIPHER_BLOCK) {
+					memcpy(key, res, KEY_SIZE);
+					memcpy(ivec, res + KEY_SIZE,
+							CIPHER_BLOCK);
+				} else {
+					ret = -ENODATA;
+				}
+				gcry_free(res);
+			}
+			gcry_mpi_release(mpi);
+			gcry_ac_data_destroy(key_set);
+		}
+		gcry_ac_key_destroy(rsa_priv);
 	} else {
-		BF_set_key(key, KEY_SIZE, out);
-		memcpy(ivec, out + KEY_SIZE, IVEC_SIZE);
-		ret = 0;
+		gcry_ac_data_destroy(rsa_data_set);
 	}
 
+	gcry_cipher_close(sym_hd);
+
 Free_rsa:
-	RSA_free(rsa);
+	gcry_ac_close(rsa_hd);
+
 	return ret;
 }
 #endif
@@ -481,24 +563,41 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 		if (!error && (header->image_flags & IMAGE_ENCRYPTED)) {
 #ifdef CONFIG_ENCRYPT
+			static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
+
 			printf("resume: Encrypted image\n");
 			splash.to_verbose();
 			if (header->image_flags & IMAGE_USE_RSA) {
-				handle.num = 0;
-				error = decrypt_key(header, &handle.key,
-						handle.ivec, buffer);
+				error = decrypt_key(header, key, ivec, buffer);
 			} else {
 				int j;
 
-				encrypt_init(&handle.key, handle.ivec, &handle.num,
-						buffer, buffer + page_size, 0);
-				for (j = 0; j < IVEC_SIZE; j++)
-					handle.ivec[j] ^= header->salt[j];
+				encrypt_init(key, ivec, buffer, 0);
+				for (j = 0; j < CIPHER_BLOCK; j++)
+					ivec[j] ^= header->salt[j];
 			}
 			splash.to_silent();
 			splash.progress(15);
 			if (!error)
+				error = gcry_cipher_open(&handle.cipher_handle,
+					IMAGE_CIPHER, GCRY_CIPHER_MODE_CFB,
+					GCRY_CIPHER_SECURE);
+			if (!error) {
 				decrypt = 1;
+				error = gcry_cipher_setkey(handle.cipher_handle,
+							key, KEY_SIZE);
+			}
+			if (!error)
+				error = gcry_cipher_setiv(handle.cipher_handle,
+							ivec, CIPHER_BLOCK);
+
+			if (error) {
+				if (decrypt)
+					gcry_cipher_close(handle.cipher_handle);
+				decrypt = 0;
+				printf("resume: libgcrypt error: %s\n",
+						gcry_strerror(error));
+			}
 #else
 			printf("resume: Encryption not supported\n");
 			error = -EINVAL;
@@ -563,6 +662,11 @@ static int read_image(int dev, char *resume_dev_name)
 	}
 	fsync(fd);
 	close(fd);
+#ifdef CONFIG_ENCRYPT
+	if (decrypt)
+		gcry_cipher_close(handle.cipher_handle);
+#endif
+
 	if (!error) {
 		printf("resume: Image successfully loaded\n");
 	} else {
@@ -607,6 +711,8 @@ int main(int argc, char *argv[])
 	buffer_size = BUFFER_PAGES * page_size;
 
 #ifdef CONFIG_ENCRYPT
+	printf("resume: libgcrypt version: %s\n", gcry_check_version(NULL));
+	gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
 	mem_size = 3 * page_size + 2 * buffer_size;
 #else
 	mem_size = 3 * page_size + buffer_size;

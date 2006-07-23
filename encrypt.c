@@ -59,32 +59,31 @@ void read_password(char *pass_buf, int vrfy)
  *	long
  */
 
-void encrypt_init(BF_KEY *key, unsigned char *ivec, int *num,
-		char *pass_buf, void *key_buf, int vrfy)
+void
+encrypt_init(unsigned char *key, unsigned char *ivec, char *pass_buf, int vrfy)
 {
 
 	struct md5_ctx ctx;
 
 	read_password(pass_buf, vrfy);
 
-	memset(ivec, 0, IVEC_SIZE);
-	strncpy((char *)ivec, pass_buf, IVEC_SIZE);
+	memset(ivec, 0, CIPHER_BLOCK);
+	strncpy((char *)ivec, pass_buf, CIPHER_BLOCK);
 	md5_init_ctx(&ctx);
 	md5_process_bytes(pass_buf, strlen(pass_buf), &ctx);
-	md5_finish_ctx(&ctx, key_buf);
-	BF_set_key(key, KEY_SIZE, key_buf);
-	*num = 0;
+	md5_finish_ctx(&ctx, key);
 }
 
-void get_random_salt(char *salt, size_t size)
+void get_random_salt(unsigned char *salt, size_t size)
 {
 	int fd;
 
 	memset(salt, 0, size);
-	fd = open("/dev/random", O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	if (fd >= 0) {
 		read(fd, salt, size);
 		close(fd);
 	}
 }
 #endif
+

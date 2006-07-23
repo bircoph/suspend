@@ -43,6 +43,8 @@ if [ -f $RESUME -a -d $MOUNT_POINT -a -b $RESUME_DEVICE ]; then
 		mkdir $MOUNT_POINT/dev
 		cp -r /dev/console  $MOUNT_POINT/dev/
 		cp -r /dev/snapshot $MOUNT_POINT/dev/
+		cp -r /dev/random $MOUNT_POINT/dev/
+		cp -r /dev/urandom $MOUNT_POINT/dev/
 		cp -r $RESUME_DEVICE $MOUNT_POINT/dev/
 		mkdir $MOUNT_POINT/proc
 		mkdir $MOUNT_POINT/etc

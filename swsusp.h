@@ -58,9 +58,9 @@ struct swsusp_info {
 	uint32_t		image_flags;
 	unsigned char		checksum[16];
 #ifdef CONFIG_ENCRYPT
-	char			salt[IVEC_SIZE];
-	struct RSA_data		rsa_data;
-	struct encrypted_key	key_data;
+	unsigned char		salt[CIPHER_BLOCK];
+	struct RSA_data	rsa;
+	struct encrypted_key	key;
 #endif
 };
 

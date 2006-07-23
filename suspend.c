@@ -138,6 +138,7 @@ static unsigned int buffer_size;
 static void *mem_pool;
 #ifdef CONFIG_ENCRYPT
 struct key_data *key_data;
+gcry_cipher_hd_t cipher_handle;
 #endif
 
 static inline loff_t check_free_swap(int dev)
@@ -217,9 +218,6 @@ struct swap_map_handle {
 	struct md5_ctx ctx;
 #ifdef CONFIG_ENCRYPT
 	unsigned char *encrypt_buffer;
-	BF_KEY key;
-	unsigned char ivec[IVEC_SIZE];
-	int num;
 #endif
 };
 
@@ -301,17 +299,19 @@ static int try_get_more_swap(struct swap_map_handle *handle)
 static int flush_buffer(struct swap_map_handle *handle)
 {
 	void *src = handle->write_buffer;
-	int error;
+	int error =  0;
 
 #ifdef CONFIG_ENCRYPT
 	if (encrypt) {
-		BF_cfb64_encrypt(src, handle->encrypt_buffer, handle->cur_area.size,
-			&handle->key, handle->ivec, &handle->num, BF_ENCRYPT);
+		error = gcry_cipher_encrypt(cipher_handle,
+			handle->encrypt_buffer, handle->cur_area.size,
+			src, handle->cur_area.size);
 		src = handle->encrypt_buffer;
 	}
 #endif
-	error = write_area(handle->fd, src, handle->cur_area.offset,
-			handle->cur_area.size);
+	if (!error)
+		error = write_area(handle->fd, src, handle->cur_area.offset,
+				handle->cur_area.size);
 	if (error)
 		return error;
 	handle->areas[handle->k].offset = handle->cur_area.offset;
@@ -521,31 +521,52 @@ int write_image(int snapshot_fd, int resume_fd, int vt_no)
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
 			if (use_RSA) {
-				BF_set_key(&handle.key, KEY_SIZE, key_data->key);
-				memcpy(handle.ivec, key_data->ivec, IVEC_SIZE);
-				handle.num = 0;
-				header->image_flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
-				memcpy(&header->rsa_data, &key_data->rsa_data,
-					sizeof(struct RSA_data));
-				memcpy(&header->key_data, key_data + 1,
-					sizeof(struct encrypted_key));
+				error = gcry_cipher_setkey(cipher_handle,
+						key_data->key, KEY_SIZE);
+				if (error)
+					goto No_RSA;
+
+				error = gcry_cipher_setiv(cipher_handle,
+						key_data->ivec, CIPHER_BLOCK);
+
+				if (error)
+					goto No_RSA;
+
+				header->image_flags |= IMAGE_ENCRYPTED |
+							IMAGE_USE_RSA;
+				memcpy(&header->rsa, &key_data->rsa,
+						sizeof(struct RSA_data));
+				memcpy(&header->key, &key_data->encrypted_key,
+						sizeof(struct encrypted_key));
 			} else {
 				int j;
 
+No_RSA:
 				chvt(vt_no);
-				encrypt_init(&handle.key, handle.ivec, &handle.num,
-						handle.write_buffer,
-						handle.encrypt_buffer, 1);
+				encrypt_init(key_data->key, key_data->ivec,
+						handle.write_buffer, 1);
 				splash.switch_to();
 				splash.progress(20);
-				get_random_salt(header->salt, IVEC_SIZE);
-				for (j = 0; j < IVEC_SIZE; j++)
-					handle.ivec[j] ^= header->salt[j];
-				header->image_flags |= IMAGE_ENCRYPTED;
+				get_random_salt(header->salt, CIPHER_BLOCK);
+				for (j = 0; j < CIPHER_BLOCK; j++)
+					key_data->ivec[j] ^= header->salt[j];
+
+				error = gcry_cipher_setkey(cipher_handle,
+						key_data->key, KEY_SIZE);
+				if (!error)
+					error = gcry_cipher_setiv(cipher_handle,
+						key_data->ivec, CIPHER_BLOCK);
+
+				if (!error)
+					header->image_flags |= IMAGE_ENCRYPTED;
 			}
+			if (error)
+				printf("suspend: libgcrypt error: %s\n",
+						gcry_strerror(error));
 		}
 #endif
-		error = save_image(&handle, header->pages - 1);
+		if (!error)
+			error = save_image(&handle, header->pages - 1);
 	}
 	if (!error) {
 		error = flush_swap_writer(&handle);
@@ -615,7 +636,7 @@ static int reset_signature(int fd)
 }
 #endif
 
-static void shutdown(void)
+static void suspend_shutdown(void)
 {
 	power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
@@ -673,14 +694,14 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 				splash.progress(100);
 #ifdef CONFIG_BOTH
 				if (!s2ram) {
-					shutdown();
+					suspend_shutdown();
 				} else {
 					/* If we die (and allow system to continue) between
                                          * now and reset_signature(), very bad things will
                                          * happen. */
 					error = suspend_to_ram(snapshot_fd);
 					if (error)
-						shutdown();
+						suspend_shutdown();
 					reset_signature(resume_fd);
 					free_swap_pages(snapshot_fd);
 					free_snapshot(snapshot_fd);
@@ -688,7 +709,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 					goto Unfreeze;
 				}
 #else
-				shutdown();
+				suspend_shutdown();
 #endif
 			} else {
 				free_swap_pages(snapshot_fd);
@@ -918,10 +939,14 @@ static inline void close_swappiness(void)
 #ifdef CONFIG_ENCRYPT
 static void generate_key(void)
 {
-	RSA *rsa;
-	int fd, rnd_fd;
-	struct RSA_data *rsa_data;
+	gcry_ac_handle_t rsa_hd;
+	gcry_ac_data_t rsa_data_set, key_set;
+	gcry_ac_key_t rsa_pub;
+	gcry_mpi_t mpi;
+	int ret, fd, rnd_fd;
+	struct RSA_data *rsa;
 	unsigned char *buf;
+	int j;
 
 	if (!key_data)
 		return;
@@ -930,41 +955,79 @@ static void generate_key(void)
 	if (fd < 0)
 		return;
 
-	rsa = RSA_new();
-	if (!rsa)
+	rsa = &key_data->rsa;
+	if (read(fd, rsa, sizeof(struct RSA_data)) <= 0)
 		goto Close;
 
-	rsa_data = &key_data->rsa_data;
-	if (read(fd, rsa_data, sizeof(struct RSA_data)) <= 0)
+	ret = gcry_ac_open(&rsa_hd, GCRY_AC_RSA, 0);
+	if (ret)
+		goto Close;
+
+	buf = rsa->data;
+	ret = gcry_ac_data_new(&rsa_data_set);
+	if (ret)
 		goto Free_rsa;
 
-	buf = rsa_data->data;
-	rsa->n = BN_mpi2bn(buf, rsa_data->n_size, NULL);
-	buf += rsa_data->n_size;
-	rsa->e = BN_mpi2bn(buf, rsa_data->e_size, NULL);
-	if (!rsa->n || !rsa->e)
-		goto Free_rsa;
+	for (j = 0; j < RSA_FIELDS_PUB; j++) {
+		size_t s = rsa->size[j];
 
-	rnd_fd = open("/dev/urandom", O_RDONLY);
-	if (rnd_fd > 0) {
-		unsigned short size = KEY_SIZE + IVEC_SIZE;
+		gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, buf, s, NULL);
+		ret = gcry_ac_data_set(rsa_data_set, GCRY_AC_FLAG_COPY,
+					rsa->field[j], mpi);
+		gcry_mpi_release(mpi);
+		if (ret)
+			break;
 
-		if (read(rnd_fd, key_data->key, size) == size) {
-			struct encrypted_key *enc_key;
-			int ret;
-
-			enc_key = (struct encrypted_key *)(key_data + 1);
-			ret = RSA_public_encrypt(size, key_data->key,
-					enc_key->data, rsa, RSA_PKCS1_PADDING);
-			if (ret > 0) {
-				enc_key->size = ret;
-				use_RSA = 'y';
-			}
-		}
-		close(rnd_fd);
+		buf += s;
 	}
+	if (!ret)
+		ret = gcry_ac_key_init(&rsa_pub, rsa_hd, GCRY_AC_KEY_PUBLIC,
+					rsa_data_set);
+
+	if (!ret) {
+		unsigned short size;
+
+		ret = gcry_ac_data_new(&key_set);
+		if (ret)
+			goto Destroy_key;
+
+		rnd_fd = open("/dev/urandom", O_RDONLY);
+		if (rnd_fd <= 0)
+			goto Destroy_set;
+
+		size = KEY_SIZE + CIPHER_BLOCK;
+		if (read(rnd_fd, key_data->key, size) != size)
+			goto Close_urandom;
+
+		gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data->key, size, NULL);
+		ret = gcry_ac_data_encrypt(rsa_hd, 0, rsa_pub, mpi, &key_set);
+		gcry_mpi_release(mpi);
+		if (!ret) {
+			struct encrypted_key *key = &key_data->encrypted_key;
+			char *str;
+			size_t s;
+
+			gcry_ac_data_get_index(key_set, GCRY_AC_FLAG_COPY, 0,
+						(const char **)&str, &mpi);
+			gcry_free(str);
+			gcry_mpi_print(GCRYMPI_FMT_USG, key->data,
+					KEY_DATA_SIZE, &s, mpi);
+			gcry_mpi_release(mpi);
+			key->size = s;
+			use_RSA = 'y';
+		}
+Close_urandom:
+		close(rnd_fd);
+Destroy_set:
+		gcry_ac_data_destroy(key_set);
+Destroy_key:
+		gcry_ac_key_destroy(rsa_pub);
+	} else {
+		gcry_ac_data_destroy(rsa_data_set);
+	}
+
 Free_rsa:
-	RSA_free(rsa);
+	gcry_ac_close(rsa_hd);
 Close:
 	close(fd);
 }
@@ -1025,6 +1088,18 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 #ifdef CONFIG_ENCRYPT
+	if (encrypt) {
+		printf("suspend: libgcrypt version: %s\n",
+			gcry_check_version(NULL));
+		gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
+		ret = gcry_cipher_open(&cipher_handle, IMAGE_CIPHER,
+				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
+		if (ret) {
+			fprintf(stderr, "suspend: libgcrypt error %s\n",
+				gcry_strerror(ret));
+			encrypt = 0;
+		}
+	}
 	if (encrypt) {
 		mem_size -= buffer_size;
 		key_data = (struct key_data *)((char *)mem_pool + mem_size);
@@ -1138,6 +1213,10 @@ Close_snapshot_fd:
 Close_resume_fd:
 	close(resume_fd);
 
+#ifdef CONFIG_ENCRYPT
+	if (encrypt)
+		gcry_cipher_close(cipher_handle);
+#endif
 	free(mem_pool);
 
 	return ret;
