@@ -1,37 +1,48 @@
-Userland support for software suspend
+Userland support for suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Copyright (C) 2005 Rafael J. Wysocki <rjw@sisk.pl>
 Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
 
-The package contains the suspend and resume tools that make
-it possible to use the kernel software suspend userland interface
-(available in the 2.6.17-rc1 kernel and above).
+This package contains some userland tools allowing you to suspend a Linux
+system either to disk or to RAM.  These tools provide some capabilities
+that are not available in the vanilla Linux kernel.
 
-You'll need /dev/snapshot for these to work:
+The suspend to disk can be carried out with the help of s2disk and resume
+utilities which use the software suspend userland interface available in
+the Linux kernel 2.6.17 or above.  Among other things, they provide the
+following features:
 
-crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
+- suspend image checksumming
+- suspend image compression
+- suspend image encryption
+- (limited) support for splash screens and graphical progress meters
 
-(see the HOWTO file for more details).
+that are not provided by the in-kernel software suspend code (swsusp).
+Please refer to the HOWTO document in this package for more information about
+these utilities and installation instructions.
 
-The suspend tool now supports the "suspend to both" option which
-means the box may be suspended to RAM after the suspend to disk
-image has been created instead of being powered off.  Then, if
-there's enough battery power, you can resume from RAM and
-discard the saved image.  However, this is only possible if your
-box is explicitly whitelisted.
+The s2ram tool allows you to suspend the system to RAM and restore the state
+of the graphics adapter after the resume automatically.  For this purpose it
+uses the code out of vbetool and radeontool utilities, needed for handling
+quite a lot of graphics cards after the resume from RAM.  It also contains a
+whitelist of machines that are known to work with it.  Please refer to the
+document README.s2ram-whitelist in this package for more information about the
+s2ram whitelist.
 
-The s2ram utility is also provided allowing you to suspend to RAM
-or just check if the box is on the whitelist.  The utility contains
-the code out of vbetool and radeontool needed for handling quite a lot
-of graphics cards after resume from RAM.
+The s2both tool combines the functionalities of s2disk and s2ram.  With the
+help of it the system may be suspended to RAM after the suspend-to-disk
+image has been created instead of being powered off.  Then, if there's enough
+battery power, you can resume from RAM and discard the saved image, or you
+can resume the system from disk using the resume tool otherwise  However, this
+is only possible if your box is present in the s2ram whitelist.
+
+To build the s2ram and s2both tools you will need the pciutils-devel
+(pciutils-dev) package which is necessary to compile the vbetool code
+(the vbetool code is based on vbetool-0.6-1.1 from Debian).
 
 For debugging, see http://www.opensuse.org/ACPI_Suspend_debugging and
 http://en.opensuse.org/S2ram .
 
 acpi-support package from Ubuntu has *very* long whitelist of machines: 
-http://packages.ubuntu.org.cn/dapper/admin/acpi-support .
-
-The vbetool code is based on vbetool-0.6-1.1 from Debian.
-
-pciutils-dev package is needed to compile the vbetool code, so it's needed
-to compile the suspend and s2ram tools.
+http://packages.ubuntu.org.cn/dapper/admin/acpi-support that are likely to
+work with s2ram.
