@@ -29,6 +29,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* Cristian Rigamonti */
+	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	{ "ASUSTeK Computer Inc.        ",	"M6N       ",	"",	"", S3_MODE },
@@ -43,9 +45,12 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
+	/* Mark Stillwell */
+	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
-	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_POST|VBE_SAVE },
+	/* VBE_POST|VBE_SAVE works on text console, but not under X. Tested by Chirag Rajyaguru */
+	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_SAVE },
 	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
@@ -56,6 +61,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
 	/* Dell inspiron 1300, Tim Dijkstra <tim@famdijkstra.org> */
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
+	/* Dell Inspiron 630m, Fredrik Edemar */
+	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
@@ -115,6 +122,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
 	{ "TOSHIBA",			"Satellite A30",	"",	"", VBE_SAVE },
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_SAVE },
+	/* Michaell Gurski */
+	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
 	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
 	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
