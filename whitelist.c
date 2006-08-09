@@ -24,6 +24,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer           ",		"TravelMate 630 ",	"",	"", S3_BIOS|S3_MODE },
 	/* Norbert Preining */
 	{ "Acer",			"TravelMate 650",	"",	"", VBE_POST|VBE_SAVE },
+	/* Martin Sack, this one may be NOFB, to be verified */
+	{ "Acer",			"TravelMate 800",	"",	"", VBE_POST },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
@@ -45,6 +47,9 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
+	/* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-(
+	   reported by James Spencer */
+	{ "",	"",	"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
 	/* Mark Stillwell */
 	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
