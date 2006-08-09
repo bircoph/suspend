@@ -49,7 +49,7 @@ struct machine_entry whitelist[] = {
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-(
 	   reported by James Spencer */
-	{ "",	"",	"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
+	{ "",		"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
 	/* Mark Stillwell */
 	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
