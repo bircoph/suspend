@@ -10,6 +10,7 @@
  */
 
 #include <stdint.h>
+#include <linux/fs.h>
 
 #include "encrypt.h"
 
