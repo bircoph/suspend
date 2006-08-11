@@ -1,9 +1,15 @@
+Installation instruction for SUSE 10.1
+--------------------------------------
+Copyright (C) 2006 Rafael J. Wysocki <rjw@sisk.pl>
+
 This document describes how to install the s2disk (s2both) and resume tools
 on SUSE Linux 10.1 quickly.  Of course you can do it in a more sophisticated
 way, but then you'll need to figure out a couple of things yourself.
 
 I assume you have read Section I of the HOWTO in the main source directory.
-If not, please do it now and get back here when you're ready.
+If not, please do it now and get back here when you're ready.  Also make
+sure that your system has been updated and update it if not.  The mkinitrd
+patch below will not apply on a "vanilla" system.
 
 1. Install the Marc Lehmann's libLZF library (optionally), libgcrypt-devel
 (optionally) and build the s2disk and resume as described in Section I (b)-(d)
