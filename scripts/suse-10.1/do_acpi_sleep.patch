@@ -1,0 +1,50 @@
+--- a/do_acpi_sleep	2006-07-20 03:45:02.000000000 +0200
++++ b/do_acpi_sleep	2006-07-25 18:27:42.000000000 +0200
+@@ -54,6 +54,8 @@ OPT="--hctosys"
+ # where is the s2ram binary installed?
+ S2RAM="/usr/sbin/s2ram"
+ S2RAM_LOG=/var/log/suspend2ram.log
++S2DISK="/usr/local/sbin/s2disk"
++S2DISK_LOG=/var/log/suspend2disk.log
+ 
+ # blank the "suspend console"
+ deallocvt 63
+@@ -68,20 +70,25 @@ fi
+ 
+ case "$1" in
+     suspend2disk)
+-	IMG_SZ=0
+-	read IMG_SZ < /sys/power/image_size	
+-	$MYECHO /sys/power/state disk
+-	RET=$?      # 28=ENOSPC, "not enough swap."
+-	#
+-	# the logic here is:
+-	# if image_size > 0 (without kernel support, IMG_SZ will be zero),
+-	# and we got ENOSPC, then try again with image_size set to zero.
+-	if [ $RET -eq 28 -a $IMG_SZ -ne 0 ]; then # try again with minimal image size
+-		echo 0 > /sys/power/image_size
+-		$MYECHO /sys/power/state disk
++	if [ -x $S2DISK ]; then
++		$S2DISK >> $S2DISK_LOG 2>&1
+ 		RET=$?
+-		echo $IMG_SZ > /sys/power/image_size
+-        fi
++	else
++		IMG_SZ=0
++		read IMG_SZ < /sys/power/image_size	
++		$MYECHO /sys/power/state disk
++		RET=$?      # 28=ENOSPC, "not enough swap."
++		#
++		# the logic here is:
++		# if image_size > 0 (without kernel support, IMG_SZ will be zero),
++		# and we got ENOSPC, then try again with image_size set to zero.
++		if [ $RET -eq 28 -a $IMG_SZ -ne 0 ]; then # try again with minimal image size
++			echo 0 > /sys/power/image_size
++			$MYECHO /sys/power/state disk
++			RET=$?
++			echo $IMG_SZ > /sys/power/image_size
++        	fi
++	fi
+ 	[ "$SUSPEND2DISK_RESTORE_CLOCK" == "yes" ] && $HWCLOCK $OPT
+ 	;;
+     suspend2ram)

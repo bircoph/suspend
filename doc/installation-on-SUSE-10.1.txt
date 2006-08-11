@@ -1,0 +1,131 @@
+This document describes how to install the s2disk (s2both) and resume tools
+on SUSE Linux 10.1 quickly.  Of course you can do it in a more sophisticated
+way, but then you'll need to figure out a couple of things yourself.
+
+I assume you have read Section I of the HOWTO in the main source directory.
+If not, please do it now and get back here when you're ready.
+
+1. Install the Marc Lehmann's libLZF library (optionally), libgcrypt-devel
+(optionally) and build the s2disk and resume as described in Section I (b)-(d)
+of the HOWTO, but _do_ _not_ install the resume initrd.  Make sure that
+suspend.conf and s2disk will be installed in /etc/ and /usr/local/sbin/ ,
+respectively.
+
+2. Copy the resume binary to /usr/local/sbin/ .
+
+3. Go to the scripts/suse-10.1/ directory and run
+
+# ./modify-system-files.sh
+
+(as root).  It will use the two patches in the scripts/suse-10.1/ directory,
+mkinitrd.patch and do_acpi_sleep.patch, to modify /sbin/mkinitrd and
+/usr/lib/powersave/do_acpi_sleep .
+
+This will make powersaved use s2disk for suspending to disk and mkinitrd
+put the resume binary into the initrams images created by it.
+
+4. Configure and build the kernel, as described in /usr/src/linux/README.SUSE
+(this file is in the kernel-source package, so you need to have it installed).
+However, initially it's better to use a vanilla kernel.org kernel, so you'll
+need to download one (at least 2.6.17, but there have been quite a lot of
+suspend-related fixes recently, so it probably is a good idea to use the
+newest possible kernel, either "stable" or from the -rc series).
+
+To configure the new kernel, you can use your running kernel's configuration
+file, in which case you'll have all of the necessery modules built.  For this
+purpose:
+
+(a) become root, go to the /usr/src/linux/ directory (it will only be present
+if the kernel-source package is installed) and run
+
+# make cloneconfig
+
+(b) become normal user, unpack the kernel source wherever you want, for
+example somewhere in your home directory, and go to the new kernel source
+directory,
+
+(c) run
+
+$ cp /usr/src/linux/.config .
+
+(d) run
+
+$ make oldconfig
+
+Now, you probably will be asked many questions related to the new kernel's
+configuration, but it generally is safe to leave the default settings,
+unless you know what you're doing.
+
+(e) run
+
+$ make
+
+or, if you have an SMP system and you want the kernel to compile faster,
+
+$ make -j N
+
+where N is a small integer (on my dual-core box N=5 seems to be the best).
+
+5. Become root, go to the new kernel source directory and run
+
+# cp arch/x86_64/boot/bzImage /boot/vmlinuz-<version> && \
+cp System.map /boot/System.map-<version> && make modules_install
+
+where <version> is the version of your new kernel (eg. 2.6.18-rc2).
+
+6. Run
+
+# mkinitrd -k vmlinuz-<version> -i initrd-<version>
+
+7. Add the new kernel entry to /boot/grub/menu.lst , i.e.:
+
+(a) Find the entry of your default kernel (it should be the first one, with
+the title "SUSE Linux 10.1") and copy it, _without_ the preceding comment,
+to the top (ie. right after "gfxmenu (hd0,0)/message").
+
+(b) In the new entry, replace "vmlinuz" with "vmlinuz-<version>" and
+"initrd" with "initrd-<version>" and save the file.
+
+Now, the head of your /boot/grub/menu.lst should read like this:
+
+# Modified by YaST2. Last modification on Thu Jul 20 23:09:44 CEST 2006
+
+color white/blue black/light-gray
+default 0
+timeout 8
+gfxmenu (hd0,0)/message
+
+title SUSE Linux 10.1 (2.6.18-rc2)
+    root (hd0,0)
+    kernel /vmlinuz-2.6.18-rc2 root=/dev/sda1 vga=0x31a resume=/dev/sda2 splash=silent showopts
+    initrd /initrd-2.6.18-rc2
+
+###Don't change this comment - YaST2 identifier: Original name: linux###
+
+title SUSE Linux 10.1
+    root (hd0,0)
+    kernel /vmlinuz root=/dev/sda1 vga=0x31a resume=/dev/sda2 splash=silent showopts
+    initrd /initrd
+
+8. Test if the new kernel boots.  If it does, you also should be able to
+suspend using s2disk and resume should be run automatically from the initrd
+during system startup, if needed.
+
+9. It may be needed to add SUSPEND2DISK_SKIP_RESUME_CHECK="yes" is powersaved
+complains that the resume partition is not set and refuses to suspend.
+
+10. If you want to use s2both instead of s2diks, you will need to replace
+"s2disk" with "s2both" in do_acpi_sleep.patch before running
+./modify-system-files.sh in step 2.
+
+Of course, you will also have to build s2both and install it, but for this
+purpose you only need to run
+
+$ make s2both
+
+instead of "make s2disk" and
+
+$ make install-suspend
+
+instead of "make install-s2disk" when building the suspend tools.  Please note,
+however, that pciutils-devel has to be installed for this to work.
