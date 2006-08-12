@@ -52,6 +52,8 @@ struct machine_entry whitelist[] = {
 	{ "",		"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
 	/* Mark Stillwell */
 	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
+	/* Andreas Schmitz */
+	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
 	/* VBE_POST|VBE_SAVE works on text console, but not under X. Tested by Chirag Rajyaguru */
