@@ -28,6 +28,10 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 800",	"",	"", VBE_POST },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
+	/* From: Saul Mena Avila <saul_2110@yahoo.com.mx> */
+	{ "Acer",			"Aspire 3620",		"",	"", S3_BIOS|S3_MODE },
+	/* From: LucaB <lbonco@tin.it> */
+	{ "Acer, inc.",			"TravelMate 4100 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
@@ -63,6 +67,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz> */
+	{ "Dell Inc.",			"Latitude D620 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Dell e1505, Alexander Antoniades */
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
@@ -121,6 +127,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",		"ThinkPad X60",	"", S3_BIOS|S3_MODE },
 	/* T60p */
 	{ "LENOVO",			"2007*",		"",	"", S3_BIOS|S3_MODE },
+	/* T60 From: Jeff Nichols <jnichols@renkoo.net> */
+	{ "LENOVO",			"",		"ThinkPad T60",	"", S3_BIOS|S3_MODE },
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_SAVE },
