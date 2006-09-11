@@ -6,6 +6,8 @@ ARCH:=$(shell uname -m)
 CC_FLAGS=-I/usr/local/include
 LD_FLAGS=-L/usr/local/lib
 
+CFLAGS := -O2 -Wall
+
 ifdef CONFIG_COMPRESS
 CC_FLAGS	+= -DCONFIG_COMPRESS
 LD_FLAGS	+= -llzf
@@ -45,59 +47,59 @@ clean:
 	rm -f $(S2DISK) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
-	$(CC) -g -Wall -O2 s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+	$(CC) $(CFLAGS) -g s2ram.c $(S2RAMOBJ) -lpci -o s2ram
 
 vbetool/vbetool.o:	vbetool/vbetool.c
-	$(CC) -Wall -O2 -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o
+	$(CC) $(CFLAGS) -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o
 
 vbetool/lrmi.o:	vbetool/lrmi.c
-	$(CC) -Wall -O2 -c vbetool/lrmi.c -o vbetool/lrmi.o
+	$(CC) $(CFLAGS) -c vbetool/lrmi.c -o vbetool/lrmi.o
 
 vbetool/x86-common.o:	vbetool/x86-common.c
-	$(CC) -Wall -O2 -c vbetool/x86-common.c -o vbetool/x86-common.o
+	$(CC) $(CFLAGS) -c vbetool/x86-common.c -o vbetool/x86-common.o
 
 vbetool/x86emu/libx86emu.a:
 	make -C vbetool/x86emu -f makefile.linux
 
 vbetool/thunk.o:	vbetool/thunk.c
-	$(CC) -Wall -O2 -c vbetool/thunk.c -o vbetool/thunk.o
+	$(CC) $(CFLAGS) -c vbetool/thunk.c -o vbetool/thunk.o
 
 dmidecode.o:	dmidecode.c
-	$(CC) -Wall -O2 -DS2RAM -c dmidecode.c -o dmidecode.o
+	$(CC) $(CFLAGS) -DS2RAM -c dmidecode.c -o dmidecode.o
 
 radeontool.o:	radeontool.c
-	$(CC) -Wall -O2 -DS2RAM -c radeontool.c -o radeontool.o
+	$(CC) $(CFLAGS) -DS2RAM -c radeontool.c -o radeontool.o
 
 md5.o:	md5.c md5.h
-	$(CC) -Wall -o md5.o -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c
+	$(CC) $(CFLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c md5.c -o md5.o
 
 encrypt.o:	encrypt.c encrypt.h md5.h
-	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) -c encrypt.c
+	$(CC) $(CFLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) -c encrypt.c -o encrypt.o
 
 config.o:	config.c config.h
-	$(CC) -Wall $(CC_FLAGS) -c config.c
+	$(CC) $(CFLAGS) $(CC_FLAGS) -c config.c -o config.o
 
 vt.o:	vt.c vt.h
-	$(CC) -Wall -c vt.c
+	$(CC) $(CFLAGS) -c vt.c -o vt.o
 
 bootsplash.o: bootsplash.h bootsplash.c
-	$(CC) -g -Wall $(CC_FLAGS) -c bootsplash.c -o bootsplash.o
+	$(CC) -g $(CFLAGS) $(CC_FLAGS) -c bootsplash.c -o bootsplash.o
 
 splash.o: splash.h splash.c bootsplash.o vt.o
-	$(CC) -g -Wall $(CC_FLAGS) -c splash.c -o splash.o
+	$(CC) -g $(CFLAGS) $(CC_FLAGS) -c splash.c -o splash.o
 
 $(S2DISK):	vt.o md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
-	$(CC) -g -O2 -Wall $(CC_FLAGS) vt.o md5.o encrypt.o config.o suspend.c -o $@ $(SPLASHOBJ) $(LD_FLAGS)
+	$(CC) -g $(CFLAGS) $(CC_FLAGS) vt.o md5.o encrypt.o config.o suspend.c -o $@ $(SPLASHOBJ) $(LD_FLAGS)
 
 $(S2BOTH):	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
-	$(CC) -g -O2 -DCONFIG_BOTH -Wall $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
+	$(CC) -g $(CFLAGS) -DCONFIG_BOTH $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
-	$(CC) -Wall $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
+	$(CC) $(CFLAGS) $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
 
 ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o keygen.c encrypt.h md5.h
-	$(CC) -Wall -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
+	$(CC) $(CFLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
 
 install-s2disk: $(S2DISK) suspend-keygen conf/$(CONFIGFILE)
 	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
