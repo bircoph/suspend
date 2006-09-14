@@ -1,6 +1,6 @@
 #CONFIG_COMPRESS=yes
 #CONFIG_ENCRYPT=yes
-CONFIG_SPLASHY=yes
+#CONFIG_SPLASHY=yes
 
 ARCH:=$(shell uname -m)
 
