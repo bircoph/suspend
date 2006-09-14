@@ -402,7 +402,7 @@ static int decrypt_key(struct swsusp_info *header, unsigned char *key,
 	ivec_buf = key_buf + PK_KEY_SIZE;
 	out = ivec_buf + PK_CIPHER_BLOCK;
 	do {
-		read_password(pass_buf, 0);
+		splash.read_password(pass_buf, 0);
 		memset(ivec_buf, 0, PK_CIPHER_BLOCK);
 		strncpy((char *)ivec_buf, pass_buf, PK_CIPHER_BLOCK);
 		md5_init_ctx(&ctx);
@@ -567,17 +567,16 @@ static int read_image(int dev, char *resume_dev_name)
 			static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
 
 			printf("resume: Encrypted image\n");
-			splash.to_verbose();
 			if (header->image_flags & IMAGE_USE_RSA) {
 				error = decrypt_key(header, key, ivec, buffer);
 			} else {
 				int j;
 
-				encrypt_init(key, ivec, buffer, 0);
+				splash.read_password(buffer, 0);
+				encrypt_init(key, ivec, buffer);
 				for (j = 0; j < CIPHER_BLOCK; j++)
 					ivec[j] ^= header->salt[j];
 			}
-			splash.to_silent();
 			splash.progress(15);
 			if (!error)
 				error = gcry_cipher_open(&handle.cipher_handle,
@@ -630,7 +629,7 @@ static int read_image(int dev, char *resume_dev_name)
 		        "\tnow and successful resume. That would badly damage\n"
 		        "\taffected filesystems.]\n\n"
 			"\tDo you want to continue boot (Y/n)? ");
-		c = getchar();
+		c = splash.getchar();
 		ret = (c == 'n' || c == 'N');
 		if (ret) {
 			close(fd);
@@ -672,7 +671,7 @@ static int read_image(int dev, char *resume_dev_name)
 	} else {
 		printf("resume: Error %d loading the image\n"
 			"\nPress ENTER to continue", error);
-		getchar();
+		splash.getchar();
 	}
 	return error;
 }

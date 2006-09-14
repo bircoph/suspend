@@ -55,7 +55,7 @@ struct key_data {
 };
 
 void read_password(char *pass_buf, int vrfy);
-void encrypt_init(unsigned char *, unsigned char *, char *, int);
+void encrypt_init(unsigned char *, unsigned char *, char *);
 void get_random_salt(unsigned char *salt, size_t size);
 
 #define KEY_FILE	""

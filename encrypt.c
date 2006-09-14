@@ -21,6 +21,11 @@
 #include "md5.h"
 #include "encrypt.h"
 
+/**
+ * read_password - get non-empty, \0-terminated password from stdin
+ * passbuf - buffer of at least PASS_SIZE * 2 chars
+ * vrfy - if verify the password or not
+ */
 void read_password(char *pass_buf, int vrfy)
 {
 	struct termios termios;
@@ -60,12 +65,10 @@ void read_password(char *pass_buf, int vrfy)
  */
 
 void
-encrypt_init(unsigned char *key, unsigned char *ivec, char *pass_buf, int vrfy)
+encrypt_init(unsigned char *key, unsigned char *ivec, char *pass_buf)
 {
 
 	struct md5_ctx ctx;
-
-	read_password(pass_buf, vrfy);
 
 	memset(ivec, 0, CIPHER_BLOCK);
 	strncpy((char *)ivec, pass_buf, CIPHER_BLOCK);

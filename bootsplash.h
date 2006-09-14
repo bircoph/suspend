@@ -16,8 +16,8 @@ int bootsplash_open(void);
 int bootsplash_prepare(void);
 int bootsplash_finish(void);
 int bootsplash_progress(int p);
-int bootsplash_to_silent(void);
-int bootsplash_to_verbose(void);
 void bootsplash_switch_to(void);
+void bootsplash_read_password(char *, int);
+int bootsplash_getchar(void);
 
 #endif /* BOOTSPLASH_H */

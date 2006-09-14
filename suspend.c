@@ -55,6 +55,7 @@ static unsigned long compr_diff;
 static char encrypt;
 static char use_RSA;
 static char key_name[MAX_STR_LEN] = KEY_FILE;
+static char password[PASS_SIZE];
 #else
 #define encrypt 0
 #define key_name NULL
@@ -541,10 +542,8 @@ int write_image(int snapshot_fd, int resume_fd, int vt_no)
 				int j;
 
 No_RSA:
-				chvt(vt_no);
 				encrypt_init(key_data->key, key_data->ivec,
-						handle.write_buffer, 1);
-				splash.switch_to();
+						password);
 				splash.progress(20);
 				get_random_salt(header->salt, CIPHER_BLOCK);
 				for (j = 0; j < CIPHER_BLOCK; j++)
@@ -1167,6 +1166,12 @@ int main(int argc, char *argv[])
 #ifdef CONFIG_BOTH
 	/* If s2ram_prepare returns != 0, better not try to suspend to RAM */
 	s2ram = !s2ram_prepare();
+#endif
+#ifdef CONFIG_ENCRYPT
+        if (encrypt && ! use_RSA) {
+                splash.read_password((char *)mem_pool,1);
+                strncpy(password,(char *)mem_pool,PASS_SIZE);
+        }
 #endif
 
 	open_printk();

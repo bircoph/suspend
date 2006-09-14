@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "vt.h"
+#include "encrypt.h"
 
 #define BOOTSPLASH_PROC "/proc/splash"
 #define MAX_LINE_SIZE   1024
@@ -30,36 +31,6 @@ int bootsplash_finish(void)
 	}
 
 	return 0;
-}
-
-int bootsplash_open(void)
-{
-	char *str, buf[MAX_LINE_SIZE];
-
-	splash_file = fopen(BOOTSPLASH_PROC, "r+");
-	if (!splash_file)
-		return -1;
-
-	str = fgets(buf, MAX_LINE_SIZE, splash_file);
-	if (!str)
-		goto close;
-
-	if (!strstr(buf, ": on"))
-		goto close;
-
-	return 0;
-close:
-	bootsplash_finish();
-	return -1;
-}
-
-void bootsplash_switch_to(void)
-{
-	if (splash_file) {
-		/* assume that bootsplash is on console 1, there's no way
-		 * to figure this out AFAIK */
-		chvt(1);
-	}
 }
 
 static int bootsplash_write(const char *buf)
@@ -80,6 +51,47 @@ static int bootsplash_write(const char *buf)
 	return 0;
 }
 
+static int bootsplash_to_silent(void)
+{
+	return bootsplash_write("silent\n");
+}
+
+static int bootsplash_to_verbose(void)
+{
+	return bootsplash_write("verbose\n");
+}
+
+int bootsplash_open(void)
+{
+	char *str, buf[MAX_LINE_SIZE];
+
+	splash_file = fopen(BOOTSPLASH_PROC, "r+");
+	if (!splash_file)
+		return -1;
+
+	str = fgets(buf, MAX_LINE_SIZE, splash_file);
+	if (!str)
+		goto close;
+
+	if (!strstr(buf, ": on"))
+		goto close;
+
+	bootsplash_to_silent();
+	return 0;
+close:
+	bootsplash_finish();
+	return -1;
+}
+
+void bootsplash_switch_to(void)
+{
+	if (splash_file) {
+		/* assume that bootsplash is on console 1, there's no way
+		 * to figure this out AFAIK */
+		chvt(1);
+	}
+}
+
 inline int bootsplash_progress(int p)
 {
 	char buf[MAX_LINE_SIZE];
@@ -92,12 +104,21 @@ inline int bootsplash_progress(int p)
 	return bootsplash_write(buf);
 }
 
-int bootsplash_to_silent(void)
+void bootsplash_read_password (char * buf, int vrfy) 
 {
-	return bootsplash_write("silent\n");
+#if CONFIG_ENCRYPT
+	bootsplash_to_verbose();
+	read_password(buf, vrfy);
+	bootsplash_to_silent();
+#endif
 }
 
-int bootsplash_to_verbose(void)
+int bootsplash_getchar (void)
 {
-	return bootsplash_write("verbose\n");
+	int ret;
+	bootsplash_to_verbose();
+	ret = getchar();
+	bootsplash_to_silent();
+
+	return ret;
 }

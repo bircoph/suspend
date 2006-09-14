@@ -14,6 +14,7 @@
 
 #include "splash.h"
 #include "bootsplash.h"
+#include "encrypt.h"
 
 /**
  *	dummy functions in case if no splash system was found or
@@ -22,29 +23,35 @@
 static int splash_dummy_int_void(void) { return 0; }
 static int splash_dummy_int_int(int p) { return 0; }
 static void splash_dummy_void_void(void) { return; }
+#ifndef CONFIG_ENCRYPT
+static void splash_dummy_readpass (char *a, int b) { }
+#endif
 
 /* Tries to find a splash system and initializes interface functions */
 void splash_prepare(struct splash *splash, int enabled)
 {
 	int error = 0;
 
-	splash->to_silent   = splash_dummy_int_void;
-	splash->to_verbose  = splash_dummy_int_void;
 	splash->finish      = splash_dummy_int_void;
 	splash->progress    = splash_dummy_int_int;
 	splash->switch_to   = splash_dummy_void_void;
-
+	splash->getchar	    = getchar;
+#ifdef CONFIG_ENCRYPT
+	splash->read_password   = read_password;
+#else
+	splash->read_password   = splash_dummy_readpass;
+#endif
 	if (!enabled)
 		return;
 
 	printf("Looking for splash system... ");
 
 	if (!(error = bootsplash_open())) {
-		splash->to_silent   = bootsplash_to_silent;
-		splash->to_verbose  = bootsplash_to_verbose;
 		splash->finish      = bootsplash_finish;
 		splash->progress    = bootsplash_progress;
 		splash->switch_to   = bootsplash_switch_to;
+		splash->getchar	    = bootsplash_getchar;
+		splash->read_password = bootsplash_read_password;
 	} else if (0) {
 		/* add another splash system here */
 	} else {
@@ -53,6 +60,5 @@ void splash_prepare(struct splash *splash, int enabled)
 	}
 	printf("found\n");
 
-	splash->to_silent();
 	splash->progress(0);
 }
