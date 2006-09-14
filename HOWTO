@@ -17,6 +17,7 @@ crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
 (e) [optionally] Marc Lehmann's libLZF library (for image compression)
 (f) [optionally] libgcrypt (for image encryption)
+(g) [optionally] libsplashy (for user space splash)
 
 2) Basic steps
 
@@ -76,7 +77,12 @@ and you should install it in a way that's appropriate for your distribution.
 Still, if your distribution doesn't provide the binary package, you can refer
 to the documentation at http://www.gnupg.org/ for installation instructions.
 
-(d) Configure, build and install the suspend utilities
+(d) [optionally] install libsplashy-dev (for user space splash screens)
+
+For now you need the experimental version of splashy, which can be 
+found at svn://svn.debian.org/svn/splashy/branches/0.3 . 
+
+(e) Configure, build and install the suspend utilities
 
 - Edit Makefile and the conf/suspend.conf file to reflect the configuration
 of your system (please refer to Section II of this document for details).  The
@@ -198,12 +204,15 @@ suspend tools, you'll need the Marc Lehmann's libLZF and/or libgcrypt,
 respectively.  Short instructions related to these packages have been
 given in Secion I above.
 
+If you want a user space splash screen you will need a splashy theme,
+you also have to copy the theme files to your initramfs/initrd.
+
 3) Configuration and compilation of suspend tools
 
-(a) [optional] If you want to use the compression and/or encryption
-capabilities of the suspend tools and you have installed the necessary
-packages referred to in subsection 2), you need to set
-CONFIG_COMPRESS and/or CONFIG_ENCRYPT in the Makefile to "yes".
+(a) [optional] If you want to use the compression, encryption and/or
+user space splash capabilities of the suspend tools and you have installed 
+the necessary packages referred to in subsection 2), you need to set
+CONFIG_COMPRESS, CONFIG_ENCRYPT and/or CONFIG_SPLASHY in the Makefile to "yes".
 
 (b) Compile the s2disk and resume binaries by running:
 
@@ -267,7 +276,10 @@ the image to it.  [This has been reported to speed up the suspend on some
 boxes and eliminates the "fast progress meter and long fsync wait" effect.]
 
 The "splash" parameter is used to make s2disk and/or resume use a splash system
-(when set to 'y').  Currently the bootsplash.org's splash system is supported.
+(when set to 'y').  Currently the bootsplash.org and splashy splash systems
+are supported. Note that for both systems your initrd or initramfs will
+need additional files. See the documentation of your splash system for
+more information.
 
 The resume tool can use the same configuration file that is used by the
 s2disk tool, but it will ignore most of the above parameters.  It will use the
