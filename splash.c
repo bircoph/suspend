@@ -14,6 +14,7 @@
 
 #include "splash.h"
 #include "bootsplash.h"
+#include "splashy_funcs.h"
 #include "encrypt.h"
 
 /**
@@ -52,6 +53,14 @@ void splash_prepare(struct splash *splash, int enabled)
 		splash->switch_to   = bootsplash_switch_to;
 		splash->getchar	    = bootsplash_getchar;
 		splash->read_password = bootsplash_read_password;
+#ifdef CONFIG_SPLASHY
+	} else if (!splashy_open()) {
+		splash->finish      = splashy_finish;
+		splash->progress    = splashy_progress;
+		splash->getchar	    = splashy_getchar;
+		splash->read_password   = splashy_read_password;
+
+#endif
 	} else if (0) {
 		/* add another splash system here */
 	} else {

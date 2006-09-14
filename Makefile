@@ -1,5 +1,6 @@
 #CONFIG_COMPRESS=yes
 #CONFIG_ENCRYPT=yes
+CONFIG_SPLASHY=yes
 
 ARCH:=$(shell uname -m)
 
@@ -41,7 +42,20 @@ ifeq ($(ARCH), x86_64)
 S2RAMOBJ=vt.o vbetool/thunk.o vbetool/x86-common.o vbetool/vbetool.o vbetool/x86emu/libx86emu.a radeontool.o dmidecode.o
 endif
 
-SPLASHOBJ = splash.o bootsplash.o
+SPLASHOBJ = splash.o bootsplash.o 
+
+ifdef CONFIG_SPLASHY
+CC_FLAGS	+= -DCONFIG_SPLASHY
+LD_FLAGS	+= -lsplashy
+SPLASHOBJ 	+= splashy_funcs.o 
+STATIC_LD_FLAGS= -lsplashycnf \
+		$(shell directfb-config  --libs --input=keyboard \
+		--imageprovider=jpeg,gif,png\
+		--font=ft2,default) \
+		$(shell pkg-config --static --libs glib-2.0)
+STATIC_CC_FLAGS=$(shell directfb-config --cflags)\
+		$(shell pkg-config --static --cflags glib-2.0)
+endif
 
 clean:
 	rm -f $(S2DISK) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
@@ -85,8 +99,11 @@ vt.o:	vt.c vt.h
 bootsplash.o: bootsplash.h bootsplash.c
 	$(CC) -g $(CFLAGS) $(CC_FLAGS) -c bootsplash.c -o bootsplash.o
 
-splash.o: splash.h splash.c bootsplash.o vt.o
+splash.o: splash.h splash.c bootsplash.o vt.o splashy_funcs.o
 	$(CC) -g $(CFLAGS) $(CC_FLAGS) -c splash.c -o splash.o
+
+splashy_funcs.o: splashy_funcs.c splashy_funcs.h
+	$(CC) -g $(CFLAGS) $(CC_FLAGS) -c $< -o $@
 
 $(S2DISK):	vt.o md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
 	$(CC) -g $(CFLAGS) $(CC_FLAGS) vt.o md5.o encrypt.o config.o suspend.c -o $@ $(SPLASHOBJ) $(LD_FLAGS)
@@ -95,7 +112,7 @@ $(S2BOTH):	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h 
 	$(CC) -g $(CFLAGS) -DCONFIG_BOTH $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
-	$(CC) $(CFLAGS) $(CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS)
+	$(CC) $(CFLAGS) $(CC_FLAGS) $(STATIC_CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS) $(STATIC_LD_FLAGS)
 
 ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o keygen.c encrypt.h md5.h
