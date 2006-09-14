@@ -425,8 +425,7 @@ static int save_image(struct swap_map_handle *handle,
 				break;
 			if (!(nr_pages % m)) {
 				printf("\b\b\b\b%3d%%", nr_pages / m);
-				if ((nr_pages / m) >= 20 && (nr_pages / m) <= 95)
-					splash.progress(nr_pages / m);
+				splash.progress(20 + (nr_pages / m) * 0.75);
 			}
 			if (!(nr_pages % writeout_rate))
 				start_writeout(handle->fd);
