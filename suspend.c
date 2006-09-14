@@ -661,16 +661,11 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 		return ENOSPC;
 	}
 
-	ioctl(vt_fd, KDSKBMODE, K_MEDIUMRAW);
-	ioctl(vt_fd, VT_ACTIVATE, vt_no);
-	ioctl(vt_fd, VT_WAITACTIVE, vt_no);
-	ioctl(vt_fd, KDSETMODE, KD_GRAPHICS);
 	error = freeze(snapshot_fd);
-	ioctl(vt_fd, KDSETMODE, KD_TEXT);
-	ioctl(vt_fd, KDSKBMODE, K_XLATE);
-	ioctl(vt_fd, VT_ACTIVATE, vt_no);
-	ioctl(vt_fd, VT_WAITACTIVE, vt_no);
 
+	/* This a hack for a bug in bootsplash. Apparently it will
+	 * drop to 'verbose mode' after the freeze() call.
+	 */
 	splash.switch_to();
 	splash.progress(15);
 
@@ -1158,14 +1153,14 @@ int main(int argc, char *argv[])
 		goto Close_snapshot_fd;
 	}
 
-	splash_prepare(&splash, splash_param);
-
 	vt_fd = prepare_console(&orig_vc, &suspend_vc);
 	if (vt_fd < 0) {
 		ret = errno;
 		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
 		goto Close_snapshot_fd;
 	}
+
+	splash_prepare(&splash, splash_param);
 
 	splash.progress(5);
 
@@ -1206,8 +1201,8 @@ int main(int argc, char *argv[])
 	close_swappiness();
 
 Restore_console:
-	restore_console(vt_fd, orig_vc);
 	splash.finish();
+	restore_console(vt_fd, orig_vc);
 Close_snapshot_fd:
 	close(snapshot_fd);
 Close_resume_fd:
