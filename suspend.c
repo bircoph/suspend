@@ -502,7 +502,7 @@ int write_image(int snapshot_fd, int resume_fd, int vt_no)
 		return error < 0 ? error : -EFAULT;
 	printf("suspend: Image size: %lu kilobytes\n", header->size / 1024);
 	if (!enough_swap(snapshot_fd, header->size) && !compress) {
-		printf("suspend: Not enough free swap\n");
+		fprintf(stderr, "suspend: Not enough free swap\n");
 		return -ENOSPC;
 	}
 	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
@@ -560,7 +560,7 @@ No_RSA:
 					header->image_flags |= IMAGE_ENCRYPTED;
 			}
 			if (error)
-				printf("suspend: libgcrypt error: %s\n",
+				fprintf(stderr,"suspend: libgcrypt error: %s\n",
 						gcry_strerror(error));
 		}
 #endif
@@ -625,10 +625,11 @@ static int reset_signature(int fd)
 	}
 	fsync(fd);
 	if (error) {
-		printf("reset_signature: Error %d resetting the image.\n"
-		       "There should be valid image on disk. Powerdown and do normal resume.\n"
-		       "Continuing with this booted system will lead to data corruption.\n", 
-		       error);
+		fprintf(stderr,
+			"reset_signature: Error %d resetting the image.\n"
+			"There should be valid image on disk. Powerdown and do normal resume.\n"
+			"Continuing with this booted system will lead to data corruption.\n", 
+			error);
 		while(1);
 	}
 	return error;
@@ -640,7 +641,7 @@ static void suspend_shutdown(void)
 	power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
 	 * We'd do resume with stale caches on next boot. */
-	printf("Powerdown failed. That's impossible.\n");
+	fprintf(stderr,"Powerdown failed. That's impossible.\n");
 	while(1);
 }
 

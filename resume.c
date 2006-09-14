@@ -359,12 +359,14 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 	return error;
 }
 
-static inline void print_checksum(unsigned char *checksum)
+static char * print_checksum(char * buf, unsigned char *checksum)
 {
 	int j;
 
 	for (j = 0; j < 16; j++)
-		printf("%02hhx ", checksum[j]);
+		buf += sprintf(buf, "%02hhx ", checksum[j]);
+
+	return buf;
 }
 
 #ifdef CONFIG_ENCRYPT
@@ -529,7 +531,7 @@ static int read_image(int dev, char *resume_dev_name)
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
 		ret = -errno;
-		printf("resume: Could not open the resume device\n");
+		fprintf(stderr,"resume: Could not open the resume device\n");
 		return ret;
 	}
 	if (lseek(fd, shift, SEEK_SET) != shift)
@@ -546,9 +548,8 @@ static int read_image(int dev, char *resume_dev_name)
 	if (!error) {
 		if(header->image_flags & IMAGE_CHECKSUM) {
 			memcpy(orig_checksum, header->checksum, 16);
-			printf("resume: MD5 checksum ");
-			print_checksum(orig_checksum);
-			printf("\n");
+			printf("resume: MD5 checksum %s\n",
+				print_checksum(buffer, orig_checksum));
 			verify_checksum = 1;
 		}
 		splash.progress(10);
@@ -557,7 +558,7 @@ static int read_image(int dev, char *resume_dev_name)
 #ifdef CONFIG_COMPRESS
 			decompress = 1;
 #else
-			printf("resume: Compression not supported\n");
+			fprintf(stderr,"resume: Compression not supported\n");
 			error = -EINVAL;
 #endif
 		}
@@ -595,11 +596,11 @@ static int read_image(int dev, char *resume_dev_name)
 				if (decrypt)
 					gcry_cipher_close(handle.cipher_handle);
 				decrypt = 0;
-				printf("resume: libgcrypt error: %s\n",
+				fprintf(stderr, "resume: libgcrypt error: %s\n",
 						gcry_strerror(error));
 			}
 #else
-			printf("resume: Encryption not supported\n");
+			fprintf(stderr, "resume: Encryption not supported\n");
 			error = -EINVAL;
 #endif
 		}
@@ -615,7 +616,8 @@ static int read_image(int dev, char *resume_dev_name)
 			error = load_image(&handle, dev, nr_pages);
 	}
 	if (error) {
-		printf("\nresume: The system snapshot image could not be read.\n\n"
+		fprintf(stderr,
+			"\nresume: The system snapshot image could not be read.\n\n"
 #ifdef CONFIG_ENCRYPT
 			"\tThis might be a result of booting a wrong kernel\n"
 			"\tor typing in a wrong passphrase.\n\n"
@@ -639,11 +641,9 @@ static int read_image(int dev, char *resume_dev_name)
 		if (!error && verify_checksum) {
 			md5_finish_ctx(&handle.ctx, checksum);
 			if (memcmp(orig_checksum, checksum, 16)) {
-				printf("resume: MD5 checksum does not match\n");
-				printf("resume: Computed MD5 checksum ");
-				print_checksum(checksum);
-				printf("\nPress ENTER to continue ");
-				getchar();
+				fprintf(stderr,"resume: MD5 checksum does not match\n");
+				fprintf(stderr,"resume: Computed MD5 checksum %s\n",
+					print_checksum(buffer, checksum));
 				error = -EINVAL;
 			}
 		}
@@ -686,7 +686,7 @@ static void set_kernel_console_loglevel(int level)
 
 	if (stat(procname, &stat_buf) && errno == ENOENT) {
 		if (mount("none", "/proc", "proc", 0, NULL)) {
-			printf("resume: Could not mount proc\n");
+			fprintf(stderr, "resume: Could not mount proc\n");
 			return;
 		} else
 			proc_mounted = 1;
@@ -731,7 +731,8 @@ int main(int argc, char *argv[])
 		splash_param = 0;
 
 	while (stat(resume_dev_name, &stat_buf)) {
-		printf("resume: Could not stat the resume device file.\n"
+		fprintf(stderr, 
+			"resume: Could not stat the resume device file.\n"
 			"\tPlease type in the file name to try again"
 			"\tor press ENTER to boot the system: ");
 		fgets(resume_dev_name, MAX_STR_LEN - 1, stdin);
