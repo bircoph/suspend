@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
 #else
@@ -66,6 +67,8 @@ static char splash_param;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
+static struct vt_mode orig_vtm;
+static int vfd;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -487,7 +490,7 @@ static int mark_swap(int fd, loff_t start)
  *	write_image - Write entire image and metadata.
  */
 
-int write_image(int snapshot_fd, int resume_fd, int vt_no)
+int write_image(int snapshot_fd, int resume_fd)
 {
 	static struct swap_map_handle handle;
 	struct swsusp_info *header = mem_pool;
@@ -644,7 +647,7 @@ static void suspend_shutdown(void)
 	while(1);
 }
 
-int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
+int suspend_system(int snapshot_fd, int resume_fd)
 {
 	loff_t avail_swap;
 	unsigned long image_size;
@@ -683,7 +686,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int vt_fd, int vt_no)
 				free_snapshot(snapshot_fd);
 				break;
 			}
-			error = write_image(snapshot_fd, resume_fd, vt_no);
+			error = write_image(snapshot_fd, resume_fd);
 			if (!error) {
 				splash.progress(100);
 #ifdef CONFIG_BOTH
@@ -1027,6 +1030,61 @@ Close:
 }
 #endif
 
+static void unlock_vt(void)
+{
+	ioctl(vfd, VT_SETMODE, &orig_vtm);
+	close(vfd);
+}
+
+static int lock_vt(void)
+{
+	struct sigaction sa;
+	struct vt_mode vtm;
+	struct vt_stat vtstat;
+	char *vt_name = mem_pool;
+	int fd, error;
+
+	fd = console_fd("/dev/console");
+	if (fd < 0)
+		return fd;
+
+	error = ioctl(fd, VT_GETSTATE, &vtstat);
+	close(fd);
+	
+	if (error < 0)
+		return error;
+
+	sprintf(vt_name, "/dev/tty%d", vtstat.v_active);
+	vfd = open(vt_name, O_RDWR);
+	if (vfd < 0)
+		return vfd;
+
+	error = ioctl(vfd, VT_GETMODE, &vtm);
+	if (error < 0) 
+		return error;
+
+	/* Setting vt mode to VT_PROCESS means this process
+	 * will handle vt switching requests.
+	 * We just ignore all request by installing SIG_IGN.
+	 */
+	sigemptyset(&(sa.sa_mask));
+	sa.sa_flags = SA_RESTART;
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGUSR1, &sa, NULL);
+
+	orig_vtm = vtm;
+	vtm.mode = VT_PROCESS;
+	vtm.relsig = SIGUSR1;
+	vtm.acqsig = SIGUSR1;
+	error = ioctl(vfd, VT_SETMODE, &vtm);
+	if (error < 0)
+		return error;
+
+	return 0;
+}
+
+
+
 int main(int argc, char *argv[])
 {
 	unsigned int mem_size;
@@ -1161,6 +1219,9 @@ int main(int argc, char *argv[])
 
 	splash_prepare(&splash, splash_param);
 
+	if (lock_vt() < 0)
+		goto Restore_console;
+
 	splash.progress(5);
 
 #ifdef CONFIG_BOTH
@@ -1187,7 +1248,7 @@ int main(int argc, char *argv[])
 	if (!s2ram && chroot(chroot_path)) {
 		ret = errno;
 		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
-		goto Restore_console;
+		goto Unlock_vt;
 	}
 	chdir("/");
 
@@ -1195,7 +1256,7 @@ int main(int argc, char *argv[])
 
 	splash.progress(10);
 
-	ret = suspend_system(snapshot_fd, resume_fd, vt_fd, suspend_vc);
+	ret = suspend_system(snapshot_fd, resume_fd);
 
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
@@ -1205,6 +1266,8 @@ int main(int argc, char *argv[])
 		set_swappiness(orig_swappiness);
 	close_swappiness();
 
+Unlock_vt:
+	unlock_vt();
 Restore_console:
 	splash.finish();
 	restore_console(vt_fd, orig_vc);
