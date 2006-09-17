@@ -58,7 +58,7 @@ STATIC_CC_FLAGS=$(shell directfb-config --cflags)\
 endif
 
 clean:
-	rm -f $(S2DISK) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
+	rm -f $(S2DISK) $(S2BOTH) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
 	$(CC) $(CFLAGS) -g s2ram.c $(S2RAMOBJ) -lpci -o s2ram
