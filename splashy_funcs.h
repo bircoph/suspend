@@ -17,7 +17,7 @@ int splashy_open(void);
 int splashy_finish(void);
 int splashy_progress(int p);
 void splashy_read_password(char *, int);
-int splashy_getchar(void);
+int splashy_dialog(const char *);
 void splashy_print(const char *);
 
 #endif

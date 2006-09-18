@@ -14,11 +14,11 @@
 
 /* generic interface functions for an arbitary splash method */
 struct splash {
-	int (*finish)     (void);
-	int (*progress)   (int p);
+	int (*finish) (void);
+	int (*progress) (int p);
 	void (*switch_to) (void);
 	void (*read_password) (char *, int);
-	int (*getchar) (void);
+	int (*dialog) (const char *);
 };
 
 void splash_prepare(struct splash *splash, int enabled);

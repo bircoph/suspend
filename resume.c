@@ -615,7 +615,7 @@ static int read_image(int dev, char *resume_dev_name)
 			error = load_image(&handle, dev, nr_pages);
 	}
 	if (error) {
-		fprintf(stderr,
+		c = splash.dialog(
 			"\nresume: The system snapshot image could not be read.\n\n"
 #ifdef CONFIG_ENCRYPT
 			"\tThis might be a result of booting a wrong kernel\n"
@@ -629,7 +629,6 @@ static int read_image(int dev, char *resume_dev_name)
 		        "\tnow and successful resume. That would badly damage\n"
 		        "\taffected filesystems.]\n\n"
 			"\tDo you want to continue boot (Y/n)? ");
-		c = splash.getchar();
 		ret = (c == 'n' || c == 'N');
 		if (ret) {
 			close(fd);
@@ -669,9 +668,9 @@ static int read_image(int dev, char *resume_dev_name)
 	if (!error) {
 		printf("resume: Image successfully loaded\n");
 	} else {
-		printf("resume: Error %d loading the image\n"
-			"\nPress ENTER to continue", error);
-		splash.getchar();
+		sprintf(buffer, "resume: Error %d loading the image\n"
+			"\nPress ENTER to continue\n", error);
+		splash.dialog(buffer);
 	}
 	return error;
 }

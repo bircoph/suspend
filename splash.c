@@ -25,8 +25,13 @@ static int splash_dummy_int_void(void) { return 0; }
 static int splash_dummy_int_int(int p) { return 0; }
 static void splash_dummy_void_void(void) { return; }
 #ifndef CONFIG_ENCRYPT
-static void splash_dummy_readpass (char *a, int b) { }
+static void splash_dummy_readpass(char *a, int b) { }
 #endif
+static int splash_dialog(const char *prompt) 
+{
+	printf(prompt);
+	return getchar();
+}
 
 /* Tries to find a splash system and initializes interface functions */
 void splash_prepare(struct splash *splash, int enabled)
@@ -36,7 +41,7 @@ void splash_prepare(struct splash *splash, int enabled)
 	splash->finish      = splash_dummy_int_void;
 	splash->progress    = splash_dummy_int_int;
 	splash->switch_to   = splash_dummy_void_void;
-	splash->getchar	    = getchar;
+	splash->dialog	    = splash_dialog;
 #ifdef CONFIG_ENCRYPT
 	splash->read_password   = read_password;
 #else
@@ -51,13 +56,13 @@ void splash_prepare(struct splash *splash, int enabled)
 		splash->finish      = bootsplash_finish;
 		splash->progress    = bootsplash_progress;
 		splash->switch_to   = bootsplash_switch_to;
-		splash->getchar	    = bootsplash_getchar;
+		splash->dialog	    = bootsplash_dialog;
 		splash->read_password = bootsplash_read_password;
 #ifdef CONFIG_SPLASHY
 	} else if (!splashy_open()) {
 		splash->finish      = splashy_finish;
 		splash->progress    = splashy_progress;
-		splash->getchar	    = splashy_getchar;
+		splash->dialog	    = splashy_dialog;
 		splash->read_password   = splashy_read_password;
 
 #endif

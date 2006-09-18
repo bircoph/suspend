@@ -104,7 +104,7 @@ inline int bootsplash_progress(int p)
 	return bootsplash_write(buf);
 }
 
-void bootsplash_read_password (char * buf, int vrfy) 
+void bootsplash_read_password(char * buf, int vrfy) 
 {
 #if CONFIG_ENCRYPT
 	bootsplash_to_verbose();
@@ -113,10 +113,11 @@ void bootsplash_read_password (char * buf, int vrfy)
 #endif
 }
 
-int bootsplash_getchar (void)
+int bootsplash_dialog(const char *prompt)
 {
 	int ret;
 	bootsplash_to_verbose();
+	printf(prompt);
 	ret = getchar();
 	bootsplash_to_silent();
 

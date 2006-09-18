@@ -18,6 +18,6 @@ int bootsplash_finish(void);
 int bootsplash_progress(int p);
 void bootsplash_switch_to(void);
 void bootsplash_read_password(char *, int);
-int bootsplash_getchar(void);
+int bootsplash_dialog(const char *);
 
 #endif /* BOOTSPLASH_H */

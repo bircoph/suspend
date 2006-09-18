@@ -19,12 +19,12 @@
 
 int splashy_open() //char *mode)
 {
-        char * mode="suspend";
+	char * mode="suspend";
 	/* Do some detecting logic here ... */
 	if (!splashy_init (NULL,mode))
 		return -1;
 
-       if (splashy_start_splash () < 0)
+	if (splashy_start_splash () < 0)
 		return -1;
 
 	return 0;
@@ -47,7 +47,7 @@ inline int splashy_progress(int p)
 	return 0;
 }
 
-void splashy_read_password (char *buf, int vrfy)
+void splashy_read_password(char *buf, int vrfy)
 {
 #if CONFIG_ENCRYPT
         char *vrfy_buf = vrfy ? buf + PASS_SIZE : buf;
@@ -64,8 +64,10 @@ void splashy_read_password (char *buf, int vrfy)
 #endif
 }
 
-void splashy_print(const char *str) {
-	splashy_printline(str);
+int splashy_dailog(const char *prompt) 
+{
+	splashy_printline(prompt);
+	return splashy_getchar();
 }
 
 #endif
