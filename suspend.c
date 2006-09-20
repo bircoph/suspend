@@ -418,7 +418,7 @@ static int save_image(struct swap_map_handle *handle,
 	if (!m)
 		m = 1;
 	if (early_writeout)
-		writeout_rate = m
+		writeout_rate = m;
 	else
 		writeout_rate = nr_pages;
 	nr_pages = 0;
