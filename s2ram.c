@@ -241,7 +241,7 @@ void s2ram_resume(void)
 #ifndef CONFIG_BOTH
 static void usage(void)
 {
-	printf("Usage: s2ram [-nhi] [-fsra]\n"
+	printf("Usage: s2ram [-nhi] [-fspmra]\n"
 	       "\n"
 	       "Options:\n"
 	       "    -h, --help:       this text.\n"
