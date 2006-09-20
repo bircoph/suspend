@@ -64,7 +64,7 @@ void splashy_read_password(char *buf, int vrfy)
 #endif
 }
 
-int splashy_dailog(const char *prompt) 
+int splashy_dialog(const char *prompt) 
 {
 	splashy_printline(prompt);
 	return splashy_getchar();
