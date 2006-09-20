@@ -1,6 +1,7 @@
 #CONFIG_COMPRESS=yes
 #CONFIG_ENCRYPT=yes
 #CONFIG_SPLASHY=yes
+#CONFIG_UDEV=yes
 
 ARCH:=$(shell uname -m)
 
@@ -29,6 +30,10 @@ BOOT_DIR=/boot
 S2BOTH=s2both
 S2DISK=s2disk
 CONFIGFILE=suspend.conf
+
+ifndef CONFIG_UDEV
+SNAPSHOT=$(DESTDIR)/dev/snapshot
+endif
 
 ifdef CONFIG_ENCRYPT
 all: $(S2DISK) $(S2BOTH) suspend-keygen resume s2ram
@@ -118,27 +123,23 @@ ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o keygen.c encrypt.h md5.h
 	$(CC) $(CFLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
 
-install-s2disk: $(S2DISK) suspend-keygen conf/$(CONFIGFILE)
-	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+install-s2disk: $(S2DISK) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 
-install-suspend: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE)
-	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+install-suspend: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 else
-install-s2disk: $(S2DISK) conf/$(CONFIGFILE)
-	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+install-s2disk: $(S2DISK) conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 
-install-suspend: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE)
-	if [ ! -c /dev/snapshot ]; then mknod /dev/snapshot c 10 231; fi
+install-suspend: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
@@ -151,3 +152,6 @@ install-resume-initrd:	resume conf/$(CONFIGFILE)
 install-resume:		resume 
 	./scripts/install-resume.sh
 
+$(SNAPSHOT):
+	mknod $(SNAPSHOT) c 10 231;
+	
