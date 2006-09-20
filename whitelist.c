@@ -63,6 +63,8 @@ struct machine_entry whitelist[] = {
 	/* VBE_POST|VBE_SAVE works on text console, but not under X. Tested by Chirag Rajyaguru */
 	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_SAVE },
 	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* by Henare Degan <henare.degan@gmail.com> 8500 w. NVidia card. There are also 8500s w. ATI cards */
+	{ "Dell Computer Corporation",  "Inspiron 8500 *",	"",	"", 0 },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
@@ -76,9 +78,14 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
 	/* Dell Inspiron 630m, Fredrik Edemar */
 	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
+	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
+	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
+	/* Those two x86_64 amilos are a bit strange. I seldom see s3_bios + vbe_* ... */
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
+	/* reported by Thomas Halva Labella <hlabella@ulb.ac.be> */
+	{ "FUJITSU SIEMENS",		"Amilo A7645 ",		"",	"", VBE_SAVE|S3_BIOS|S3_MODE },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
@@ -87,6 +94,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nx6125 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
+	/* Michael Biebl <biebl@teco.edu> */
+	{ "Hewlett-Packard",		"HP Compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"", S3_BIOS },
