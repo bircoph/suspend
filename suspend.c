@@ -417,8 +417,9 @@ static int save_image(struct swap_map_handle *handle,
 	m = nr_pages / 100;
 	if (!m)
 		m = 1;
-	writeout_rate = nr_pages / 5;
-	if (!writeout_rate || !early_writeout)
+	if (early_writeout)
+		writeout_rate = m
+	else
 		writeout_rate = nr_pages;
 	nr_pages = 0;
 	do {
@@ -1122,8 +1123,8 @@ int main(int argc, char *argv[])
 	if (splash_param != 'y' && splash_param != 'Y')
 		splash_param = 0;
 
-	if (early_writeout != 'y' && early_writeout != 'Y')
-		early_writeout = 0;
+	if (early_writeout != 'n' && early_writeout != 'N')
+		early_writeout = 1;
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
