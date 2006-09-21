@@ -158,6 +158,8 @@ struct machine_entry whitelist[] = {
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
+	/* Joseph Smith <joe@uwcreations.com> */
+	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
