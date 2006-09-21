@@ -97,6 +97,8 @@ struct machine_entry whitelist[] = {
 	/* Michael Biebl <biebl@teco.edu> */
 	{ "Hewlett-Packard",		"HP Compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
+	/* Arthur Peters <amp@singingwizard.org> */
+	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"", S3_BIOS },
 	/* R51 and T43 confirmed by Christian Zoz */
