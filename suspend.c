@@ -16,6 +16,8 @@
 #include <sys/mount.h>
 #include <sys/vt.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <time.h>
 #include <linux/kd.h>
 #include <linux/tiocl.h>
 #include <syscall.h>
@@ -497,6 +499,7 @@ int write_image(int snapshot_fd, int resume_fd)
 	struct swsusp_info *header = mem_pool;
 	loff_t start;
 	int error;
+ 	struct timeval begin;
 
 	printf("suspend: System snapshot ready. Preparing to write\n");
 	start = get_swap_page(snapshot_fd);
@@ -567,13 +570,22 @@ No_RSA:
 						gcry_strerror(error));
 		}
 #endif
-		if (!error)
+		if (!error) {
+			gettimeofday(&begin, NULL);
 			error = save_image(&handle, header->pages - 1);
+		}
 	}
 	if (!error) {
 		error = flush_swap_writer(&handle);
 		if (compute_checksum)
 			md5_finish_ctx(&handle.ctx, header->checksum);
+	}
+	fsync(resume_fd);
+	if (!error) {
+		struct timeval end;
+		gettimeofday(&end, NULL);
+		timersub(&end, &begin, &end);
+		header->writeout_time = end.tv_usec / 1000000.0 + end.tv_sec;
 	}
 	if (!error)
 		error = write_area(resume_fd, header, start, page_size);

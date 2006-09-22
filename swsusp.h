@@ -63,6 +63,7 @@ struct swsusp_info {
 	struct RSA_data	rsa;
 	struct encrypted_key	key;
 #endif
+	double			writeout_time;
 };
 
 #define IMAGE_CHECKSUM		0x0001

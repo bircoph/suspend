@@ -15,6 +15,8 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
+#include <sys/time.h>
+#include <time.h>
 #include <syscall.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -611,8 +613,28 @@ static int read_image(int dev, char *resume_dev_name)
 			if (ret < (int)page_size)
 				error = ret < 0 ? ret : -EIO;
 		}
-		if (!error)
+		if (!error) {
+			struct timeval begin, end;
+			double delta, mb = header->size / (1024.0 * 1024.0);
+
+			gettimeofday(&begin, NULL);
 			error = load_image(&handle, dev, nr_pages);
+			gettimeofday(&end, NULL);
+
+			timersub(&end, &begin, &end);
+			delta = end.tv_usec / 1000000.0 + end.tv_sec;
+
+			printf("wrote %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
+				mb, header->writeout_time, mb / header->writeout_time);
+
+			printf("read %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
+				mb, delta, mb / delta);
+
+			mb *= 2.0;
+			delta += header->writeout_time;
+			printf("total image i/o %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
+				mb, delta, mb / delta);
+		}
 	}
 	if (error) {
 		c = splash.dialog(
