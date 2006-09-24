@@ -66,6 +66,8 @@ static char password[PASS_SIZE];
 static char s2ram;
 static char early_writeout;
 static char splash_param;
+#define SHUTDOWN_LEN	16
+static char shutdown_method[SHUTDOWN_LEN];
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
@@ -134,6 +136,12 @@ static struct config_par parameters[PARAM_NO] = {
 		.name = "splash",
 		.fmt = "%c",
 		.ptr = &splash_param,
+	},
+	{
+		.name = "shutdown method",
+		.fmt = "%s",
+		.ptr = shutdown_method,
+		.len = SHUTDOWN_LEN,
 	},
 };
 
@@ -653,7 +661,11 @@ static int reset_signature(int fd)
 
 static void suspend_shutdown(void)
 {
-	power_off();
+	/* todo: platform, S3 */
+	if (!strcmp(shutdown_method, "reboot"))
+		reboot();
+	else
+		power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
 	 * We'd do resume with stale caches on next boot. */
 	fprintf(stderr,"Powerdown failed. That's impossible.\n");

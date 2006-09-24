@@ -275,6 +275,12 @@ utility will start syncing the resume device early in the process of writing
 the image to it.  [This has been reported to speed up the suspend on some
 boxes and eliminates the "fast progress meter and long fsync wait" effect.]
 
+If the "shutdown method" parameter is set to "reboot", the s2disk utility will
+reboot the machine rather than powering down. This is useful when testing
+repeated benchmarks, such as when checking whether "early writeout" produces a
+speedup or not for your combination of hardware, image size, and s2disk
+parameters.
+
 The "splash" parameter is used to make s2disk and/or resume use a splash system
 (when set to 'y').  Currently the bootsplash.org and splashy splash systems
 are supported. Note that for both systems your initrd or initramfs will

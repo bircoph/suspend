@@ -116,6 +116,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt = "%c",
 		.ptr = &splash_param,
 	},
+	{
+		.name = "shutdown method",
+		.fmt = "%s",
+		.ptr = NULL,
+	},
 };
 
 static unsigned int page_size;

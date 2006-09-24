@@ -170,7 +170,7 @@ struct buf_block {
 
 #define SUSPEND_SWAPPINESS	100
 
-#define GEN_PARAM	8
+#define GEN_PARAM	9
 
 #ifdef CONFIG_COMPRESS
 #define COMPRESS_PARAM	1
