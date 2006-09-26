@@ -67,7 +67,8 @@ static char s2ram;
 static char early_writeout;
 static char splash_param;
 #define SHUTDOWN_LEN	16
-static char shutdown_method[SHUTDOWN_LEN];
+static char shutdown_method[SHUTDOWN_LEN] = "platform";
+static int use_platform_suspend;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
@@ -659,13 +660,17 @@ static int reset_signature(int fd)
 }
 #endif
 
-static void suspend_shutdown(void)
+static void suspend_shutdown(int snapshot_fd)
 {
-	/* todo: platform, S3 */
 	if (!strcmp(shutdown_method, "reboot"))
 		reboot();
-	else
-		power_off();
+	else if (use_platform_suspend) {
+		int ret = platform_enter(snapshot_fd);
+		if (ret < 0)
+			fprintf(stderr, "suspend: pm_ops->enter returned"
+				" error %d, calling power_off\n", ret);
+	}
+	power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
 	 * We'd do resume with stale caches on next boot. */
 	fprintf(stderr,"Powerdown failed. That's impossible.\n");
@@ -699,6 +704,13 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	if (error)
 		goto Unfreeze;
 
+	if (use_platform_suspend) {
+		int ret = platform_prepare(snapshot_fd);
+		if (ret < 0)
+			fprintf(stderr, "suspend: pm_ops->prepare returned "
+				"error %d\n", ret);
+	}
+
 	printf("suspend: Snapshotting system\n");
 	attempts = 2;
 	do {
@@ -709,6 +721,8 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		if (!atomic_snapshot(snapshot_fd, &in_suspend)) {
 			if (!in_suspend) {
 				free_snapshot(snapshot_fd);
+				if (use_platform_suspend)
+					platform_finish(snapshot_fd);
 				break;
 			}
 			error = write_image(snapshot_fd, resume_fd);
@@ -716,14 +730,14 @@ int suspend_system(int snapshot_fd, int resume_fd)
 				splash.progress(100);
 #ifdef CONFIG_BOTH
 				if (!s2ram) {
-					suspend_shutdown();
+					suspend_shutdown(snapshot_fd);
 				} else {
 					/* If we die (and allow system to continue) between
                                          * now and reset_signature(), very bad things will
                                          * happen. */
 					error = suspend_to_ram(snapshot_fd);
 					if (error)
-						suspend_shutdown();
+						suspend_shutdown(snapshot_fd);
 					reset_signature(resume_fd);
 					free_swap_pages(snapshot_fd);
 					free_snapshot(snapshot_fd);
@@ -731,7 +745,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 					goto Unfreeze;
 				}
 #else
-				suspend_shutdown();
+				suspend_shutdown(snapshot_fd);
 #endif
 			} else {
 				free_swap_pages(snapshot_fd);
@@ -1149,6 +1163,8 @@ int main(int argc, char *argv[])
 
 	if (early_writeout != 'n' && early_writeout != 'N')
 		early_writeout = 1;
+
+	use_platform_suspend = !strcmp(shutdown_method, "platform");
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;

@@ -26,7 +26,12 @@
 #define SNAPSHOT_FREE_SWAP_PAGES	_IO(SNAPSHOT_IOC_MAGIC, 9)
 #define SNAPSHOT_SET_SWAP_FILE		_IOW(SNAPSHOT_IOC_MAGIC, 10, unsigned int)
 #define SNAPSHOT_S2RAM			_IO(SNAPSHOT_IOC_MAGIC, 11)
-#define SNAPSHOT_IOC_MAXNR	11
+#define SNAPSHOT_PMOPS			_IOW(SNAPSHOT_IOC_MAGIC, 12, unsigned int)
+#define SNAPSHOT_IOC_MAXNR	12
+
+#define PMOPS_PREPARE	1
+#define PMOPS_ENTER	2
+#define PMOPS_FINISH	3
 
 #define	LINUX_REBOOT_MAGIC1	0xfee1dead
 #define	LINUX_REBOOT_MAGIC2	672274793
@@ -97,6 +102,21 @@ static inline int atomic_snapshot(int dev, int *in_suspend)
 static inline int atomic_restore(int dev)
 {
 	return ioctl(dev, SNAPSHOT_ATOMIC_RESTORE, 0);
+}
+
+static inline int platform_prepare(int dev)
+{
+	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_FINISH);
+}
+
+static inline int platform_enter(int dev)
+{
+	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_FINISH);
+}
+
+static inline int platform_finish(int dev)
+{
+	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_FINISH);
 }
 
 static inline int free_snapshot(int dev)
