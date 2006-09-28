@@ -247,6 +247,7 @@ RSA key file = <path>
 max loglevel = <ignored>
 early writeout = <y/n>
 splash = <y/n>
+shutdown method = <reboot, platform>
 
 The "image size" parameter may be used to limit the size of the system
 snapshot image created by the s2disk tool, but it's not mandatory. Namely,
