@@ -154,6 +154,8 @@ struct machine_entry whitelist[] = {
 	/* Michaell Gurski */
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
 	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
+	/* Stefan Seyfried has one of those :-) */
+	{ "TOSHIBA",			"TECRA 8200",		"",	"", 0 },
 	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
