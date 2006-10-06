@@ -59,13 +59,20 @@ struct machine_entry whitelist[] = {
 	/* Andreas Schmitz */
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
+	/* Chris AtLee <chris@atlee.ca> */
+	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
+	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
+	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
+	/* Eric Sandall <eric@sandall.us> */
+	{ "Dell Computer Corporation",  "Inspiron 5100 *",	"",	"", NOFB },
 	/* VBE_POST|VBE_SAVE works on text console, but not under X. Tested by Chirag Rajyaguru */
 	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_SAVE },
 	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* by Henare Degan <henare.degan@gmail.com> 8500 w. NVidia card. There are also 8500s w. ATI cards */
 	{ "Dell Computer Corporation",  "Inspiron 8500 *",	"",	"", 0 },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
+	{ "Dell Computer Corporation",  "Latitude C610 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
@@ -78,14 +85,16 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
 	/* Dell Inspiron 630m, Fredrik Edemar */
 	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
-	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
-	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
+	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
+	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
 	/* Those two x86_64 amilos are a bit strange. I seldom see s3_bios + vbe_* ... */
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	/* reported by Thomas Halva Labella <hlabella@ulb.ac.be> */
 	{ "FUJITSU SIEMENS",		"Amilo A7645 ",		"",	"", VBE_SAVE|S3_BIOS|S3_MODE },
+	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
+	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
@@ -95,7 +104,7 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nx6125 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
 	/* Michael Biebl <biebl@teco.edu> */
-	{ "Hewlett-Packard",		"HP Compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Hewlett-Packard ",		"HP compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
@@ -117,7 +126,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2373*",		"",	"", S3_BIOS|S3_MODE },
 	/* T41p, Stefan Gerber */
 	{ "IBM",			"2374*",		"",	"", S3_BIOS|S3_MODE },
-	{ "IBM",			"2668*",	"ThinkPad T43",	"", S3_BIOS|S3_MODE },
+	/* Some T43's reported by Sebastian Nagel */
+	{ "IBM",			"",		"ThinkPad T43",	"", S3_BIOS|S3_MODE },
 	/* G40 confirmed by David H"ademan */
 	{ "IBM",			"2388*",		"",	"", VBE_SAVE },
 	/* R32 */
@@ -136,10 +146,10 @@ struct machine_entry whitelist[] = {
 	/* At least 1709 series thinkpads can be whitelisted by name,
 	   and we can probably delete entries above, too.... */
 	{ "LENOVO",			"",		"ThinkPad X60",	"", S3_BIOS|S3_MODE },
-	/* T60p */
-	{ "LENOVO",			"2007*",		"",	"", S3_BIOS|S3_MODE },
-	/* T60 From: Jeff Nichols <jnichols@renkoo.net> */
-	{ "LENOVO",			"",		"ThinkPad T60",	"", S3_BIOS|S3_MODE },
+	/* T60p, had a report from a 2007* and a 2008* model */
+	{ "LENOVO",			"",	"ThinkPad T60p",	"", S3_BIOS|S3_MODE },
+	/* T60 From: Jeff Nichols <jnichols@renkoo.net> and Kristofer Hallgren <kristofer.hallgren@gmail.com> */
+	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_SAVE },
@@ -160,6 +170,8 @@ struct machine_entry whitelist[] = {
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
+	/* Olivier Saier <osaier@gmail.com>, apparently S3_BIOS locks the machine hard */
+	{ "Sony Corporation",		"VGN-FS115Z",		"",	"", S3_MODE },
 	/* Joseph Smith <joe@uwcreations.com> */
 	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
@@ -271,7 +283,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"1876*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// T43/p
 	{ "IBM",			"2668*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2669*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2678*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2679*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2686*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
