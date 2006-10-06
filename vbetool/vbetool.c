@@ -169,7 +169,7 @@ int do_vbe_service(unsigned int AX, unsigned int BX, reg_frame * regs)
 	}
 
 	if (!function_sup) {
-		fprintf(stderr, "Function not supported\n");
+		fprintf(stderr, "Function not supported?\n");
 		return -3;
 	}
 
