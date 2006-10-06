@@ -688,7 +688,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		image_size = pref_image_size;
 	else
 		image_size = avail_swap;
-	if (!image_size) {
+	if (!avail_swap) {
 		fprintf(stderr, "suspend: No swap space for suspend\n");
 		return ENOSPC;
 	}
