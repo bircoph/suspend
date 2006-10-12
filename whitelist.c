@@ -59,7 +59,7 @@ struct machine_entry whitelist[] = {
 	/* Andreas Schmitz */
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
-	/* Chris AtLee <chris@atlee.ca> */
+	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
 	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
@@ -70,7 +70,7 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",  "Inspiron 5150*",	"",	"", VBE_SAVE },
 	{ "Dell Computer Corporation",  "Inspiron 8000 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* by Henare Degan <henare.degan@gmail.com> 8500 w. NVidia card. There are also 8500s w. ATI cards */
-	{ "Dell Computer Corporation",  "Inspiron 8500 *",	"",	"", 0 },
+	{ "Dell Computer Corporation",  "Inspiron 8500 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
 	{ "Dell Computer Corporation",  "Latitude C610 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
@@ -85,6 +85,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
 	/* Dell Inspiron 630m, Fredrik Edemar */
 	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
+	/* Dell Inspiron 640m, Daniel Drake <dsd@gentoo.org> */
+	{ "Dell Inc.",			"MXC061 *",		"",	"", VBE_POST },
 	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
 	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
 	/* Andi Kleen, reported to work in 64bit mode */
@@ -143,6 +145,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"1702*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1704*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
+	/* https://bugzilla.novell.com/show_bug.cgi?id=210928, note the small "p" in Thinkpad */
+	{ "LENOVO",			"",		"Thinkpad R60",	"", S3_BIOS },
 	/* At least 1709 series thinkpads can be whitelisted by name,
 	   and we can probably delete entries above, too.... */
 	{ "LENOVO",			"",		"ThinkPad X60",	"", S3_BIOS|S3_MODE },
@@ -152,7 +156,7 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
-	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
 	/* Hugo Costelha */
 	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
@@ -164,8 +168,8 @@ struct machine_entry whitelist[] = {
 	/* Michaell Gurski */
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
 	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
-	/* Stefan Seyfried has one of those :-) */
-	{ "TOSHIBA",			"TECRA 8200",		"",	"", 0 },
+	/* Stefan Seyfried has one of those :-) S3_BIOS leads to "melting screen" */
+	{ "TOSHIBA",			"TECRA 8200",		"",	"", S3_MODE },
 	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
