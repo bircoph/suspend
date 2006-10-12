@@ -14,6 +14,11 @@
 
 #include "encrypt.h"
 
+struct resume_swap_area {
+	loff_t offset;
+	u_int32_t dev;
+} __attribute__((packed));
+
 #define SNAPSHOT_IOC_MAGIC	'3'
 #define SNAPSHOT_FREEZE			_IO(SNAPSHOT_IOC_MAGIC, 1)
 #define SNAPSHOT_UNFREEZE		_IO(SNAPSHOT_IOC_MAGIC, 2)
@@ -27,7 +32,9 @@
 #define SNAPSHOT_SET_SWAP_FILE		_IOW(SNAPSHOT_IOC_MAGIC, 10, unsigned int)
 #define SNAPSHOT_S2RAM			_IO(SNAPSHOT_IOC_MAGIC, 11)
 #define SNAPSHOT_PMOPS			_IOW(SNAPSHOT_IOC_MAGIC, 12, unsigned int)
-#define SNAPSHOT_IOC_MAXNR	12
+#define SNAPSHOT_SET_SWAP_AREA		_IOW(SNAPSHOT_IOC_MAGIC, 13, \
+							struct resume_swap_area)
+#define SNAPSHOT_IOC_MAXNR	13
 
 #define PMOPS_PREPARE	1
 #define PMOPS_ENTER	2
@@ -190,7 +197,7 @@ struct buf_block {
 
 #define SUSPEND_SWAPPINESS	100
 
-#define GEN_PARAM	9
+#define GEN_PARAM	10
 
 #ifdef CONFIG_COMPRESS
 #define COMPRESS_PARAM	1

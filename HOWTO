@@ -10,7 +10,7 @@ I. Quick start
 
 (a) This package
 (b) Linux kernel supporting the swsusp userland interface (2.6.17 or above)
-(c) Swap partition, approximately as big as 1/2 of RAM
+(c) Swap partition or a swap file, approximately as big as 1/2 of RAM
 (d) Special device file for the snapshot device (character, 10, 231), e.g.
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
@@ -93,7 +93,12 @@ full path of a swap partition device file (eg. /dev/hda3).
 [There should be just one resume partition, for now. You'll need at most 1/2
 of your RAM of free space on it, but in some cases it may be smaller, too.
 The s2disk tool may be configured to create quite small snapshot images but
-then some contents of the RAM will have to be swapped out before suspend.]
+then some contents of the RAM will have to be swapped out before suspend.
+
+It also is possible to use a swap file for suspending, but this only works with
+the 2.6.18-mm3 kernel (or later).  In such a case the resume partition is the
+partition that holds the swap file, and there is an additional configuration
+parameter "resume offset" that has to be set, as described below.]
 
 - Build the suspend tools in the usual way:
 
@@ -238,7 +243,9 @@ snapshot device = /dev/snapshot
 
 and the following parameters:
 
+resume offset = <offset_of_the_swap_header>
 image size = <preferred_suspend_image_size_in_bytes>
+shutdown method = <reboot, platform>
 suspend loglevel = <kernel_console_loglevel_during_suspend>
 compute checksum = <y/n>
 compress = <y/n>
@@ -247,7 +254,13 @@ RSA key file = <path>
 max loglevel = <ignored>
 early writeout = <y/n>
 splash = <y/n>
-shutdown method = <reboot, platform>
+
+The "resume offset" parameter is necessary if a swap file is used for
+suspending.  In such a case the device identified by the "resume device"
+parameter is regarded as the partition that contains the swap file, and
+"resume offset" must be equal to the offset from the beginning of this
+partition at which the swap file's header is located, in <PAGE_SIZE> units.
+[For this feature to work, you will need an -mm kernel, 2.6.18-mm3 or newer.]
 
 The "image size" parameter may be used to limit the size of the system
 snapshot image created by the s2disk tool, but it's not mandatory. Namely,
@@ -255,6 +268,17 @@ the s2disk tool will do its best to limit the image size as required by
 this parameter, but if that's not possible, it will suspend the system anyway,
 with a bigger image. If "image size" is set to 0, the snapshot image will be
 as small as possible.
+
+The "shutdown method" parameter defines the operation that will be carried out
+after the suspend image has been created and the machine is ready to be powered
+off.  If it is set to "reboot", the machine will be rebooted immediately.
+If it is set to "platform", the machine will be shut down using special
+power management operations available from the kernel that may be necessary
+for the hardware to be properly reinitialized after the resume, and may cause
+the system to resume faster (this is the recommended shutdown method on the
+majority of systems).  For any other value the machine will be powered off.
+The default is to use the "platform" method.  [For this feature to work,
+you will need an -mm kernel, 2.6.18-mm3 or newer.]
 
 If the "compute checksum" parameter is set to 'y', the s2disk and resume
 tools will use the MD5 algorithm to verify the image integrity.
@@ -276,12 +300,6 @@ utility will start syncing the resume device early in the process of writing
 the image to it.  [This has been reported to speed up the suspend on some
 boxes and eliminates the "fast progress meter and long fsync wait" effect.]
 
-If the "shutdown method" parameter is set to "reboot", the s2disk utility will
-reboot the machine rather than powering down. This is useful when testing
-repeated benchmarks, such as when checking whether "early writeout" produces a
-speedup or not for your combination of hardware, image size, and s2disk
-parameters.
-
 The "splash" parameter is used to make s2disk and/or resume use a splash system
 (when set to 'y').  Currently the bootsplash.org and splashy splash systems
 are supported. Note that for both systems your initrd or initramfs will
@@ -290,15 +308,16 @@ more information.
 
 The resume tool can use the same configuration file that is used by the
 s2disk tool, but it will ignore most of the above parameters.  It will use the
-value of "suspend loglevel" as the kernel console loglevel during resume. Additionally
-it will use the value of "max loglevel" as the kernel console loglevel to switch to in
-case the resume fails (this parameter is ignored by the s2disk tool).
+value of "suspend loglevel" as the kernel console loglevel during resume.
+Additionally it will use the value of "max loglevel" as the kernel console
+loglevel to switch to in case the resume fails (this parameter is ignored by
+the s2disk tool).
 
 It is not necessary to set "compute checksum = y" and/or "compress = y",
-and/or "encrypt = y" for the resume tool.  The appropriate information related to
-these options will be passed to it in the image header by the s2disk tool.
-However, the resume tool will only use the splash system if "splash = y" is set for it
-explicitly.
+and/or "encrypt = y" for the resume tool.  The appropriate information related
+to these options will be passed to it in the image header by the s2disk tool.
+However, the resume tool will only use the splash system if "splash = y" is set
+for it explicitly.
 
 In order to create the configuration file for s2disk and/or resume, it is
 recommended to edit the file suspend.conf in the conf/ subdirectory of the

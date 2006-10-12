@@ -37,6 +37,7 @@
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
+static loff_t resume_offset;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static int max_loglevel = MAX_LOGLEVEL;
 static char verify_checksum;
@@ -66,6 +67,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt ="%s",
 		.ptr = resume_dev_name,
 		.len = MAX_STR_LEN
+	},
+	{
+		.name = "resume offset",
+		.fmt = "%llu",
+		.ptr = &resume_offset,
 	},
 	{
 		.name = "suspend loglevel",
@@ -532,7 +538,7 @@ static int read_image(int dev, char *resume_dev_name)
 	char *buffer = (char *)mem_pool + page_size;
 	unsigned int nr_pages;
 	unsigned int size = sizeof(struct swsusp_header);
-	unsigned int shift = page_size - size;
+	unsigned int shift = (resume_offset + 1) * page_size - size;
 	char c;
 
 	fd = open(resume_dev_name, O_RDWR);

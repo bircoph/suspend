@@ -45,6 +45,7 @@
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
+static loff_t resume_offset;
 static unsigned long pref_image_size = IMAGE_SIZE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
@@ -87,6 +88,11 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt ="%s",
 		.ptr = resume_dev_name,
 		.len = MAX_STR_LEN
+	},
+	{
+		.name = "resume offset",
+		.fmt = "%llu",
+		.ptr = &resume_offset,
 	},
 	{
 		.name = "image size",
@@ -185,9 +191,18 @@ static inline int free_swap_pages(int dev)
 	return ioctl(dev, SNAPSHOT_FREE_SWAP_PAGES, 0);
 }
 
-static inline int set_swap_file(int dev, dev_t blkdev)
+static inline int set_swap_file(int dev, dev_t blkdev, loff_t offset)
 {
-	return ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
+	struct resume_swap_area swap;
+	int error;
+
+	swap.dev = blkdev;
+	swap.offset = offset;
+	error = ioctl(dev, SNAPSHOT_SET_SWAP_AREA, &swap);
+	if (error && !offset)
+		error = ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
+
+	return error;
 }
 
 /**
@@ -236,7 +251,8 @@ struct swap_map_handle {
 #endif
 };
 
-static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
+static int
+init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 {
 	if (!buf)
 		return -EINVAL;
@@ -477,12 +493,14 @@ static int mark_swap(int fd, loff_t start)
 {
 	int error = 0;
 	unsigned int size = sizeof(struct swsusp_header);
-	unsigned int shift = page_size - size;
+	unsigned int shift = (resume_offset + 1) * page_size - size;
 
 	if (lseek(fd, shift, SEEK_SET) != shift)
 		return -EIO;
+
 	if (read(fd, &swsusp_header, size) < size)
 		return -EIO;
+
 	if (!memcmp("SWAP-SPACE", swsusp_header.sig, 10) ||
 	    !memcmp("SWAPSPACE2", swsusp_header.sig, 10)) {
 		memcpy(swsusp_header.orig_sig, swsusp_header.sig, 10);
@@ -490,6 +508,7 @@ static int mark_swap(int fd, loff_t start)
 		swsusp_header.image = start;
 		if (lseek(fd, shift, SEEK_SET) != shift)
 			return -EIO;
+
 		if (write(fd, &swsusp_header, size) < size)
 			error = -EIO;
 	} else {
@@ -620,7 +639,7 @@ static int reset_signature(int fd)
 {
 	int ret, error = 0;
 	unsigned int size = sizeof(struct swsusp_header);
-	unsigned int shift = page_size - size;
+	unsigned int shift = (resume_offset + 1) * page_size - size;
 
 	if (lseek(fd, shift, SEEK_SET) != shift)
 		return -EIO;
@@ -1244,7 +1263,7 @@ int main(int argc, char *argv[])
 		goto Close_resume_fd;
 	}
 
-	if (set_swap_file(snapshot_fd, resume_dev)) {
+	if (set_swap_file(snapshot_fd, resume_dev, resume_offset)) {
 		ret = errno;
 		fprintf(stderr, "suspend: Could not use the resume device "
 			"(try swapon -a)\n");
