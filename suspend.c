@@ -9,6 +9,8 @@
  *
  */
 
+#define _LARGEFILE64_SOURCE
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -219,7 +221,7 @@ static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
 	ssize_t cnt = 0;
 
 	if (offset) {
-		if (lseek(fd, offset, SEEK_SET) == offset)
+		if (lseek64(fd, offset, SEEK_SET) == offset)
 			cnt = write(fd, buf, size);
 		if (cnt == size)
 			res = 0;
