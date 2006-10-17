@@ -64,6 +64,8 @@ struct machine_entry whitelist[] = {
 	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
 	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
 	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
+	/* Dell Inspiron 510m, Jose Carlos Garcia Sogo <jsogo@debian.org> */
+	{ "Dell Inc.",			"Inspiron 510m *",	"",	"", VBE_POST },
 	/* Eric Sandall <eric@sandall.us> */
 	{ "Dell Computer Corporation",  "Inspiron 5100 *",	"",	"", NOFB },
 	/* VBE_POST|VBE_SAVE works on text console, but not under X. Tested by Chirag Rajyaguru */
