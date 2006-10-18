@@ -100,6 +100,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Amilo A7645 ",		"",	"", VBE_SAVE|S3_BIOS|S3_MODE },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
+	/* Eckhart Woerner <ew@ewsoftware.de> */
+	{ "FUJITSU SIEMENS",		"LIFEBOOK T4010",	"",	"", S3_BIOS|S3_MODE },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
