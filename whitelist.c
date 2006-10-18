@@ -149,7 +149,7 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"1704*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
 	/* https://bugzilla.novell.com/show_bug.cgi?id=210928, note the small "p" in Thinkpad */
-	{ "LENOVO",			"",		"Thinkpad R60",	"", S3_BIOS },
+	{ "LENOVO",			"",		"Thinkpad R60",	"", S3_BIOS|S3_MODE },
 	/* At least 1709 series thinkpads can be whitelisted by name,
 	   and we can probably delete entries above, too.... */
 	{ "LENOVO",			"",		"ThinkPad X60",	"", S3_BIOS|S3_MODE },
