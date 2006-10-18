@@ -39,7 +39,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
-	{ "ASUSTeK Computer Inc.        ",	"M6N       ",	"",	"", S3_MODE },
+	/* Manfred Tremmel, https://bugzilla.novell.com/show_bug.cgi?id=171107 */
+	{ "ASUSTeK Computer Inc.        ",	"M6N       ",	"",	"", S3_BIOS|S3_MODE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
 	/* Charles de Miramon */
 	{ "ASUSTeK Computer Inc.        ",	"M5N       ",	"",	"", S3_BIOS|S3_MODE },
