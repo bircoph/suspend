@@ -77,6 +77,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
 	{ "Dell Computer Corporation",  "Latitude C610 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* Ian Samule, https://bugzilla.novell.com/show_bug.cgi?id=175568 */
+	{ "Dell Inc.",			"Latitude D505 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz> */
