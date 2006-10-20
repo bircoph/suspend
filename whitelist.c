@@ -65,6 +65,8 @@ struct machine_entry whitelist[] = {
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
+	/* From bug 1544913@sf.net, Andrei - amaces */
+	{ "Dell Computer Corporation",  "Inspiron 1150*",       "",     "", VBE_POST|VBE_SAVE|UNSURE },
 	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
 	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
 	/* Dell Inspiron 510m, Jose Carlos Garcia Sogo <jsogo@debian.org> */
