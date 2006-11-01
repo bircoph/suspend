@@ -19,6 +19,7 @@
 #include <sys/vt.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <time.h>
 #include <linux/kd.h>
 #include <linux/tiocl.h>
@@ -66,7 +67,9 @@ static char password[PASS_SIZE];
 #define encrypt 0
 #define key_name NULL
 #endif
+#ifdef CONFIG_BOTH
 static char s2ram;
+#endif
 static char early_writeout;
 static char splash_param;
 #define SHUTDOWN_LEN	16
@@ -470,6 +473,7 @@ static int save_image(struct swap_map_handle *handle,
 		error = -errno;
 	if (!error)
 		printf(" done (%u pages)\n", nr_pages);
+
 	return error;
 }
 
@@ -1148,11 +1152,12 @@ static int lock_vt(void)
 int main(int argc, char *argv[])
 {
 	unsigned int mem_size;
-	char *chroot_path;
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
 	dev_t resume_dev;
 	int orig_loglevel, orig_swappiness, ret;
+	struct rlimit rlim;
+	static char chroot_path[MAX_STR_LEN];
 
 	/* Make sure the 0, 1, 2 descriptors are open before opening the
 	 * snapshot and resume devices
@@ -1230,23 +1235,44 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
+	snprintf(chroot_path, MAX_STR_LEN, "/proc/%d", getpid());
+	if (mount("none", chroot_path, "tmpfs", 0, NULL)) {
+		ret = errno;
+		fprintf(stderr, "suspend: Could not mount tmpfs on %s\n", chroot_path);
+		return ret;
+	}
+
+	ret = 0;
 	if (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the resume device file\n");
-		return ENODEV;
+		ret = ENODEV;
+		goto Umount;
 	}
 	if (!S_ISBLK(stat_buf.st_mode)) {
 		fprintf(stderr, "suspend: Invalid resume device\n");
-		return EINVAL;
+		ret = EINVAL;
+		goto Umount;
 	}
-	resume_fd = open(resume_dev_name, O_RDWR);
+	if (chdir(chroot_path)) {
+		ret = errno;
+		fprintf(stderr, "suspend: Could not change directory to %s\n",
+			chroot_path);
+		goto Umount;
+	}
+	resume_dev = stat_buf.st_rdev;
+	if (mknod("resume", S_IFBLK | 0600, resume_dev)) {
+		ret = errno;
+		fprintf(stderr, "suspend: Could not create %s/%s\n",
+			chroot_path, "resume");
+		goto Umount;
+	}
+	resume_fd = open("resume", O_RDWR);
 	if (resume_fd < 0) {
 		ret = errno;
 		fprintf(stderr, "suspend: Could not open the resume device\n");
-		return ret;
+		goto Umount;
 	}
-	resume_dev = stat_buf.st_rdev;
 
-	ret = 0;
 	if (stat(snapshot_dev_name, &stat_buf)) {
 		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
 		ret = ENODEV;
@@ -1305,30 +1331,27 @@ int main(int argc, char *argv[])
 	orig_swappiness = get_swappiness();
 	set_swappiness(suspend_swappiness);
 
-	chroot_path = mem_pool;
-	sprintf(chroot_path, "/proc/%d", getpid());
-	if (!s2ram && chroot(chroot_path)) {
-		ret = errno;
-		fprintf(stderr, "suspend: Could not chroot to %s\n", chroot_path);
-		goto Unlock_vt;
-	}
-	chdir("/");
-
 	sync();
 
 	splash.progress(10);
+
+	rlim.rlim_cur = 0;
+	rlim.rlim_max = 0;
+	setrlimit(RLIMIT_NOFILE, &rlim);
+	setrlimit(RLIMIT_NPROC, &rlim);
+	setrlimit(RLIMIT_CORE, &rlim);
 
 	ret = suspend_system(snapshot_fd, resume_fd);
 
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
+
 	close_printk();
 
 	if(orig_swappiness >= 0)
 		set_swappiness(orig_swappiness);
 	close_swappiness();
 
-Unlock_vt:
 	unlock_vt();
 Restore_console:
 	splash.finish();
@@ -1337,7 +1360,13 @@ Close_snapshot_fd:
 	close(snapshot_fd);
 Close_resume_fd:
 	close(resume_fd);
-
+Umount:
+	if (chdir("/")) {
+		ret = errno;
+		fprintf(stderr, "suspend: Could not change directory to /\n");
+	} else {
+		umount(chroot_path);
+	}
 #ifdef CONFIG_ENCRYPT
 	if (encrypt)
 		gcry_cipher_close(cipher_handle);
