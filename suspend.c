@@ -31,6 +31,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <termios.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
 #else
@@ -442,17 +443,42 @@ static int save_image(struct swap_map_handle *handle,
                       unsigned int nr_pages)
 {
 	unsigned int m, writeout_rate;
-	int ret;
+	int ret, abort_possible;
+	struct termios newtrm, savedtrm;
+	char c = 0;
 	int error = 0;
 
-	printf("suspend: Saving image data pages (%u pages) ...     ", nr_pages);
+	/* Switch the state of the terminal so that we can read the keyboard
+	 * without blocking and with no echo.
+	 *
+	 * stdin must be attached to the terminal now.
+	 */
+	abort_possible = !tcgetattr(0, &savedtrm);
+	if (abort_possible) {
+		newtrm = savedtrm;
+		newtrm.c_cc[VMIN] = 0;
+		newtrm.c_cc[VTIME] = 1;
+		newtrm.c_iflag = IGNBRK | IGNPAR | ICRNL | IMAXBEL;
+		newtrm.c_lflag = 0;
+		abort_possible = !tcsetattr(0, TCSANOW, &newtrm);
+	}
+	if (abort_possible)
+		printf("suspend: Saving %u image data pages "
+			"(press " ABORT_KEY_NAME " to abort) ...     ",
+			nr_pages);
+	else
+		printf("suspend: Saving image data pages (%u pages) ...     ",
+			nr_pages);
+
 	m = nr_pages / 100;
 	if (!m)
 		m = 1;
+
 	if (early_writeout)
 		writeout_rate = m;
 	else
 		writeout_rate = nr_pages;
+
 	nr_pages = 0;
 	do {
 		ret = read(handle->dev, handle->page_buffer, page_size);
@@ -460,19 +486,33 @@ static int save_image(struct swap_map_handle *handle,
 			error = swap_write_page(handle);
 			if (error)
 				break;
+
 			if (!(nr_pages % m)) {
 				printf("\b\b\b\b%3d%%", nr_pages / m);
 				splash.progress(20 + (nr_pages / m) * 0.75);
+				if (abort_possible) {
+					ret = read(0, &c, 1);
+					if (ret > 0 && c == ABORT_KEY_CODE) {
+						printf(" aborted!\n");
+						return -EINTR;
+					}
+					ret = 1;
+				}
 			}
 			if (!(nr_pages % writeout_rate))
 				start_writeout(handle->fd);
+
 			nr_pages++;
 		}
 	} while (ret > 0);
 	if (ret < 0)
 		error = -errno;
+
 	if (!error)
 		printf(" done (%u pages)\n", nr_pages);
+
+	if (abort_possible)
+		tcsetattr(0, TCSANOW, &savedtrm);
 
 	return error;
 }
@@ -1307,8 +1347,11 @@ int main(int argc, char *argv[])
 
 	splash_prepare(&splash, splash_param);
 
-	if (lock_vt() < 0)
+	if (lock_vt() < 0) {
+		ret = errno;
+		fprintf(stderr, "suspend: Could not lock the terminal\n");
 		goto Restore_console;
+	}
 
 	splash.progress(5);
 

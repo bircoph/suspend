@@ -212,3 +212,6 @@ struct buf_block {
 #endif
 
 #define PARAM_NO	(GEN_PARAM + COMPRESS_PARAM + ENCRYPT_PARAM)
+
+#define ABORT_KEY_CODE	127
+#define ABORT_KEY_NAME	"backspace"
