@@ -111,6 +111,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
+	/* From: Einon <einon@animehq.hu>, seems to work only from X :-( */
+	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
@@ -187,6 +189,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 	/* Olivier Saier <osaier@gmail.com>, apparently S3_BIOS locks the machine hard */
 	{ "Sony Corporation",		"VGN-FS115Z",		"",	"", S3_MODE },
+	/* S.Çağlar Onur <caglar@pardus.org.tr> */
+	{ "Sony Corporation",		"VGN-FS215B",	"",	"", 0 },
 	/* Joseph Smith <joe@uwcreations.com> */
 	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
