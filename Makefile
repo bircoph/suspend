@@ -128,22 +128,24 @@ install-s2disk: $(S2DISK) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 
-install-suspend: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
+install: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
 else
 install-s2disk: $(S2DISK) conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 
-install-suspend: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE) $(SNAPSHOT)
+install: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
 endif
 
 install-resume-initrd:	resume conf/$(CONFIGFILE)
