@@ -349,6 +349,18 @@ need to make sure the snapshot device file is present (if you have set
 CONFIG_ENCRYPT=yes in Makefile, you may also need to copy the suspend-keygen
 binary to its final destination manually).
 
+You can also use a tool called "checkinstall" to prepare a package file
+according to the distribution of your choice (checkinstall supports
+Slackware, RPM distributions and DEB distributions).
+
+To download it: http://asic-linux.com.mx/~izto/checkinstall/download.php
+
+To create your package, run "make" and then (as root user) simply
+type "checkinstall" and answer the questions. This will not install
+anything: instead it will create a package file you can install with rpm,
+dpkg or whatever tool your distribution provides.
+
+
 4) Create snapshot device file
 
 If you don't use "make install-s2disk", you may need to create the snapshot
