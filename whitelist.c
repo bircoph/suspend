@@ -182,6 +182,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_SAVE },
 	/* Michaell Gurski */
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
+	/* From: Jim <jim.t@vertigo.net.au> */
+	{ "TOSHIBA",			"SatellitePro4600",	"",	"", 0 },
 	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
 	/* Stefan Seyfried has one of those :-) S3_BIOS leads to "melting screen" */
 	{ "TOSHIBA",			"TECRA 8200",		"",	"", S3_MODE },
