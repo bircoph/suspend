@@ -826,6 +826,11 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		}
 	} while (--attempts);
 
+	/* we only get here when we failed to suspend.
+	   Remember, suspend_shutdown() never returns! */
+	if (use_platform_suspend)
+		platform_finish(snapshot_fd);
+
 Unfreeze:
 	unfreeze(snapshot_fd);
 	return error;

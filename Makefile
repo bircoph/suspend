@@ -1,12 +1,12 @@
-#CONFIG_COMPRESS=yes
-#CONFIG_ENCRYPT=yes
+CONFIG_COMPRESS=yes
+CONFIG_ENCRYPT=yes
 #CONFIG_SPLASHY=yes
 #CONFIG_UDEV=yes
 
 ARCH:=$(shell uname -m)
 
 CC_FLAGS=-I/usr/local/include
-LD_FLAGS=-L/usr/local/lib
+LD_FLAGS=-L/usr/local/lib -lz
 
 CFLAGS := -O2 -Wall
 
@@ -22,7 +22,7 @@ CC_FLAGS	+= $(GCRYPT_CC_FLAGS)
 LD_FLAGS	+= $(GCRYPT_LD_FLAGS)
 endif
 
-SUSPEND_DIR=/usr/local/sbin
+SUSPEND_DIR=/usr/sbin
 CONFIG_DIR=/etc
 RESUME_DEVICE=<path_to_resume_device_file>
 BOOT_DIR=/boot
@@ -66,7 +66,7 @@ clean:
 	rm -f $(S2DISK) $(S2BOTH) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
-	$(CC) $(CFLAGS) -g s2ram.c $(S2RAMOBJ) -lpci -o s2ram
+	$(CC) $(CFLAGS) -g s2ram.c $(S2RAMOBJ) -lpci -lz -o s2ram
 
 vbetool/vbetool.o:	vbetool/vbetool.c
 	$(CC) $(CFLAGS) -DS2RAM -c vbetool/vbetool.c -o vbetool/vbetool.o

@@ -113,16 +113,19 @@ static inline int atomic_restore(int dev)
 
 static inline int platform_prepare(int dev)
 {
+printf("%s\n", __FUNCTION__);
 	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_PREPARE);
 }
 
 static inline int platform_enter(int dev)
 {
+printf("%s\n", __FUNCTION__);
 	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_ENTER);
 }
 
 static inline int platform_finish(int dev)
 {
+printf("%s\n", __FUNCTION__);
 	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_FINISH);
 }
 
