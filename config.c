@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <getopt.h>
 
 #include "config.h"
 #include "encrypt.h"
@@ -24,17 +25,25 @@
  *	parse - read and parse the configuration file
  */
 
-static int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
+int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
 {
 	char *str, *dst, *fmt, buf[MAX_STR_LEN];
+	struct stat stat_buf;
 	FILE *file;
 	int error, i, j, k;
 
+	if (stat(file_name, &stat_buf)) {
+		error = errno;
+		fprintf(stderr, "%s: Could not stat configuration file\n",
+			my_name);
+		return -error;
+	}
 	file = fopen(file_name, "r");
 	if (!file) {
+		error = errno;
 		fprintf(stderr, "%s: Could not open configuration file\n",
 			my_name);
-		return -errno;
+		return -error;
 	}
 	error = 0;
 	i = 0;
@@ -96,33 +105,16 @@ static int parse(char *my_name, char *file_name, int parc, struct config_par *pa
 	return error;
 }
 
-int get_config(char *my_name, int argc, char *argv[],
-	       int parc, struct config_par *parv, char *special)
+void usage(char *my_name, struct option *options)
 {
-	struct stat stat_buf;
-	int ret = 0;
+	struct option *opt;
 
-	if (argc <= 2) {
-		if (!stat(CONFIG_FILE, &stat_buf))
-			ret = parse(my_name, CONFIG_FILE, parc, parv);
-		if (ret < 0 || argc < 2)
-			return ret;
-		strncpy(special, argv[1], MAX_STR_LEN - 1);
-		return 0;
-	}
+	printf("Usage: %s ", my_name);
+	for (opt = options; opt->name; opt++)
+		if (opt->has_arg)
+			printf("[-%c <%s>]", opt->val, opt->name);
+		else
+			printf("[-%c]", opt->val);
 
-	if (strncmp(argv[1], "-f", 2)) {
-		fprintf(stderr, "Usage: %s [-f config][resume_device]\n",
-			my_name);
-		return -EINVAL;
-	}
-
-	ret = parse(my_name, argv[2], parc, parv);
-	if (ret)
-		return ret;
-
-	if (argc > 3)
-		strncpy(special, argv[3], MAX_STR_LEN - 1);
-
-	return 0;
+	printf(" [<resume_device>]\n");
 }

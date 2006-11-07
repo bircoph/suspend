@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <termios.h>
+#include <getopt.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
 #else
@@ -1192,7 +1193,60 @@ static int lock_vt(void)
 	return 0;
 }
 
+/* Parse the command line and/or configuration file */
+static inline int get_config(int argc, char *argv[])
+{
+	static struct option options[] = {
+		{ "help",		no_argument,		NULL, 'h'},
+		{ "config",		required_argument,	NULL, 'f'},
+		{ "image_size",		required_argument,	NULL, 's'},
+		{ "resume_offset",	required_argument,	NULL, 'o'},
+		{ NULL,			0,			NULL,  0 }
+	};
+	int i, error;
+	char *conf_name = CONFIG_FILE;
+	int set_off = 0;
+	unsigned long long int off = 0;
+	int set_size = 0;
+	unsigned long int im_size = 0;
 
+	while ((i = getopt_long(argc, argv, "hf:s:o:", options, NULL)) != -1) {
+		switch (i) {
+		case 'h':
+			usage("suspend", options);
+			exit(0);
+		case 'f':
+			conf_name = optarg;
+			break;
+		case 's':
+			im_size = atoll(optarg);
+			set_size = 1;
+			break;
+		case 'o':
+			off = atoll(optarg);
+			set_off = 1;
+			break;
+		default:
+			usage("suspend", options);
+			return -EINVAL;
+		}
+	}
+	error = parse("suspend", conf_name, PARAM_NO, parameters);
+	if (error) {
+		fprintf(stderr, "suspend: Could not parse config file\n");
+		return error;
+	}
+	if (set_off)
+		resume_offset = off;
+
+	if (set_size)
+		pref_image_size = im_size;
+
+	if (optind < argc)
+		strncpy(resume_dev_name, argv[optind], MAX_STR_LEN - 1);
+
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -1217,8 +1271,10 @@ int main(int argc, char *argv[])
 	} while (ret < 3);
 	close(ret);
 
-	if (get_config("suspend", argc, argv, PARAM_NO, parameters, resume_dev_name))
-		return EINVAL;
+	ret = get_config(argc, argv);
+	if (ret)
+		return -ret;
+
 	if (compute_checksum != 'y' && compute_checksum != 'Y')
 		compute_checksum = 0;
 #ifdef CONFIG_COMPRESS

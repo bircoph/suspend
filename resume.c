@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <errno.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
@@ -733,16 +734,67 @@ static void set_kernel_console_loglevel(int level)
 		umount("/proc");
 }
 
+/* Parse the command line and/or configuration file */
+static inline int get_config(int argc, char *argv[])
+{
+	static struct option options[] = {
+		{ "help",		no_argument,		NULL, 'h'},
+		{ "config",		required_argument,	NULL, 'f'},
+		{ "resume_offset",	required_argument,	NULL, 'o'},
+		{ NULL,			0,			NULL,  0 }
+	};
+	int i, error;
+	char *conf_name = CONFIG_FILE;
+	int set_off = 0;
+	unsigned long long int off = 0;
+
+	while ((i = getopt_long(argc, argv, "hf:o:", options, NULL)) != -1) {
+		switch (i) {
+		case 'h':
+			usage("resume", options);
+			exit(EXIT_SUCCESS);
+		case 'f':
+			conf_name = optarg;
+			break;
+		case 'o':
+			off = atoll(optarg);
+			set_off = 1;
+			break;
+		default:
+			usage("resume", options);
+			return -EINVAL;
+		}
+	}
+	error = parse("resume", conf_name, PARAM_NO, parameters);
+	if (error) {
+		fprintf(stderr, "resume: Could not parse config file\n");
+		return error;
+	}
+	if (set_off)
+		resume_offset = off;
+
+	if (optind < argc)
+		strncpy(resume_dev_name, argv[optind], MAX_STR_LEN - 1);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned int mem_size;
 	struct stat stat_buf;
 	int dev;
-	int n, error = 0;
+	int n, error;
+
+	error = get_config(argc, argv);
+	if (error)
+		return -error;
+
+	if (splash_param != 'y' && splash_param != 'Y')
+		splash_param = 0;
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
-
 #ifdef CONFIG_ENCRYPT
 	printf("resume: libgcrypt version: %s\n", gcry_check_version(NULL));
 	gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
@@ -757,12 +809,6 @@ int main(int argc, char *argv[])
 		return error;
 	}
 
-	if (get_config("resume", argc, argv, PARAM_NO, parameters, resume_dev_name))
-		return EINVAL;
-
-	if (splash_param != 'y' && splash_param != 'Y')
-		splash_param = 0;
-
 	while (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, 
 			"resume: Could not stat the resume device file.\n"
@@ -770,8 +816,11 @@ int main(int argc, char *argv[])
 			"\tor press ENTER to boot the system: ");
 		fgets(resume_dev_name, MAX_STR_LEN - 1, stdin);
 		n = strlen(resume_dev_name) - 1;
-		if (n <= 0)
-			return ENOENT;
+		if (n <= 0) {
+			error = EINVAL;
+			goto Free;
+		}
+
 		if (resume_dev_name[n] == '\n')
 			resume_dev_name[n] = '\0';
 	}
@@ -782,16 +831,19 @@ int main(int argc, char *argv[])
 	setvbuf(stderr, NULL, _IONBF, 0);
 
 	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
+		error = errno;
 		fprintf(stderr, "resume: Could not lock myself\n");
-		return 1;
+		goto Free;
 	}
 
 	splash_prepare(&splash, splash_param);
 	splash.progress(5);
 
 	dev = open(snapshot_dev_name, O_WRONLY);
-	if (dev < 0)
-		return ENOENT;
+	if (dev < 0) {
+		error = ENOENT;
+		goto Free;
+	}
 	error = read_image(dev, resume_dev_name);
 	if (error) {
 		fprintf(stderr, "resume: Could not read the image\n");
@@ -810,7 +862,7 @@ Close:
 	close(dev);
 
 	set_kernel_console_loglevel(max_loglevel);
-
+Free:
 	free(mem_pool);
 
 	return error;

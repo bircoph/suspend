@@ -19,11 +19,8 @@ struct config_par {
 	unsigned int len;
 };
 
-int get_config(char *my_name,
-               int argc,
-               char *argv[],
-               int parc,
-               struct config_par *parv,
-               char *special);
+int parse(char *my_name, char *file_name, int parc, struct config_par *parv);
+
+void usage(char *my_name, struct option options[]);
 
 #define CONFIG_FILE	"/etc/suspend.conf"
