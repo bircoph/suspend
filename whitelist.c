@@ -145,6 +145,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2374*",		"",	"", S3_BIOS|S3_MODE },
 	/* Some T43's reported by Sebastian Nagel */
 	{ "IBM",			"",		"ThinkPad T43",	"", S3_BIOS|S3_MODE },
+	/* T43p reported by Magnus Boman */
+	{ "IBM",			"",	"ThinkPad T43p",	"", S3_BIOS|S3_MODE },
 	/* G40 confirmed by David H"ademan */
 	{ "IBM",			"2388*",		"",	"", VBE_SAVE },
 	/* R32 */
@@ -304,12 +306,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"1874*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1875*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1876*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	// T43/p
-	{ "IBM",			"2668*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2678*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2679*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2686*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2687*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// X30
 	{ "IBM",			"2673*",		"",	"", VBE_POST|VBE_SAVE|UNSURE|RADEON_OFF },
 	{ "IBM",			"2884*",		"",	"", VBE_POST|VBE_SAVE|UNSURE|RADEON_OFF },
