@@ -23,6 +23,7 @@
 
 /**
  *	parse - read and parse the configuration file
+ *	note that a non-present config file is not considered an error here
  */
 
 int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
@@ -33,17 +34,15 @@ int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
 	int error, i, j, k;
 
 	if (stat(file_name, &stat_buf)) {
-		error = errno;
 		fprintf(stderr, "%s: Could not stat configuration file\n",
 			my_name);
-		return -error;
+		return 0;
 	}
 	file = fopen(file_name, "r");
 	if (!file) {
-		error = errno;
 		fprintf(stderr, "%s: Could not open configuration file\n",
 			my_name);
-		return -error;
+		return 0;
 	}
 	error = 0;
 	i = 0;
