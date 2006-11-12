@@ -260,7 +260,9 @@ suspending.  In such a case the device identified by the "resume device"
 parameter is regarded as the partition that contains the swap file, and
 "resume offset" must be equal to the offset from the beginning of this
 partition at which the swap file's header is located, in <PAGE_SIZE> units.
-[For this feature to work, you will need an -mm kernel, 2.6.18-mm3 or newer.]
+The value of this parameter for given swap file can be determined by the
+swap-offset program (has to be run as root) included in this package.  [For
+this feature to work, you will need an -mm kernel, 2.6.18-mm3 or newer.]
 
 The "image size" parameter may be used to limit the size of the system
 snapshot image created by the s2disk tool, but it's not mandatory. Namely,

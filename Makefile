@@ -36,9 +36,9 @@ SNAPSHOT=$(DESTDIR)/dev/snapshot
 endif
 
 ifdef CONFIG_ENCRYPT
-all: $(S2DISK) $(S2BOTH) suspend-keygen resume s2ram
+all: $(S2DISK) $(S2BOTH) swap-offset suspend-keygen resume s2ram
 else
-all: $(S2DISK) $(S2BOTH) resume s2ram
+all: $(S2DISK) $(S2BOTH) swap-offset resume s2ram
 endif
 
 S2RAMOBJ=vt.o vbetool/lrmi.o vbetool/x86-common.o vbetool/vbetool.o radeontool.o dmidecode.o
@@ -63,7 +63,7 @@ STATIC_CC_FLAGS=$(shell directfb-config --cflags)\
 endif
 
 clean:
-	rm -f $(S2DISK) $(S2BOTH) suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
+	rm -f $(S2DISK) $(S2BOTH) swap-offset suspend-keygen suspend.keys resume s2ram *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
 
 s2ram:	s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ)
 	$(CC) $(CFLAGS) -g s2ram.c $(S2RAMOBJ) -lpci -o s2ram
@@ -119,33 +119,38 @@ $(S2BOTH):	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h 
 resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
 	$(CC) $(CFLAGS) $(CC_FLAGS) $(STATIC_CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS) $(STATIC_LD_FLAGS)
 
+swap-offset: swap-offset.c
+	$(CC) swap-offset.c -o swap-offset
+
 ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o keygen.c encrypt.h md5.h
 	$(CC) $(CFLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
 
-install-s2disk: $(S2DISK) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
+install-s2disk: $(S2DISK) suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 
-install: $(S2DISK) $(S2BOTH) suspend-keygen conf/$(CONFIGFILE) $(SNAPSHOT)
+install: $(S2DISK) $(S2BOTH) suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 swap-offset $(DESTDIR)$(SUSPEND_DIR)
 else
-install-s2disk: $(S2DISK) conf/$(CONFIGFILE) $(SNAPSHOT)
+install-s2disk: $(S2DISK) swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 
-install: $(S2DISK) $(S2BOTH) conf/$(CONFIGFILE) $(SNAPSHOT)
+install: $(S2DISK) $(S2BOTH) swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 swap-offset $(DESTDIR)$(SUSPEND_DIR)
 endif
 
 install-resume-initrd:	resume conf/$(CONFIGFILE)
