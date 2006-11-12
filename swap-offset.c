@@ -103,8 +103,8 @@ int main(int argc, char **argv) {
 		last_block = block;
 	}
 	if (size < page_size) {
-		fprintf(stderr, "Swapfile header is not contiguous and cannot be used"
-				"for suspension.\n");
+		fprintf(stderr, "Swapfile header is not contiguous and cannot "
+				"be used for suspension.\n");
 		err = EINVAL;
 	} else {
 		printf("resume offset = %d\n", first_block * blk_size / page_size);
