@@ -1,5 +1,5 @@
 /*
- * swap-file.c
+ * swap-offset.c
  *
  * This program determines the location of the swap offset for given swap file.
  *
