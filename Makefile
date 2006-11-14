@@ -120,7 +120,7 @@ resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SP
 	$(CC) $(CFLAGS) $(CC_FLAGS) $(STATIC_CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS) $(STATIC_LD_FLAGS)
 
 swap-offset: swap-offset.c
-	$(CC) swap-offset.c -o swap-offset
+	$(CC) $(CFLAGS) swap-offset.c -o swap-offset
 
 ifdef CONFIG_ENCRYPT
 suspend-keygen:	md5.o keygen.c encrypt.h md5.h
