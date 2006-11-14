@@ -127,27 +127,27 @@ suspend-keygen:	md5.o keygen.c encrypt.h md5.h
 	$(CC) $(CFLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H $(CC_FLAGS) md5.o keygen.c -o suspend-keygen $(LD_FLAGS)
 
 install-s2disk: $(S2DISK) suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
-	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
+	install -D --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)/suspend-keygen
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
-	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 
 install: $(S2DISK) $(S2BOTH) suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
-	install --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)
+	install -D --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)/suspend-keygen
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
-	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 swap-offset $(DESTDIR)$(SUSPEND_DIR)
 else
 install-s2disk: $(S2DISK) swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
-	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
-	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
+	install -D --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)/$(S2DISK)
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 
 install: $(S2DISK) $(S2BOTH) swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
-	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
+	install -D --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)/$(S2DISK)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
-	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR); fi
+	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 swap-offset $(DESTDIR)$(SUSPEND_DIR)
