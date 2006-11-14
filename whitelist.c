@@ -141,6 +141,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2672*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X40 confirmed by Christian Deckelmann */
 	{ "IBM",			"2371*",	"ThinkPad X40",	"", S3_BIOS|S3_MODE },
+	/* X41 Tablet, tested by Danny Kukawka */
+	{ "IBM",			"",	"ThinkPad X41 Tablet",	"", S3_BIOS|S3_MODE },
 	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
 	{ "IBM",			"2373*",		"",	"", S3_BIOS|S3_MODE },
 	/* T41p, Stefan Gerber */
@@ -328,10 +330,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2526*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2527*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2528*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	// X41 Tablet
-	{ "IBM",			"1866*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"1867*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"1869*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 
 	{ "Samsung Electronics",	"NX05S*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "SHARP Corporation",		"PC-MM20 Series*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
