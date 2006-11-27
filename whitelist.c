@@ -17,6 +17,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_POST|VBE_SAVE },
 	/* Alexander Wirt */
 	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
+	/* Julien BLACHE jb@jblache.org */
+	{ "Apple Computer, Inc.",	"MacBookPro2,2",	"",	"", VBE_SAVE|VBE_MODE },
 	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* From: Bontemps Camille <camille.bontemps@gmail.com> */
 	{ "Acer",			"Aspire 3610",		"",	"", S3_BIOS|S3_MODE },
@@ -59,6 +61,8 @@ struct machine_entry whitelist[] = {
 	{ "",		"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
 	/* Mark Stillwell */
 	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
+	/* Ross Patterson <me@rpatterson.net> */
+	{ "AVERATEC",			"1000 Series",		"",	"", S3_BIOS|S3_MODE },
 	/* Andreas Schmitz */
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
@@ -117,12 +121,16 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
+	/* Jan Adlen <janne@rosehip.mine.nu> */
+	{ "Hewlett-Packard",		"Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* Winfried Dobbe, https://bugzilla.novell.com/show_bug.cgi?id=159688 */
 	{ "Hewlett-Packard",		"HP Compaq nc6120 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nx6125 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
 	/* Michael Biebl <biebl@teco.edu> */
 	{ "Hewlett-Packard ",		"HP compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
+	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
