@@ -811,9 +811,10 @@ int main(int argc, char *argv[])
 
 	while (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, 
-			"resume: Could not stat the resume device file.\n"
+			"resume: Could not stat the resume device file '%s'\n"
 			"\tPlease type in the full path name to try again\n"
-			"\tor press ENTER to boot the system: ");
+			"\tor press ENTER to boot the system: ",
+			resume_dev_name);
 		fgets(resume_dev_name, MAX_STR_LEN - 1, stdin);
 		n = strlen(resume_dev_name) - 1;
 		if (n <= 0) {
