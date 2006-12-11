@@ -28,7 +28,7 @@
 #define PK_KEY_SIZE	16
 #define PK_CIPHER_BLOCK	16
 /* Auxiliary constants */
-#define RSA_DATA_SIZE	2000
+#define RSA_DATA_SIZE	3072
 #define KEY_DATA_SIZE	1000
 #define RSA_FIELDS	6
 #define RSA_FIELDS_PUB	2
