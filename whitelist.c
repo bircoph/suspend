@@ -33,6 +33,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 650",	"",	"", VBE_POST|VBE_SAVE },
 	/* Martin Sack, this one may be NOFB, to be verified */
 	{ "Acer",			"TravelMate 800",	"",	"", VBE_POST },
+	/* jan sekal <jsekal@seznam.cz> */
+	{ "Acer",			"TravelMate 2410",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
 	/* From: LucaB <lbonco@tin.it> */
@@ -52,6 +54,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.        ",	"M6VA      ",	"",	"", S3_BIOS|S3_MODE },
 	/* M7N, Xavier Douville <s2ram-sourceforge@douville.org> */
 	{ "ASUSTeK Computer Inc.        ",	"M7A       ",	"",	"", S3_BIOS|S3_MODE },
+	/* ASUS S5200N Philip Frei <pjf@gmx.de> */
+	{ "ASUSTeK Computer Inc.        ",	"S5N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS V6V, Johannes Engel <j-engel@gmx.de> */
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
@@ -65,6 +69,8 @@ struct machine_entry whitelist[] = {
 	{ "AVERATEC",			"1000 Series",		"",	"", S3_BIOS|S3_MODE },
 	/* Andreas Schmitz */
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
+	/* Gilles Grandou <gilles@grandou.net> */
+	{ "CLEVO",			"D500P",		"",	"", VBE_POST|NOFB },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
@@ -93,10 +99,14 @@ struct machine_entry whitelist[] = {
 	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz> */
 	{ "Dell Inc.",			"Latitude D620 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* Johannes Engel <j-engel@gmx.de> */
+	{ "Dell Inc.",			"Latitude D820 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Dell e1505, Alexander Antoniades */
 	{ "Dell Inc.",			"MM061 *",		"",	"", 0 },
 	/* Dell inspiron 1300, Tim Dijkstra <tim@famdijkstra.org> */
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
+	/* Dell Inspiron E1702, Julian Krause <suspend@thecrypto.org> */
+	{ "Dell Inc.",			"MP061 *",		"",	"", 0 },
 	/* Dell Inspiron 630m, Fredrik Edemar */
 	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
 	/* Dell Inspiron 640m, Daniel Drake <dsd@gentoo.org> */
@@ -135,8 +145,10 @@ struct machine_entry whitelist[] = {
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
-	/* Fabio Comolli <fabio.comolli@gmail.com> */
-	{ "Hewlett-Packard",		"Pavilion dv4000 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* Fabio Comolli <fabio.comolli@gmail.com>, dv4378ea, ATI X700 */
+	{ "Hewlett-Packard",	"Pavilion dv4000 (ES973EA#*",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* Damien Raude-Morvan <drazzib@drazzib.com>, This is a dv4052ea, i915GM */
+	{ "Hewlett-Packard",	"Pavilion dv4000 (EB911EA#*",	"",	"", S3_BIOS },
 	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"", S3_BIOS },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
