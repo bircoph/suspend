@@ -368,5 +368,5 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"TECRA A2*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"TECRA A5*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"TECRA M2*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ NULL }
+	{ NULL, NULL, NULL, NULL, 0 }
 };
