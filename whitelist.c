@@ -24,6 +24,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"Aspire 3610",		"",	"", S3_BIOS|S3_MODE },
 	/* From: Saul Mena Avila <saul_2110@yahoo.com.mx> */
 	{ "Acer",			"Aspire 3620",		"",	"", S3_BIOS|S3_MODE },
+	/* From: Witmaster <witmaster@op.pl> */
+	{ "Acer            ",		"Aspire 3690 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer           ",		"TravelMate 240 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer           ",		"TravelMate C300",	"",	"", VBE_SAVE },
@@ -35,6 +37,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 800",	"",	"", VBE_POST },
 	/* jan sekal <jsekal@seznam.cz> */
 	{ "Acer",			"TravelMate 2410",	"",	"", S3_BIOS|S3_MODE },
+	/* Peter Stolz <p.stolz@web.de> */
+	{ "Acer",			"TravelMate 2420",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
 	/* From: LucaB <lbonco@tin.it> */
@@ -43,6 +47,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* Cristian Rigamonti */
 	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
+	/* Patryk Zawadzki <patrys@icenter.pl> */
+	{ "ASUSTeK Computer Inc. ",	"A6Km      ",		"",	"", 0 },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	/* Manfred Tremmel, https://bugzilla.novell.com/show_bug.cgi?id=171107 */
@@ -90,8 +96,14 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",  "Inspiron 8500 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
 	{ "Dell Computer Corporation",  "Latitude C610 *",	"",	"", VBE_POST|VBE_MODE },
+	/* Manuel Jander */
+	{ "Dell Computer Corporation",	"Latitude CPx J650GT*",	"",	"", 0 },
+	/* Luke Myers */
+	{ "Dell Computer Corporation",	"Latitude CPx J800GT*",	"",	"", VBE_POST|VBE_SAVE },
 	/* https://bugzilla.novell.com/show_bug.cgi?id=220865 */
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_MODE },
+	/* Roland Hagemann <mail@rolandhagemann.de> */
+	{ "Dell Computer Corporation",  "Latitude D500 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Ian Samule, https://bugzilla.novell.com/show_bug.cgi?id=175568 */
 	{ "Dell Inc.",			"Latitude D505 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
@@ -113,6 +125,9 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"MXC061 *",		"",	"", VBE_POST },
 	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
 	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
+	/* Allen <ducalen@sympatico.ca>, Desktop with onboard grephics */
+	{ "Dell Computer Corporation",	"Dimension 3000 *",	"",	"", VBE_POST|VBE_MODE },
+
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
 	/* Those two x86_64 amilos are a bit strange. I seldom see s3_bios + vbe_* ... */
@@ -141,17 +156,26 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
 	/* Michael Biebl <biebl@teco.edu> */
 	{ "Hewlett-Packard ",		"HP compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* François Münch <francois.munch@free.fr> */
+	{ "Hewlett-Packard ",		"Compaq nx 7010 (PG588EA#*","",	"", S3_BIOS },
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
+	/* "Zirkel, Timothy K" <zirkelt@lafayette.edu> */
+	{ "Hewlett-Packard ",		"Compaq Presario X1000 (DK454AV)*",	"",	"", S3_BIOS },
 	/* Fabio Comolli <fabio.comolli@gmail.com>, dv4378ea, ATI X700 */
 	{ "Hewlett-Packard",	"Pavilion dv4000 (ES973EA#*",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* Damien Raude-Morvan <drazzib@drazzib.com>, This is a dv4052ea, i915GM */
 	{ "Hewlett-Packard",	"Pavilion dv4000 (EB911EA#*",	"",	"", S3_BIOS },
-	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"", S3_BIOS },
+	/* Arun Gupta <axgupta1@gmail.com> */
+	{ "Hewlett-Packard",	"Pavilion dv6000 (EY798AV#*",	"",	"", 0 },
+	/* Frank Schröder <frank.schroeder@gmail.com>, zt3380us */
+	{ "Hewlett-Packard ",	"Pavilion zt3300 (PF083UA#*",	"",	"", 0 },
+	/* Karthik <molecularbiophysics@gmail.com> */
+	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"68BAL*", S3_BIOS },
 	/* R51 and T43 confirmed by Christian Zoz */
 	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
 	/* R52, reported by Joscha Arenz */
@@ -191,6 +215,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
 	/* https://bugzilla.novell.com/show_bug.cgi?id=210928, note the small "p" in Thinkpad */
 	{ "LENOVO",			"",		"Thinkpad R60",	"", S3_BIOS|S3_MODE },
+	/* From: gregor herrmann <gregor.herrmann@comodo.priv.at> */
+	{ "LENOVO",			"",		"Thinkpad R60e", "", S3_BIOS|S3_MODE },
 	/* At least 1709 series thinkpads can be whitelisted by name,
 	   and we can probably delete entries above, too.... */
 	{ "LENOVO",			"",		"ThinkPad X60",	"", S3_BIOS|S3_MODE },
@@ -201,16 +227,31 @@ struct machine_entry whitelist[] = {
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
+	/* Hanspeter Kunz <buzz.rexx@gmail.com> */
+	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-R3E*",	"002",	"", 0 },
 	/* Joost Witteveen <joost@iliana.nl> */
 	{ "MAXDATA",			"IMPERIO4045A *",	"",	"", 0 },
+	/* Jan Gerrit <JanGerrit@Burg-Borgholz.de> */
+	{ "MAXDATA",			"PRO600IW",		"",	"", S3_BIOS|S3_MODE },
 	/* Hugo Costelha */
 	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
+
+	/* Daniel Koester <koester@math.uni-augsburg.de> */
+	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R55S *",	"",	"", 0 },
+	/* Stephen Denham <stephen.denham@gmail.com> */
+	{ "SAMSUNG Electronics",	"SENS V25",		"",	"", VBE_POST|VBE_MODE },
+
 	{ "TOSHIBA",			"Libretto L5/TNK",	"",	"", 0 },
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
 	{ "TOSHIBA",			"Satellite A30",	"",	"", VBE_SAVE },
-	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_SAVE },
+	/* Diego Ocampo <diegoocampo8@gmail.com> unconfirmed, maybe X only */
+	{ "TOSHIBA",			"Satellite A80",	"",	"", 0 },
+	/* Christian Schneeman <cschneemann@suse.de> */
+	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_MODE },
+	/* tnt.rocket@freenet.de, need to verify if S3_MODE is needed too */
+	{ "TOSHIBA",			"Satellite M30X",	"",	"", S3_BIOS },
 	/* Michaell Gurski */
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
 	/* From: Jim <jim.t@vertigo.net.au> */
