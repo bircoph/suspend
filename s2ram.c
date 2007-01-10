@@ -20,7 +20,7 @@
 
 static void *vbe_buffer;
 static unsigned char vga_pci_state[256];
-static struct pci_dev *vga_dev;
+static struct pci_dev vga_dev;
 static struct pci_access *pacc;
 /* Flags set from whitelist */
 static int flags, vbe_mode = -1;
@@ -150,9 +150,7 @@ int s2ram_check(int id)
 	return ret;
 }
 
-static struct pci_dev vga_dev_s;
-
-struct pci_dev *find_vga(void)
+int find_vga(void)
 {
 	struct pci_dev *dev;
 
@@ -165,21 +163,22 @@ struct pci_dev *find_vga(void)
 	}
 
 	if (!dev)
-		return NULL;
+		return 0;
 
-	memcpy(&vga_dev_s, dev, sizeof(*dev));
-	vga_dev_s.next = NULL;
-	return &vga_dev_s;
+	memcpy(&vga_dev, dev, sizeof(*dev));
+	vga_dev.next = NULL;
+
+	return 1;
 }
 
-void save_vga_pci(struct pci_dev *dev)
+void save_vga_pci(void)
 {
-	pci_read_block(dev, 0, vga_pci_state, 256);
+	pci_read_block(&vga_dev, 0, vga_pci_state, 256);
 }
 
-void restore_vga_pci(struct pci_dev *dev)
+void restore_vga_pci(void)
 {
-	pci_write_block(dev, 0, vga_pci_state, 256);
+	pci_write_block(&vga_dev, 0, vga_pci_state, 256);
 }
 
 /* warning: we have to be on a text console when calling this */
@@ -212,14 +211,15 @@ int s2ram_hacks(void)
 	}
 	if (flags & PCI_SAVE) {
 		pacc = pci_alloc();     /* Get the pci_access structure */
-	        pci_init(pacc);         /* Initialize the PCI library */
+		pci_init(pacc);         /* Initialize the PCI library */
 
-		vga_dev = find_vga();
-		if (vga_dev) {
+		if (find_vga()) {
 			printf("saving PCI config of device %02x:%02x.%d\n",
-				vga_dev->bus, vga_dev->dev, vga_dev->func);
-			save_vga_pci(vga_dev);
-		}
+				vga_dev.bus, vga_dev.dev, vga_dev.func);
+			save_vga_pci();
+		} else
+			/* pci_save requested, no VGA device found => abort */
+			return 1;
 	}
 
 	return 0;
@@ -266,10 +266,10 @@ int s2ram_do(void)
 
 void s2ram_resume(void)
 {
-	if ((flags & PCI_SAVE) && vga_dev) {
+	if ((flags & PCI_SAVE) && vga_dev.device_class == 0x300) {
 		printf("restoring PCI config of device %02x:%02x.%d\n",
-			vga_dev->bus, vga_dev->dev, vga_dev->func);
-		restore_vga_pci(vga_dev);
+			vga_dev.bus, vga_dev.dev, vga_dev.func);
+		restore_vga_pci();
 
 		pci_cleanup(pacc);
 	}
