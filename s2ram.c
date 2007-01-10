@@ -11,12 +11,17 @@
 #include <errno.h>
 #include <string.h>
 
+#include <pci/pci.h>
+
 #define S2RAM
 #include "vbetool/vbetool.h"
 #include "vt.h"
 #include "s2ram.h"
 
 static void *vbe_buffer;
+static unsigned char vga_pci_state[256];
+static struct pci_dev *vga_dev;
+static struct pci_access *pacc;
 /* Flags set from whitelist */
 static int flags, vbe_mode = -1;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
@@ -36,6 +41,7 @@ char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define UNSURE      0x20	/* unverified entries from acpi-support 0.59 */
 #define NOFB        0x40	/* must not use a frame buffer */
 #define VBE_MODE    0x80	/* machine needs "vbetool vbemode get / set" */
+#define PCI_SAVE   0x100	/* we need to save the VGA PCI registers */
 
 #include "whitelist.c"
 
@@ -67,14 +73,15 @@ void machine_known(int i)
 	       "    bios_version = '%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: 0x%x  %s%s%s%s%s%s%s\n", flags,
+	printf("Fixes: 0x%x  %s%s%s%s%s%s%s%s\n", flags,
 	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
 	       (flags & VBE_POST) ? "VBE_POST " : "",
 	       (flags & VBE_MODE) ? "VBE_MODE " : "",
 	       (flags & RADEON_OFF) ? "RADEON_OFF " : "",
 	       (flags & S3_BIOS) ? "S3_BIOS " : "",
 	       (flags & S3_MODE) ? "S3_MODE " : "",
-	       (flags & NOFB) ? "NOFB " : "");
+	       (flags & NOFB) ? "NOFB " : "",
+	       (flags & PCI_SAVE) ? "PCI_SAVE " : "");
 	if (flags & UNSURE)
 		printf("Machine is in the whitelist but perhaps using "
 		       "vbetool unnecessarily.\n"
@@ -143,6 +150,38 @@ int s2ram_check(int id)
 	return ret;
 }
 
+static struct pci_dev vga_dev_s;
+
+struct pci_dev *find_vga(void)
+{
+	struct pci_dev *dev;
+
+	pci_scan_bus(pacc);	/* We want to get the list of devices */
+
+	for (dev=pacc->devices; dev; dev=dev->next) {
+		pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_CLASS);
+		if (dev->device_class == 0x300)
+			break;
+	}
+
+	if (!dev)
+		return NULL;
+
+	memcpy(&vga_dev_s, dev, sizeof(*dev));
+	vga_dev_s.next = NULL;
+	return &vga_dev_s;
+}
+
+void save_vga_pci(struct pci_dev *dev)
+{
+	pci_read_block(dev, 0, vga_pci_state, 256);
+}
+
+void restore_vga_pci(struct pci_dev *dev)
+{
+	pci_write_block(dev, 0, vga_pci_state, 256);
+}
+
 /* warning: we have to be on a text console when calling this */
 int s2ram_hacks(void)
 {
@@ -170,6 +209,17 @@ int s2ram_hacks(void)
 		map_radeon_cntl_mem();
 		printf("Calling radeon_cmd_light(0)\n");
 		radeon_cmd_light(0);
+	}
+	if (flags & PCI_SAVE) {
+		pacc = pci_alloc();     /* Get the pci_access structure */
+	        pci_init(pacc);         /* Initialize the PCI library */
+
+		vga_dev = find_vga();
+		if (vga_dev) {
+			printf("saving PCI config of device %02x:%02x.%d\n",
+				vga_dev->bus, vga_dev->dev, vga_dev->func);
+			save_vga_pci(vga_dev);
+		}
 	}
 
 	return 0;
@@ -216,6 +266,13 @@ int s2ram_do(void)
 
 void s2ram_resume(void)
 {
+	if ((flags & PCI_SAVE) && vga_dev) {
+		printf("restoring PCI config of device %02x:%02x.%d\n",
+			vga_dev->bus, vga_dev->dev, vga_dev->func);
+		restore_vga_pci(vga_dev);
+
+		pci_cleanup(pacc);
+	}
 	// FIXME: can we call vbetool_init() multiple times without cleaning up?
 	if (flags & VBE_POST) {
 		vbetool_init();
@@ -260,6 +317,7 @@ static void usage(void)
 	       "    -a, --acpi_sleep: set the acpi_sleep parameter before "
 				       "suspend\n"
 	       "                      1=s3_bios, 2=s3_mode, 3=both\n"
+	       "    -v, --pci_save:   save the PCI config space for the VGA card.\n"
 	       "\n");
 	exit(1);
 }
@@ -278,10 +336,11 @@ int main(int argc, char *argv[])
 		{ "radeontool",	no_argument,		NULL, 'r'},
 		{ "identify",	no_argument,		NULL, 'i'},
 		{ "acpi_sleep",	required_argument,	NULL, 'a'},
+		{ "pci_save",	no_argument,		NULL, 'v'},
 		{ NULL,		0,			NULL,  0 }
 	};
 
-	while ((i = getopt_long(argc, argv, "nhfspmria:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, "nhfspmriva:", options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage();
@@ -310,6 +369,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':
 			flags |= (atoi(optarg) & (S3_BIOS | S3_MODE));
+			break;
+		case 'v':
+			flags |= PCI_SAVE;
 			break;
 		default:
 			usage();
@@ -366,6 +428,7 @@ int main(int argc, char *argv[])
 		printf("switching back to vt%d\n", active_console);
 		chvt(active_console);
 	}
+
 	return ret;
 }
 #endif
