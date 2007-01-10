@@ -446,7 +446,6 @@ static int save_image(struct swap_map_handle *handle,
 	unsigned int m, writeout_rate;
 	int ret, abort_possible;
 	struct termios newtrm, savedtrm;
-	char c = 0;
 	int error = 0;
 
 	/* Switch the state of the terminal so that we can read the keyboard
@@ -454,15 +453,8 @@ static int save_image(struct swap_map_handle *handle,
 	 *
 	 * stdin must be attached to the terminal now.
 	 */
-	abort_possible = !tcgetattr(0, &savedtrm);
-	if (abort_possible) {
-		newtrm = savedtrm;
-		newtrm.c_cc[VMIN] = 0;
-		newtrm.c_cc[VTIME] = 1;
-		newtrm.c_iflag = IGNBRK | IGNPAR | ICRNL | IMAXBEL;
-		newtrm.c_lflag = 0;
-		abort_possible = !tcsetattr(0, TCSANOW, &newtrm);
-	}
+	abort_possible = !splash.prepare_abort(&savedtrm, &newtrm);
+
 	if (abort_possible)
 		printf("suspend: Saving %u image data pages "
 			"(press " ABORT_KEY_NAME " to abort) ...     ",
@@ -491,13 +483,11 @@ static int save_image(struct swap_map_handle *handle,
 			if (!(nr_pages % m)) {
 				printf("\b\b\b\b%3d%%", nr_pages / m);
 				splash.progress(20 + (nr_pages / m) * 0.75);
-				if (abort_possible) {
-					ret = read(0, &c, 1);
-					if (ret > 0 && c == ABORT_KEY_CODE) {
-						printf(" aborted!\n");
-						return -EINTR;
-					}
-					ret = 1;
+				if (abort_possible && 
+					splash.key_pressed(ABORT_KEY_CODE)) {
+
+					printf(" aborted!\n");
+					return -EINTR;
 				}
 			}
 			if (!(nr_pages % writeout_rate))
@@ -513,7 +503,7 @@ static int save_image(struct swap_map_handle *handle,
 		printf(" done (%u pages)\n", nr_pages);
 
 	if (abort_possible)
-		tcsetattr(0, TCSANOW, &savedtrm);
+		splash.restore_abort(&savedtrm);
 
 	return error;
 }

@@ -16,6 +16,8 @@
 #include "bootsplash.h"
 #include "splashy_funcs.h"
 #include "encrypt.h"
+#include <unistd.h>
+#include <termios.h>
 
 /**
  *	dummy functions in case if no splash system was found or
@@ -32,6 +34,36 @@ static int splash_dialog(const char *prompt)
 	printf(prompt);
 	return getchar();
 }
+static int prepare_abort(struct termios *oldtrm, struct termios *newtrm) 
+{
+	int ret;
+
+	ret = tcgetattr(0, oldtrm);
+	if (!ret) {
+		*newtrm = *oldtrm;
+		newtrm->c_cc[VMIN] = 0;
+		newtrm->c_cc[VTIME] = 1;
+		newtrm->c_iflag = IGNBRK | IGNPAR | ICRNL | IMAXBEL;
+		newtrm->c_lflag = 0;
+		ret = tcsetattr(0, TCSANOW, newtrm);
+	}
+
+	return ret;
+}
+
+static int key_pressed(const char key)
+{
+	char c;
+	if (read(0, &c, 1) > 0 && c == key) 
+		return 1;
+
+	return 0;
+}
+
+static void restore_abort(struct termios *oldtrm) 
+{
+	tcsetattr(0, TCSANOW, oldtrm);
+}
 
 /* Tries to find a splash system and initializes interface functions */
 void splash_prepare(struct splash *splash, int enabled)
@@ -47,6 +79,9 @@ void splash_prepare(struct splash *splash, int enabled)
 #else
 	splash->read_password   = splash_dummy_readpass;
 #endif
+	splash->prepare_abort	= prepare_abort;
+	splash->restore_abort	= restore_abort;
+	splash->key_pressed	= key_pressed;
 	if (!enabled)
 		return;
 
@@ -64,7 +99,6 @@ void splash_prepare(struct splash *splash, int enabled)
 		splash->progress    = splashy_progress;
 		splash->dialog	    = splashy_dialog;
 		splash->read_password   = splashy_read_password;
-
 #endif
 	} else if (0) {
 		/* add another splash system here */
