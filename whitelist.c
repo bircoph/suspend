@@ -99,7 +99,7 @@ struct machine_entry whitelist[] = {
 	/* Manuel Jander */
 	{ "Dell Computer Corporation",	"Latitude CPx J650GT*",	"",	"", 0 },
 	/* Luke Myers */
-	{ "Dell Computer Corporation",	"Latitude CPx J800GT*",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Dell Computer Corporation",	"Latitude CPx J800GT*",	"",	"", VBE_POST|VBE_MODE },
 	/* https://bugzilla.novell.com/show_bug.cgi?id=220865 */
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Roland Hagemann <mail@rolandhagemann.de> */
@@ -228,7 +228,7 @@ struct machine_entry whitelist[] = {
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
 	/* Hanspeter Kunz <buzz.rexx@gmail.com> */
-	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-R3E*",	"002",	"", 0 },
+	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-R3E*",	"002",	"", VBE_POST|VBE_MODE },
 	/* Joost Witteveen <joost@iliana.nl> */
 	{ "MAXDATA",			"IMPERIO4045A *",	"",	"", 0 },
 	/* Jan Gerrit <JanGerrit@Burg-Borgholz.de> */
@@ -236,7 +236,7 @@ struct machine_entry whitelist[] = {
 	/* Hugo Costelha */
 	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
 
-	/* Daniel Koester <koester@math.uni-augsburg.de> */
+	/* Daniel Koester <koester@math.uni-augsburg.de> does not yet work from text mode */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R55S *",	"",	"", 0 },
 	/* Stephen Denham <stephen.denham@gmail.com> */
 	{ "SAMSUNG Electronics",	"SENS V25",		"",	"", VBE_POST|VBE_MODE },
@@ -245,8 +245,10 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Libretto L5/TNKW",	"",	"", 0 },
 	/* this is a Toshiba Satellite 4080XCDT, believe it or not :-( */
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
+	/* Alan Mycroft <Alan.Mycroft@cl.cam.ac.uk> */
+	{ "TOSHIBA",			"PORTEGE M300",		"",	"", S3_MODE },
 	{ "TOSHIBA",			"Satellite A30",	"",	"", VBE_SAVE },
-	/* Diego Ocampo <diegoocampo8@gmail.com> unconfirmed, maybe X only */
+	/* Diego Ocampo <diegoocampo8@gmail.com> */
 	{ "TOSHIBA",			"Satellite A80",	"",	"", 0 },
 	/* Christian Schneeman <cschneemann@suse.de> */
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_MODE },
