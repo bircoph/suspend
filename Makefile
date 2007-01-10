@@ -23,6 +23,7 @@ LD_FLAGS	+= $(GCRYPT_LD_FLAGS)
 endif
 
 SUSPEND_DIR=/usr/local/sbin
+RESUME_DIR=/usr/local/lib/suspend
 CONFIG_DIR=/etc
 RESUME_DEVICE=<path_to_resume_device_file>
 BOOT_DIR=/boot
@@ -131,25 +132,25 @@ install-s2disk: $(S2DISK) suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSH
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 
-install: $(S2DISK) $(S2BOTH) suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
+install: $(S2DISK) $(S2BOTH) resume suspend-keygen swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install -D --mode=755 suspend-keygen $(DESTDIR)$(SUSPEND_DIR)/suspend-keygen
 	install --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
-	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 resume $(DESTDIR)$(RESUME_DIR)
 	install --mode=755 swap-offset $(DESTDIR)$(SUSPEND_DIR)
 else
 install-s2disk: $(S2DISK) swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install -D --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)/$(S2DISK)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 
-install: $(S2DISK) $(S2BOTH) swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
+install: $(S2DISK) $(S2BOTH) resume swap-offset conf/$(CONFIGFILE) $(SNAPSHOT)
 	install -D --mode=755 $(S2DISK) $(DESTDIR)$(SUSPEND_DIR)/$(S2DISK)
 	install --mode=755 $(S2BOTH) $(DESTDIR)$(SUSPEND_DIR)
 	if [ -f $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE) ]; then install --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE).new; else install -D --mode=644 conf/$(CONFIGFILE) $(DESTDIR)$(CONFIG_DIR)/$(CONFIGFILE); fi
 	install --mode=755 s2ram $(DESTDIR)$(SUSPEND_DIR)
-	install --mode=755 resume $(DESTDIR)$(SUSPEND_DIR)
+	install --mode=755 resume $(DESTDIR)$(RESUME_DIR)
 	install --mode=755 swap-offset $(DESTDIR)$(SUSPEND_DIR)
 endif
 
