@@ -147,7 +147,8 @@ struct machine_entry whitelist[] = {
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
-	{ "Hewlett-Packard",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
+	/* there seem to be versions with a " " after Hewlett-Packard and without. */
+	{ "Hewlett-Packard*",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* Jan Adlen <janne@rosehip.mine.nu> */
 	{ "Hewlett-Packard",		"Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* Winfried Dobbe, https://bugzilla.novell.com/show_bug.cgi?id=159688 */
@@ -229,6 +230,8 @@ struct machine_entry whitelist[] = {
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
 	/* Hanspeter Kunz <buzz.rexx@gmail.com> */
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-R3E*",	"002",	"", VBE_POST|VBE_MODE },
+	/* https://sourceforge.net/tracker/index.php?func=detail&aid=1601715&group_id=45483&atid=443088 */
+	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-R2C*",	"0032",	"", VBE_POST|VBE_MODE },
 	/* Joost Witteveen <joost@iliana.nl> */
 	{ "MAXDATA",			"IMPERIO4045A *",	"",	"", 0 },
 	/* Jan Gerrit <JanGerrit@Burg-Borgholz.de> */
