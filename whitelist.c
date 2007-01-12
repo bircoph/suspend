@@ -145,6 +145,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
 	/* From: Einon <einon@animehq.hu>, seems to work only from X :-( */
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
+	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
+	{ "MTC",			"Montara-GML ",	"FAB-2",	"", 0 },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	/* there seem to be versions with a " " after Hewlett-Packard and without. */
@@ -253,6 +255,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite A30",	"",	"", VBE_SAVE },
 	/* Diego Ocampo <diegoocampo8@gmail.com> */
 	{ "TOSHIBA",			"Satellite A80",	"",	"", 0 },
+	/* From: a.maurizi@isac.cnr.it */
+	{ "TOSHIBA",			"Satellite A100",	"",	"", S3_BIOS|S3_MODE },
 	/* Christian Schneeman <cschneemann@suse.de> */
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_MODE },
 	/* tnt.rocket@freenet.de, need to verify if S3_MODE is needed too */
