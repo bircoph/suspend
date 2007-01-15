@@ -134,8 +134,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	/* reported by Thomas Halva Labella <hlabella@ulb.ac.be> */
 	{ "FUJITSU SIEMENS",		"Amilo A7645 ",		"",	"", VBE_SAVE|S3_BIOS|S3_MODE },
-	/* Markus Meyer <markus.meyer@koeln.de> */
-	{ "FUJITSU SIEMENS",		"Amilo Si 1520",	"",	"", 0 },
+	/* Markus Meyer <markus.meyer@koeln.de>, Christian Illy <christian.illy@gmx.de> */
+	{ "FUJITSU SIEMENS",		"Amilo Si 1520",	"",	"", S3_BIOS|S3_MODE },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
