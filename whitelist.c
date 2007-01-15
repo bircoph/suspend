@@ -227,6 +227,11 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60p",	"", S3_BIOS|S3_MODE },
 	/* T60 From: Jeff Nichols <jnichols@renkoo.net> and Kristofer Hallgren <kristofer.hallgren@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
+	/* LENOVO non-Thinkpads go here... */
+	/* these Lenovo 3000 N100 model 768 are available with different graphics chips, so
+	   i do not dare to wildcard anything here :-( */
+	/* Aviv Ben-Yosef <aviv.by@gmail.com> */
+	{ "LENOVO",			"07686VG",	"3000 N100 *",	"", 0 },
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
