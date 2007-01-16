@@ -19,6 +19,8 @@ struct machine_entry whitelist[] = {
 	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
 	/* Julien BLACHE jb@jblache.org */
 	{ "Apple Computer, Inc.",	"MacBookPro2,2",	"",	"", VBE_SAVE|VBE_MODE },
+	/* Felix Rommel, https://bugzilla.novell.com/show_bug.cgi?id=228572 */
+	{ "Acer,Inc.",			"Aspire 1350",		"",	"", VBE_POST|VBE_MODE|NOFB },
 	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* From: Bontemps Camille <camille.bontemps@gmail.com> */
 	{ "Acer",			"Aspire 3610",		"",	"", S3_BIOS|S3_MODE },
@@ -127,6 +129,9 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
 	/* Allen <ducalen@sympatico.ca>, Desktop with onboard grephics */
 	{ "Dell Computer Corporation",	"Dimension 3000 *",	"",	"", VBE_POST|VBE_MODE },
+
+	/* Michael Dickson <mike@communicatezing.com> */
+	{ "ECS",			"536",			"",	"", VBE_POST|NOFB },
 
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
@@ -283,6 +288,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-FS215B",	"",	"", 0 },
 	/* Joseph Smith <joe@uwcreations.com> */
 	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
+	/* Stefan Nobis <stefan@snobis.de> */
+	{ "Sony Corporation",		"PCG-FX601*",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
