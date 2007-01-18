@@ -42,7 +42,7 @@ static int prepare_abort(struct termios *oldtrm, struct termios *newtrm)
 	if (!ret) {
 		*newtrm = *oldtrm;
 		newtrm->c_cc[VMIN] = 0;
-		newtrm->c_cc[VTIME] = 1;
+		newtrm->c_cc[VTIME] = 0;
 		newtrm->c_iflag = IGNBRK | IGNPAR | ICRNL | IMAXBEL;
 		newtrm->c_lflag = 0;
 		ret = tcsetattr(0, TCSANOW, newtrm);
