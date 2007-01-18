@@ -104,10 +104,14 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",	"Latitude CPx J800GT*",	"",	"", VBE_POST|VBE_MODE },
 	/* https://bugzilla.novell.com/show_bug.cgi?id=220865 */
 	{ "Dell Inc.",			"Latitude D410 *",	"",	"", VBE_POST|VBE_MODE },
+	/* tested by seife */
+	{ "Dell Inc.",			"Latitude D420 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Roland Hagemann <mail@rolandhagemann.de> */
 	{ "Dell Computer Corporation",  "Latitude D500 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Ian Samule, https://bugzilla.novell.com/show_bug.cgi?id=175568 */
 	{ "Dell Inc.",			"Latitude D505 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* tested by seife */
+	{ "Dell Inc.",			"Latitude D520 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz> */
