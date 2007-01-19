@@ -153,12 +153,14 @@ int s2ram_check(int id)
 int find_vga(void)
 {
 	struct pci_dev *dev;
+	unsigned int class;
 
 	pci_scan_bus(pacc);	/* We want to get the list of devices */
 
 	for (dev=pacc->devices; dev; dev=dev->next) {
-		pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_CLASS);
-		if (dev->device_class == 0x300)
+		pci_fill_info(dev, PCI_FILL_IDENT);
+		class = pci_read_word(dev, PCI_CLASS_DEVICE);
+		if (class == 0x300)
 			break;
 	}
 
@@ -266,7 +268,7 @@ int s2ram_do(void)
 
 void s2ram_resume(void)
 {
-	if ((flags & PCI_SAVE) && vga_dev.device_class == 0x300) {
+	if (flags & PCI_SAVE) {
 		printf("restoring PCI config of device %02x:%02x.%d\n",
 			vga_dev.bus, vga_dev.dev, vga_dev.func);
 		restore_vga_pci();
