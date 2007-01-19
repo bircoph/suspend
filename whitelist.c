@@ -156,6 +156,9 @@ struct machine_entry whitelist[] = {
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
 	{ "MTC",			"Montara-GML ",	"FAB-2",	"", 0 },
+
+	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
+	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	/* there seem to be versions with a " " after Hewlett-Packard and without. */
