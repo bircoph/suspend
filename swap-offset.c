@@ -23,7 +23,8 @@
 #define SWAP_SIG_SIZE	10
 
 int main(int argc, char **argv) {
-	int block, last_block, first_block, blocks_per_page;
+	unsigned int block, last_block, first_block, blocks_per_page;
+	unsigned int offset;
 	int size, blk_size;
 	int fd;
 	int i;
@@ -107,7 +108,8 @@ int main(int argc, char **argv) {
 				"be used for suspension.\n");
 		err = EINVAL;
 	} else {
-		printf("resume offset = %d\n", first_block * blk_size / page_size);
+		offset = (unsigned long long)first_block * blk_size / page_size;
+		printf("resume offset = %u\n", offset);
 	}
 
 out:
