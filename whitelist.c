@@ -151,7 +151,7 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"LIFEBOOK T4010",	"",	"", S3_BIOS|S3_MODE },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
-	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_SAVE },
+	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_MODE },
 	/* From: Einon <einon@animehq.hu>, seems to work only from X :-( */
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
