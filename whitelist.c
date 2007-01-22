@@ -298,6 +298,10 @@ struct machine_entry whitelist[] = {
 	/* Stefan Nobis <stefan@snobis.de> */
 	{ "Sony Corporation",		"PCG-FX601*",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
+
+	/* Gregory Colpart <reg@evolix.fr> 'Transtec Levio 210' */
+	{ "transtec AG",		"MS-1057",		"",	"", S3_BIOS|S3_MODE },
+
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
 
