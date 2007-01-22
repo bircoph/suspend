@@ -1107,11 +1107,13 @@ static void generate_key(void)
 			gcry_ac_data_get_index(key_set, GCRY_AC_FLAG_COPY, 0,
 						(const char **)&str, &mpi);
 			gcry_free(str);
-			gcry_mpi_print(GCRYMPI_FMT_USG, key->data,
+			ret = gcry_mpi_print(GCRYMPI_FMT_USG, key->data,
 					KEY_DATA_SIZE, &s, mpi);
 			gcry_mpi_release(mpi);
-			key->size = s;
-			use_RSA = 'y';
+			if (!ret) {
+				key->size = s;
+				use_RSA = 'y';
+			}
 		}
 Close_urandom:
 		close(rnd_fd);
