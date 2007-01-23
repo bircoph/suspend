@@ -88,21 +88,21 @@ Retry:
 		goto Free_RSA;
 	}
 
-	/* Convert the key length into bytes */
-	size = (len + 7) >> 3;
 	/* Copy the public key components to struct RSA_data */
 	offset = 0;
 	for (j = 0; j < RSA_FIELDS_PUB; j++) {
 		char *str;
 		size_t s;
 
-		if (offset + size >= RSA_DATA_SIZE)
-			goto Free_RSA;
-
 		gcry_ac_data_get_index(rsa_data_set, GCRY_AC_FLAG_COPY, j,
 					(const char **)&str, &mpi);
-		gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
-					size, &s, mpi);
+		ret = gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
+					RSA_DATA_SIZE - offset, &s, mpi);
+		if (ret) {
+			fprintf(stderr, "RSA key components too big\n");
+			goto Free_RSA;
+		}
+
 		rsa.field[j][0] = str[0];
 		rsa.field[j][1] = '\0';
 		rsa.size[j] = s;
@@ -174,13 +174,14 @@ Retry:
 		char *str;
 		size_t s;
 
-		if (offset + size >= RSA_DATA_SIZE)
-			goto Free_sym;
-
 		gcry_ac_data_get_index(rsa_data_set, GCRY_AC_FLAG_COPY, j,
 					(const char **)&str, &mpi);
-		gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
-					size, &s, mpi);
+		ret = gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
+					RSA_DATA_SIZE - offset, &s, mpi);
+		if (ret) {
+			fprintf(stderr, "RSA key components too big\n");
+			goto Free_sym;
+		}
 
 		/* We encrypt the data in place */
 		ret = gcry_cipher_encrypt(sym_hd, rsa.data + offset, s, NULL, 0);
