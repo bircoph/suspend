@@ -669,31 +669,36 @@ static int read_image(int dev, char *resume_dev_name)
 		if (ret) {
 			close(fd);
 			reboot();
+                       fprintf(stderr,"resume: Reboot failed, please reboot it manually.\n");
+                       while(1)
+			   sleep(1);
 		}
 	}
-	if (!error || !ret) {
-		if (!error && verify_checksum) {
-			md5_finish_ctx(&handle.ctx, checksum);
-			if (memcmp(orig_checksum, checksum, 16)) {
-				fprintf(stderr,"resume: MD5 checksum does not match\n");
-				fprintf(stderr,"resume: Computed MD5 checksum %s\n",
-					print_checksum(buffer, checksum));
-				error = -EINVAL;
-			}
-		}
-		/* Reset swap signature now */
-		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
-		if (lseek(fd, shift, SEEK_SET) != shift) {
-			error = -EIO;
-		} else {
-			ret = write(fd, &swsusp_header, size);
-			if (ret != size) {
-				error = ret < 0 ? -errno : -EIO;
-				fprintf(stderr,
-					"resume: Could not restore the partition header\n");
-			}
+
+	/* I guess this is after the 'continue boot'-question because
+	 * there is no sense in not reseting the signature on error */
+	if (!error && verify_checksum) {
+		md5_finish_ctx(&handle.ctx, checksum);
+		if (memcmp(orig_checksum, checksum, 16)) {
+			fprintf(stderr,"resume: MD5 checksum does not match\n");
+			fprintf(stderr,"resume: Computed MD5 checksum %s\n",
+				print_checksum(buffer, checksum));
+			error = -EINVAL;
 		}
 	}
+	/* Reset swap signature now */
+	memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
+	if (lseek(fd, shift, SEEK_SET) != shift) {
+		error = -EIO;
+	} else {
+		ret = write(fd, &swsusp_header, size);
+		if (ret != size) {
+			error = ret < 0 ? -errno : -EIO;
+			fprintf(stderr,
+				"resume: Could not restore the partition header\n");
+		}
+	}
+
 	fsync(fd);
 	close(fd);
 #ifdef CONFIG_ENCRYPT
