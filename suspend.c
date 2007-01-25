@@ -44,6 +44,7 @@
 #include "md5.h"
 #include "splash.h"
 #include "vt.h"
+#include "loglevel.h"
 #ifdef CONFIG_BOTH
 #include "s2ram.h"
 #endif
@@ -965,39 +966,6 @@ static void restore_console(int fd, int orig_vc)
 	}
 Close_fd:
 	close(fd);
-}
-
-static FILE *printk_file;
-
-static inline void open_printk(void)
-{
-	printk_file = fopen("/proc/sys/kernel/printk", "r+");
-}
-
-static inline int get_kernel_console_loglevel(void)
-{
-	int level = -1;
-
-	if (printk_file) {
-		rewind(printk_file);
-		fscanf(printk_file, "%d", &level);
-	}
-	return level;
-}
-
-static inline void set_kernel_console_loglevel(int level)
-{
-	if (printk_file) {
-		rewind(printk_file);
-		fprintf(printk_file, "%d\n", level);
-		fflush(printk_file);
-	}
-}
-
-static inline void close_printk(void)
-{
-	if (printk_file)
-		fclose(printk_file);
 }
 
 static FILE *swappiness_file;

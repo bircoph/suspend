@@ -16,7 +16,6 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/mount.h>
 #include <sys/time.h>
 #include <time.h>
 #include <syscall.h>
@@ -37,6 +36,7 @@
 #include "config.h"
 #include "md5.h"
 #include "splash.h"
+#include "loglevel.h"
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
@@ -716,29 +716,6 @@ static int read_image(int dev, char *resume_dev_name)
 	return error;
 }
 
-static void set_kernel_console_loglevel(int level)
-{
-	FILE *file;
-	struct stat stat_buf;
-	char *procname = "/proc/sys/kernel/printk";
-	int proc_mounted = 0;
-
-	if (stat(procname, &stat_buf) && errno == ENOENT) {
-		if (mount("none", "/proc", "proc", 0, NULL)) {
-			fprintf(stderr, "resume: Could not mount proc\n");
-			return;
-		} else
-			proc_mounted = 1;
-	}
-	file = fopen(procname, "w");
-	if (file) {
-		fprintf(file, "%d\n", level);
-		fclose(file);
-	}
-	if (proc_mounted)
-		umount("/proc");
-}
-
 /* Parse the command line and/or configuration file */
 static inline int get_config(int argc, char *argv[])
 {
@@ -789,7 +766,7 @@ int main(int argc, char *argv[])
 	unsigned int mem_size;
 	struct stat stat_buf;
 	int dev;
-	int n, error;
+	int n, error, orig_loglevel;
 
 	error = get_config(argc, argv);
 	if (error)
@@ -814,6 +791,10 @@ int main(int argc, char *argv[])
 		return error;
 	}
 
+	open_printk();
+	orig_loglevel = get_kernel_console_loglevel();
+	set_kernel_console_loglevel(suspend_loglevel);
+
 	while (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, 
 			"resume: Could not stat the resume device file '%s'\n"
@@ -830,8 +811,6 @@ int main(int argc, char *argv[])
 		if (resume_dev_name[n] == '\n')
 			resume_dev_name[n] = '\0';
 	}
-
-	set_kernel_console_loglevel(suspend_loglevel);
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -866,9 +845,14 @@ int main(int argc, char *argv[])
 	splash.finish();
 Close:
 	close(dev);
-
-	set_kernel_console_loglevel(max_loglevel);
 Free:
+	if (error)
+	    set_kernel_console_loglevel(max_loglevel);
+	else if (orig_loglevel >= 0)
+	    set_kernel_console_loglevel(orig_loglevel);
+
+	close_printk();
+
 	free(mem_pool);
 
 	return error;

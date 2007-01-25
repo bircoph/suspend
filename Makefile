@@ -111,14 +111,14 @@ splash.o: splash.h splash.c bootsplash.o vt.o splashy_funcs.o
 splashy_funcs.o: splashy_funcs.c splashy_funcs.h
 	$(CC) -g $(CFLAGS) $(CC_FLAGS) -c $< -o $@
 
-$(S2DISK):	vt.o md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
-	$(CC) -g $(CFLAGS) $(CC_FLAGS) vt.o md5.o encrypt.o config.o suspend.c -o $@ $(SPLASHOBJ) $(LD_FLAGS)
+$(S2DISK):	vt.o md5.o encrypt.o config.o loglevel.o suspend.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
+	$(CC) -g $(CFLAGS) $(CC_FLAGS) vt.o md5.o encrypt.o config.o loglevel.o suspend.c -o $@ $(SPLASHOBJ) $(LD_FLAGS)
 
-$(S2BOTH):	md5.o encrypt.o config.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
-	$(CC) -g $(CFLAGS) -DCONFIG_BOTH $(CC_FLAGS) md5.o encrypt.o config.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
+$(S2BOTH):	md5.o encrypt.o config.o loglevel.o suspend.c swsusp.h config.h encrypt.h md5.h s2ram.c dmidecode.c whitelist.c radeontool.c $(S2RAMOBJ) $(SPLASHOBJ)
+	$(CC) -g $(CFLAGS) -DCONFIG_BOTH $(CC_FLAGS) md5.o encrypt.o config.o loglevel.o suspend.c s2ram.c -o $@ $(S2RAMOBJ) $(SPLASHOBJ) $(LD_FLAGS) -lpci
 
-resume:	md5.o encrypt.o config.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
-	$(CC) $(CFLAGS) $(CC_FLAGS) $(STATIC_CC_FLAGS) md5.o encrypt.o config.o vt.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS) $(STATIC_LD_FLAGS)
+resume:	md5.o encrypt.o config.o loglevel.o resume.c swsusp.h config.h encrypt.h md5.h $(SPLASHOBJ)
+	$(CC) $(CFLAGS) $(CC_FLAGS) $(STATIC_CC_FLAGS) md5.o encrypt.o config.o vt.o loglevel.o resume.c $(SPLASHOBJ) -static -o resume $(LD_FLAGS) $(STATIC_LD_FLAGS)
 
 swap-offset: swap-offset.c
 	$(CC) $(CFLAGS) swap-offset.c -o swap-offset
