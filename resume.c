@@ -531,18 +531,12 @@ Free_rsa:
 }
 #endif
 
-static int read_image(int dev, char *resume_dev_name)
+static int open_resume_dev(char *resume_dev_name, 
+			    struct swsusp_header *swsusp_header)
 {
-	static struct swsusp_header swsusp_header;
-	static struct swap_map_handle handle;
-	static unsigned char orig_checksum[16], checksum[16];
-	int fd, ret, error = 0;
-	struct swsusp_info *header = mem_pool;
-	char *buffer = (char *)mem_pool + page_size;
-	unsigned int nr_pages;
 	unsigned int size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
-	char c;
+	int fd, ret;
 
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
@@ -552,15 +546,34 @@ static int read_image(int dev, char *resume_dev_name)
 	}
 	if (lseek(fd, shift, SEEK_SET) != shift)
 		return -EIO;
-	ret = read(fd, &swsusp_header, size);
+	ret = read(fd, swsusp_header, size);
 	if (ret == size) {
-		if (memcmp(SWSUSP_SIG, swsusp_header.sig, 10))
-			return -EINVAL;
+		if (memcmp(SWSUSP_SIG, swsusp_header->sig, 10)) {
+			close(fd);
+			return -ENOMEDIUM;
+		}
 	} else {
-		error = ret < 0 ? ret : -EIO;
+		ret = ret < 0 ? ret : -EIO;
+		return ret;
 	}
-	if (!error)
-		error = read_area(fd, header, swsusp_header.image, page_size);
+	
+	return fd;
+}
+
+static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
+{
+	static struct swap_map_handle handle;
+	static unsigned char orig_checksum[16], checksum[16];
+	int ret, error = 0;
+	struct swsusp_info *header = mem_pool;
+	char *buffer = (char *)mem_pool + page_size;
+	unsigned int nr_pages;
+	unsigned int size = sizeof(struct swsusp_header);
+	unsigned int shift = (resume_offset + 1) * page_size - size;
+	char c;
+
+	error = read_area(fd, header, swsusp_header->image, page_size);
+
 	if (!error) {
 		if(header->image_flags & IMAGE_CHECKSUM) {
 			memcpy(orig_checksum, header->checksum, 16);
@@ -687,11 +700,11 @@ static int read_image(int dev, char *resume_dev_name)
 		}
 	}
 	/* Reset swap signature now */
-	memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
+	memcpy(swsusp_header->sig, swsusp_header->orig_sig, 10);
 	if (lseek(fd, shift, SEEK_SET) != shift) {
 		error = -EIO;
 	} else {
-		ret = write(fd, &swsusp_header, size);
+		ret = write(fd, swsusp_header, size);
 		if (ret != size) {
 			error = ret < 0 ? -errno : -EIO;
 			fprintf(stderr,
@@ -765,8 +778,9 @@ int main(int argc, char *argv[])
 {
 	unsigned int mem_size;
 	struct stat stat_buf;
-	int dev;
+	int dev, resume_dev;
 	int n, error, orig_loglevel;
+	static struct swsusp_header swsusp_header;
 
 	error = get_config(argc, argv);
 	if (error)
@@ -821,27 +835,41 @@ int main(int argc, char *argv[])
 		goto Free;
 	}
 
-	splash_prepare(&splash, splash_param);
-	splash.progress(5);
 
 	dev = open(snapshot_dev_name, O_WRONLY);
 	if (dev < 0) {
 		error = ENOENT;
 		goto Free;
 	}
-	error = read_image(dev, resume_dev_name);
+
+	resume_dev = open_resume_dev(resume_dev_name, &swsusp_header);
+	if (resume_dev == -ENOMEDIUM) {
+		error = 0;
+		goto Close;
+	} else if (resume_dev < 0) {
+		error = -resume_dev;
+		goto Close;
+	}
+
+	splash_prepare(&splash, splash_param);
+	splash.progress(5);
+
+	error = read_image(dev, resume_dev, &swsusp_header);
 	if (error) {
 		fprintf(stderr, "resume: Could not read the image\n");
 		error = -error;
-		goto Close;
+		goto Close_splash;
 	}
+
 	if (freeze(dev)) {
 		error = errno;
 		fprintf(stderr, "resume: Could not freeze processes\n");
-		goto Close;
+		goto Close_splash;
 	}
 	atomic_restore(dev);
 	unfreeze(dev);
+
+Close_splash:
 	splash.finish();
 Close:
 	close(dev);
