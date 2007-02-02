@@ -112,7 +112,7 @@ s2both:	$(SWSUSP_OBJ) $(S2RAM_OBJ) s2ram-both.o suspend.c
 	$(CC) -g $(CC_FLAGS) -DCONFIG_BOTH  $^ -o $@ $(SWSUSP_LD_FLAGS) $(S2RAM_LD_FLAGS)
 
 resume:	resume.c $(SWSUSP_OBJ)
-	$(CC) $(CC_FLAGS) $(STATIC_CC_FLAGS) $(STATIC_LD_FLAGS) $(SWSUSP_LD_FLAGS) $^ -o $@ 
+	$(CC) $(CC_FLAGS) $(STATIC_CC_FLAGS) $^ -o $@ $(STATIC_LD_FLAGS) $(SWSUSP_LD_FLAGS)
 
 swap-offset: swap-offset.c
 	$(CC) $(CC_FLAGS) $< -o $@ $(LD_FLAGS)
@@ -149,8 +149,8 @@ install-resume-new-initrd:	resume conf/$(CONFIGFILE)
 install-resume-on-initrd:	resume 
 	./scripts/install-resume.sh
 
-install-minimal: $(patsubst %,%-install,$(BINARIES_MIN)) $(SNAPSHOT) install-conf
+install-minimal: $(patsubst %,install-%,$(BINARIES_MIN)) $(SNAPSHOT) install-conf
 
-install: $(patsubst %,%-install,$(BINARIES)) $(SNAPSHOT) install-conf
+install: $(patsubst %,install-%,$(BINARIES)) $(SNAPSHOT) install-conf
 
 
