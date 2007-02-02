@@ -777,6 +777,9 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		}
 		if (!atomic_snapshot(snapshot_fd, &in_suspend)) {
 			if (!in_suspend) {
+				/* first unblank the console, see console_codes(4) */
+				printf("\e[13]");
+				printf("suspend: returned to userspace\n");
 				free_snapshot(snapshot_fd);
 				if (use_platform_suspend)
 					platform_finish(snapshot_fd);
