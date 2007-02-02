@@ -107,14 +107,14 @@ $ make resume
 
 - To install the s2disk tool, become root and run:
 
-# make install-s2disk
+# make install-minimal
 
 This will also create the snapshot device file in /dev/, if needed.
 
 - To create and install an initrd image containing the resume binary, become
 root and run:
 
-# make install-resume-initrd
+# make install-resume-new-initrd
 
 This will place the file resume-initrd in the /boot directory.
 
@@ -330,7 +330,7 @@ in the resume initrd file by scripts provided in this package.
 
 To install the s2disk tool, run:
 
-# make install-s2disk
+# make install-minimal
 
 as root.  This will place the s2disk binary in the destination directory
 defined in Makefile (/usr/local/sbin by default).  It will also
@@ -345,7 +345,7 @@ used for generating RSA keys for s2disk (see Section IV of this document
 for details) will also be built and installed in the destination directory
 specified in Makefile (/usr/local/sbin by default).
 
-If you don't want to use "make install-s2disk", you can copy the s2disk
+If you don't want to use "make install-minimal", you can copy the s2disk
 binary and the configuration file to wherever you like, but you'll also
 need to make sure the snapshot device file is present (if you have set
 CONFIG_ENCRYPT=yes in Makefile, you may also need to copy the suspend-keygen
@@ -365,7 +365,7 @@ dpkg or whatever tool your distribution provides.
 
 4) Create snapshot device file
 
-If you don't use "make install-s2disk", you may need to create the snapshot
+If you don't use "make install-minimal", you may need to create the snapshot
 device file:
 
 # mknod /dev/snapshot c 10 231
@@ -381,11 +381,11 @@ for safe testing.
 
 It is recommended to place the resume tool on an initrd/initramfs image.
 For the latter, see instructions for yaird under (6) below.  For an initrd,
-this  may be done using "make install-resume-initrd", but I'll describe the
+this  may be done using "make install-resume-new-initrd", but I'll describe the
 full procedure in case you want to do something in a different way.  For
 simplicity I will only cover the fastest method of setting it up that will
 allow you to get the resume tool up and running quickly.  [The described
-procedure reflects the actions performed by "make install-resume-initrd".]
+procedure reflects the actions performed by "make install-resume-new-initrd".]
 
 (a) Configure the kernel to support RAM disks, initial RAM disks, loopback
 block devices, and the ext2 filesystem, and install it as described in 1).
@@ -457,7 +457,7 @@ newly installed kernel, eg.
 
 (m) If you already have the resume initrd file which is called resume-initrd
 and located in the /boot directory, you can install the resume tool on it
-by using "make install-resume".
+by using "make install-resume-on-initrd".
 
 6) Install resume on initramfs with yaird
 

@@ -13,7 +13,9 @@
 
 #include <pci/pci.h>
 
+#ifndef S2RAM
 #define S2RAM
+#endif
 #include "vbetool/vbetool.h"
 #include "vt.h"
 #include "s2ram.h"
