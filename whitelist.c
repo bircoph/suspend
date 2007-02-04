@@ -37,6 +37,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 650",	"",	"", VBE_POST|VBE_SAVE },
 	/* Martin Sack, this one may be NOFB, to be verified */
 	{ "Acer",			"TravelMate 800",	"",	"", VBE_POST },
+	/* Arkadiusz Miskiewicz <arekm@maven.pl> */
+	{ "Acer",			"TravelMate 2300",	"",	"", VBE_POST|VBE_MODE },
 	/* jan sekal <jsekal@seznam.cz> */
 	{ "Acer",			"TravelMate 2410",	"",	"", S3_BIOS|S3_MODE },
 	/* Peter Stolz <p.stolz@web.de> */
@@ -82,7 +84,7 @@ struct machine_entry whitelist[] = {
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
-	{ "Compaq",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
+	{ "Compaq*",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
 	/* From bug 1544913@sf.net, Andrei - amaces */
 	{ "Dell Computer Corporation",  "Inspiron 1150*",       "",     "", 0 },
 	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
@@ -179,6 +181,8 @@ struct machine_entry whitelist[] = {
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
+	/* From: "Lim Chuen Ee, Mike" <chuenee@starhub.net.sg> */
+	{ "Hewlett-Packard",		"Presario V3000 (RL377PA#*","",	"", S3_BIOS|S3_MODE },
 	/* "Zirkel, Timothy K" <zirkelt@lafayette.edu> */
 	{ "Hewlett-Packard ",		"Compaq Presario X1000 (DK454AV)*",	"",	"", S3_BIOS },
 	/* Fabio Comolli <fabio.comolli@gmail.com>, dv4378ea, ATI X700 */
@@ -187,12 +191,16 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"Pavilion dv4000 (EB911EA#*",	"",	"", S3_BIOS },
 	/* Arun Gupta <axgupta1@gmail.com> */
 	{ "Hewlett-Packard",	"Pavilion dv6000 (EY798AV#*",	"",	"", 0 },
+	/* Antony Dovgal <tony2001@phpclub.net> */
+	{ "Hewlett-Packard",	"HP Pavilion dv6000 (RM469EA#*","",	"", 0 },
+	/* John Soros <sorosj@gmail.com> "HP dv6120ea" */
+	{ "Hewlett-Packard",	"HP Pavilion dv6000 (RP980EA#*","",	"", 0 },
 	/* Frank Schröder <frank.schroeder@gmail.com>, zt3380us */
 	{ "Hewlett-Packard ",	"Pavilion zt3300 (PF083UA#*",	"",	"", 0 },
 	/* Karthik <molecularbiophysics@gmail.com> */
 	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"68BAL*", S3_BIOS },
-	/* R51 and T43 confirmed by Christian Zoz */
-	{ "IBM",			"1829*",	"ThinkPad R51",	"", 0 },
+	/* R51 confirmed by Christian Zoz and Sitsofe Wheeler <sitsofe@yahoo.com> */
+	{ "IBM",			"",		"ThinkPad R51",	"", 0 },
 	/* R52, reported by Joscha Arenz */
 	{ "IBM",			"1860*",		"",	"", S3_BIOS|S3_MODE },
 	/* T30 */
@@ -244,6 +252,8 @@ struct machine_entry whitelist[] = {
 	   i do not dare to wildcard anything here :-( */
 	/* Aviv Ben-Yosef <aviv.by@gmail.com> */
 	{ "LENOVO",			"07686VG",	"3000 N100 *",	"", 0 },
+	/* Ted Percival <ted@midg3t.net> */
+	{ "LENOVO",			"07687MM",	"3000 N100 *",	"", S3_MODE },
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
@@ -301,6 +311,8 @@ struct machine_entry whitelist[] = {
 
 	/* Gregory Colpart <reg@evolix.fr> 'Transtec Levio 210' */
 	{ "transtec AG",		"MS-1057",		"",	"", S3_BIOS|S3_MODE },
+	/* Joachim Gleissner */
+	{ "transtec AG",		"MS-1034",		"",	"", S3_BIOS|S3_MODE },
 
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
@@ -370,7 +382,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2724*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2897*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// R50/p
-	{ "IBM",			"1829*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1830*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1831*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1832*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
