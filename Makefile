@@ -25,7 +25,7 @@ BINARIES_MIN=s2disk swap-offset
 S2RAM_OBJ=vt.o vbetool/x86-common.o vbetool/vbetool.o radeontool.o dmidecode.o
 SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o 
 
-S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci
+S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci -lz
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
 
 ifeq ($(ARCH), x86_64)
