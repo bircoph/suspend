@@ -38,7 +38,9 @@ is only possible if your box is present in the s2ram whitelist.
 
 To build the s2ram and s2both tools you will need the pciutils-devel
 (pciutils-dev) package which is necessary to compile the vbetool code
-(the vbetool code is based on vbetool-0.6-1.1 from Debian).
+(the vbetool code is based on vbetool-0.6-1.1 from Debian). With newer
+pciutils (2.2.4 and above) you also have to install the zlib development
+package (zlib-devel on SUSE, zlib1g-dev on Debian).
 
 For debugging, see http://www.opensuse.org/ACPI_Suspend_debugging and
 http://en.opensuse.org/S2ram .
