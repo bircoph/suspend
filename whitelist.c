@@ -28,6 +28,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"Aspire 3620",		"",	"", S3_BIOS|S3_MODE },
 	/* From: Witmaster <witmaster@op.pl> */
 	{ "Acer            ",		"Aspire 3690 *",	"",	"", S3_BIOS|S3_MODE },
+	/* From: "cj.yap" <chuanren.ye@gmail.com> */
+	{ "Acer, inc.",			"Aspire 5570 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer           ",		"TravelMate 240 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer           ",		"TravelMate C300",	"",	"", VBE_SAVE },
@@ -49,6 +51,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer, inc.",			"TravelMate 4100 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* From: Julien Puydt <jpuydt@free.fr> */
+	{ "ASUSTeK Computer Inc.",	"A2D       ",		"",	"", S3_BIOS|S3_MODE },
 	/* Cristian Rigamonti */
 	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
 	/* Patryk Zawadzki <patrys@icenter.pl> */
@@ -116,8 +120,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Latitude D520 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
-	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz> */
-	{ "Dell Inc.",			"Latitude D620 *",	"",	"", VBE_POST|VBE_SAVE },
+	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz>, <nicolae.mihalache@spaceapplications.com> */
+	{ "Dell Inc.",			"Latitude D620 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Computer Corporation",	"Latitude D800 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Johannes Engel <j-engel@gmx.de> */
 	{ "Dell Inc.",			"Latitude D820 *",	"",	"", VBE_POST|VBE_MODE },
@@ -201,6 +205,9 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard ",	"Pavilion zt3300 (PF083UA#*",	"",	"", 0 },
 	/* Karthik <molecularbiophysics@gmail.com> */
 	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"68BAL*", S3_BIOS },
+	/* A desktop with integrated graphics, Bo Thysell <thysell@fusemail.com> */
+	{ "HP Pavilion 061",		"EJ192AA-ABS t3250.se",	"",	"", 0 },
+
 	/* R51 confirmed by Christian Zoz and Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "IBM",			"",		"ThinkPad R51",	"", 0 },
 	/* R52, reported by Joscha Arenz */
@@ -240,6 +247,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
 	/* https://bugzilla.novell.com/show_bug.cgi?id=210928, note the small "p" in Thinkpad */
 	{ "LENOVO",			"",		"Thinkpad R60",	"", S3_BIOS|S3_MODE },
+	/* Marcus Better <marcus@better.se>, this time with a capital "P" */
+	{ "LENOVO",			"",		"ThinkPad R60",	"", S3_BIOS|S3_MODE },
 	/* From: gregor herrmann <gregor.herrmann@comodo.priv.at> */
 	{ "LENOVO",			"",		"Thinkpad R60e", "", S3_BIOS|S3_MODE },
 	/* At least 1709 series thinkpads can be whitelisted by name,
