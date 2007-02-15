@@ -137,10 +137,10 @@ install-conf: conf/$(CONFIGFILE)
 	fi
 
 install-resume:
-	install --mode=755 resume $(DESTDIR)$(RESUME_DIR)
+	install -D --mode=755 resume $(DESTDIR)$(RESUME_DIR)/resume
 
 install-% : %
-	install --mode=755 $< $(DESTDIR)$(SUSPEND_DIR)
+	install -D --mode=755 $< $(DESTDIR)$(SUSPEND_DIR)/$<
 
 # Some convenience targets
 install-resume-new-initrd:	resume conf/$(CONFIGFILE)
