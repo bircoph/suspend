@@ -45,6 +45,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 2410",	"",	"", S3_BIOS|S3_MODE },
 	/* Peter Stolz <p.stolz@web.de> */
 	{ "Acer",			"TravelMate 2420",	"",	"", S3_BIOS|S3_MODE },
+	/* Erki Ferenc <ferki@3rdparty.hu> */
+	{ "Acer            ",		"TravelMate 2450 ",	"",	"", 0 },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
 	/* From: LucaB <lbonco@tin.it> */
@@ -57,6 +59,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
 	/* Patryk Zawadzki <patrys@icenter.pl> */
 	{ "ASUSTeK Computer Inc. ",	"A6Km      ",		"",	"", 0 },
+	/* tias@ulyssis.org */
+	{ "ASUSTeK Computer Inc. ",	"A6U       ",		"",	"", VBE_POST|VBE_MODE },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
 	/* Manfred Tremmel, https://bugzilla.novell.com/show_bug.cgi?id=171107 */
@@ -258,6 +262,9 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60p",	"", S3_BIOS|S3_MODE },
 	/* T60 From: Jeff Nichols <jnichols@renkoo.net> and Kristofer Hallgren <kristofer.hallgren@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
+	/* Paul Wilkinson <pwilko@gmail.com> */
+	{ "LENOVO",			"",	"ThinkPad Z61p",	"", S3_BIOS|S3_MODE },
+	
 	/* LENOVO non-Thinkpads go here... */
 	/* these Lenovo 3000 N100 model 768 are available with different graphics chips, so
 	   i do not dare to wildcard anything here :-( */
