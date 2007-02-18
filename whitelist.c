@@ -18,10 +18,12 @@ struct machine_entry whitelist[] = {
 	/* Alexander Wirt */
 	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
 	/* Julien BLACHE jb@jblache.org */
-	{ "Apple Computer, Inc.",	"MacBookPro2,2",	"",	"", VBE_SAVE|VBE_MODE },
+	{ "Apple Computer, Inc.",	"MacBookPro2,2",	"",	"", VBE_POST|VBE_MODE },
 	/* Felix Rommel, https://bugzilla.novell.com/show_bug.cgi?id=228572 */
 	{ "Acer,Inc.",			"Aspire 1350",		"",	"", VBE_POST|VBE_MODE|NOFB },
 	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* Ricardo Garcia <sarbalap+freshmeat@gmail.com> */
+	{ "Acer, inc.",			"Aspire 3000 *",	"",	"", VBE_POST|VBE_MODE },
 	/* From: Bontemps Camille <camille.bontemps@gmail.com> */
 	{ "Acer",			"Aspire 3610",		"",	"", S3_BIOS|S3_MODE },
 	/* From: Saul Mena Avila <saul_2110@yahoo.com.mx> */
@@ -342,7 +344,6 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 660*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Acer",			"Aspire 2000*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Acer, inc.",			"TravelMate 8100*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Acer, inc.",			"Aspire 3000*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 700m*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 1200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Dell Inc.",			"Inspiron 6000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
