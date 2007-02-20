@@ -163,6 +163,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK T4010",	"",	"", S3_BIOS|S3_MODE },
+	/* Tomas Pospisek <tpo@sourcepole.ch> */
+	{ "Fujitsu Siemens",		"P6VAP-AP",		"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_MODE },
@@ -266,6 +268,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
 	/* Paul Wilkinson <pwilko@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad Z61p",	"", S3_BIOS|S3_MODE },
+	/* Z61m From: Roderick Schertler <roderick@argon.org> */
+	{ "LENOVO",			"",	"ThinkPad Z61m",	"", S3_BIOS|S3_MODE },
 	
 	/* LENOVO non-Thinkpads go here... */
 	/* these Lenovo 3000 N100 model 768 are available with different graphics chips, so
@@ -299,6 +303,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",		"Portable PC",	"Version 1.0",	"Version 7.80", S3_MODE },
 	/* Alan Mycroft <Alan.Mycroft@cl.cam.ac.uk> */
 	{ "TOSHIBA",			"PORTEGE M300",		"",	"", S3_MODE },
+	/* Mathieu Lacage <mathieu.lacage@sophia.inria.fr> */
+	{ "TOSHIBA",			"PORTEGE R100",		"",	"", 0 },
 	{ "TOSHIBA",			"Satellite A30",	"",	"", VBE_SAVE },
 	/* Diego Ocampo <diegoocampo8@gmail.com> */
 	{ "TOSHIBA",			"Satellite A80",	"",	"", 0 },
