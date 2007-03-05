@@ -78,6 +78,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.        ",	"S5N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS V6V, Johannes Engel <j-engel@gmx.de> */
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
+	/* ASUS W5A, Riccardo Sama' <riccardo.sama@yetopen.it> */
+	{ "ASUSTeK Computer Inc.        ",	"W5A       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-(
@@ -91,6 +93,9 @@ struct machine_entry whitelist[] = {
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	/* Gilles Grandou <gilles@grandou.net> */
 	{ "CLEVO",			"D500P",		"",	"", VBE_POST|NOFB },
+	/* This Armada m300, reported by benoit.monin@laposte.net seems not to have a useful
+	   model description, so to make sure i also added the bios_version */
+	{ "Compaq",			"Armada                                     ",	"",	"1.35", 0 },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
@@ -183,6 +188,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* Winfried Dobbe, https://bugzilla.novell.com/show_bug.cgi?id=159688 */
 	{ "Hewlett-Packard",		"HP Compaq nc6120 *",	"",	"", VBE_POST|VBE_MODE },
+	/* Niv aharonovich <niv.kaha@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq nx6120 *",	"",	"68DTD*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nx6125 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
 	/* Michael Biebl <biebl@teco.edu> */
@@ -192,6 +199,8 @@ struct machine_entry whitelist[] = {
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
+	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
+	{ "Hewlett-Packard ",		"Presario R3000 *",	"",	"", S3_BIOS|S3_MODE },
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
@@ -220,6 +229,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad R51",	"", 0 },
 	/* R52, reported by Joscha Arenz */
 	{ "IBM",			"1860*",		"",	"", S3_BIOS|S3_MODE },
+	/* R51e, reported by nemec.jiri@gmail.com */
+	{ "IBM",			"",	"ThinkPad R51e",	"", S3_BIOS|S3_MODE },
 	/* T30 */
 	{ "IBM",			"2366*",		"",	"", RADEON_OFF },
 	/* X22, confirmed by Richard Neill */
@@ -331,6 +342,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-FS215B",	"",	"", 0 },
 	/* Joseph Smith <joe@uwcreations.com> */
 	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
+	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
+	{ "Sony Corporation",		"PCG-FX405*",		"",	"", S3_BIOS },
 	/* Stefan Nobis <stefan@snobis.de> */
 	{ "Sony Corporation",		"PCG-FX601*",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
