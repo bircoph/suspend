@@ -142,10 +142,14 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"ME051 *",		"",	"", 0 },
 	/* Dell Inspiron E1702, Julian Krause <suspend@thecrypto.org> */
 	{ "Dell Inc.",			"MP061 *",		"",	"", 0 },
+	/* Dell Inspiron E1705, Paul Hummel <paulhummel@gmail.com> */
+	{ "Dell Inc.",			"MP061",		"",	"", 0 },
 	/* Dell Inspiron 630m, Fredrik Edemar */
 	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
 	/* Dell Inspiron 640m, Daniel Drake <dsd@gentoo.org> */
 	{ "Dell Inc.",			"MXC061 *",		"",	"", VBE_POST },
+	/* Desktop with Intel graphics, Sitsofe Wheeler <sitsofe@yahoo.com> */
+	{ "Dell Inc.                ",	"OptiPlex GX520 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
 	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
 	/* Allen <ducalen@sympatico.ca>, Desktop with onboard grephics */
