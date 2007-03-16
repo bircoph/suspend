@@ -587,10 +587,14 @@ int write_image(int snapshot_fd, int resume_fd)
 		max_block_size = page_size;
 		if (compute_checksum)
 			header->image_flags |= IMAGE_CHECKSUM;
+
 		if (compress) {
 			header->image_flags |= IMAGE_COMPRESSED;
 			max_block_size += sizeof(short);
 		}
+		if (use_platform_suspend)
+			header->image_flags |= PLATFORM_SUSPEND;
+
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
 			if (use_RSA) {
@@ -719,9 +723,9 @@ static int reset_signature(int fd)
 
 static void suspend_shutdown(int snapshot_fd)
 {
-	if (!strcmp(shutdown_method, "reboot"))
+	if (!strcmp(shutdown_method, "reboot")) {
 		reboot();
-	else if (use_platform_suspend) {
+	} else if (use_platform_suspend) {
 		int ret = platform_enter(snapshot_fd);
 		if (ret < 0)
 			fprintf(stderr, "suspend: pm_ops->enter returned"
@@ -763,9 +767,11 @@ int suspend_system(int snapshot_fd, int resume_fd)
 
 	if (use_platform_suspend) {
 		int ret = platform_prepare(snapshot_fd);
-		if (ret < 0)
+		if (ret < 0) {
 			fprintf(stderr, "suspend: pm_ops->prepare returned "
 				"error %d\n", ret);
+			use_platform_suspend = 0;
+		}
 	}
 
 	printf("suspend: Snapshotting system\n");
@@ -781,8 +787,6 @@ int suspend_system(int snapshot_fd, int resume_fd)
 				printf("\e[13]");
 				printf("suspend: returned to userspace\n");
 				free_snapshot(snapshot_fd);
-				if (use_platform_suspend)
-					platform_finish(snapshot_fd);
 				break;
 			}
 			error = write_image(snapshot_fd, resume_fd);
@@ -821,8 +825,9 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		}
 	} while (--attempts);
 
-	/* we only get here when we failed to suspend.
-	   Remember, suspend_shutdown() never returns! */
+	/* We get here during the resume or when we failed to suspend.
+	 * Remember, suspend_shutdown() never returns!
+	 */
 	if (use_platform_suspend)
 		platform_finish(snapshot_fd);
 

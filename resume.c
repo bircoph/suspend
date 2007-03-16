@@ -55,6 +55,7 @@ static char decrypt;
 #define decrypt 0
 #endif
 static char splash_param;
+static int use_platform_suspend;
 
 static struct splash splash;
 
@@ -575,7 +576,10 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	error = read_area(fd, header, swsusp_header->image, page_size);
 
 	if (!error) {
-		if(header->image_flags & IMAGE_CHECKSUM) {
+		if (header->image_flags & PLATFORM_SUSPEND)
+			use_platform_suspend = 1;
+
+		if (header->image_flags & IMAGE_CHECKSUM) {
 			memcpy(orig_checksum, header->checksum, 16);
 			printf("resume: MD5 checksum %s\n",
 				print_checksum(buffer, orig_checksum));
@@ -866,7 +870,19 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "resume: Could not freeze processes\n");
 		goto Close_splash;
 	}
+	if (use_platform_suspend) {
+		int ret = platform_prepare(dev);
+		if (ret < 0) {
+			fprintf(stderr, "resume: pm_ops->prepare returned "
+				"error %d\n", ret);
+			use_platform_suspend = 0;
+		}
+	}
 	atomic_restore(dev);
+	/* We only get here if the atomic restore fails.  Clean up. */
+	if (use_platform_suspend)
+		platform_finish(dev);
+
 	unfreeze(dev);
 
 Close_splash:

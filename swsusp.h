@@ -82,6 +82,7 @@ struct swsusp_info {
 #define IMAGE_COMPRESSED	0x0002
 #define IMAGE_ENCRYPTED		0x0004
 #define IMAGE_USE_RSA		0x0008
+#define PLATFORM_SUSPEND	0x0010
 
 #define SWSUSP_SIG	"ULSUSPEND"
 
