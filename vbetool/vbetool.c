@@ -8,10 +8,10 @@ This program is released under the terms of the GNU General Public License,
 version 2
 */
 
-#include <stdlib.h>
 #include <pci/pci.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -21,7 +21,7 @@ version 2
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "include/lrmi.h"
+#include <libx86.h>
 #include "vbetool.h"
 
 #define access_ptr_register(reg_frame,reg) (reg_frame -> reg)
@@ -54,9 +54,12 @@ void vbetool_init(void)
 #ifndef S2RAM
 int main(int argc, char *argv[])
 {
+	/* Don't bother checking for privilege if they only want usage() */
 	if (argc < 2)
 		goto usage;
+	
 	vbetool_init();
+	
 	if (!strcmp(argv[1], "vbestate")) {
 		/* VBE save/restore tends to break when done underneath X */
 		int err = check_console();
@@ -117,7 +120,7 @@ int main(int argc, char *argv[])
 			return disable_vga();
 		}
 	} else if (!strcmp(argv[1], "vbefp")) {
-		if (!strcmp(argv[2], "id")) {
+		if (!strcmp(argv[2], "id") || !strcmp(argv[2], "panelid")) {
 			return do_get_panel_id(0);
 		} else if (!strcmp(argv[2], "panelsize")) {
 			return do_get_panel_id(1);
@@ -379,11 +382,6 @@ int do_set_mode (int mode, int vga) {
 	return 0;
 }
 
-void set_vbe_mode(int mode)
-{
-	do_set_mode(mode, 0);
-}
-
 int do_get_panel_brightness() {
 	reg_frame regs;
 	int error;
@@ -524,7 +522,7 @@ int do_get_panel_id(int just_dimensions)
   r.edi = (unsigned long)(id-LRMI_base_addr()) & 0xf;
 
   if(sizeof(struct panel_id) != 32)
-    return fprintf(stderr, "oops: panel_id, sizeof struct panel_id != 32, it's %d...\n", sizeof(struct panel_id)), 7;
+    return fprintf(stderr, "oops: panel_id, sizeof struct panel_id != 32, it's %ld...\n", sizeof(struct panel_id)), 7;
 
   if(real_mode_int(0x10, &r))
     return fprintf(stderr, "Can't get panel id (vm86 failure)\n"), 8;

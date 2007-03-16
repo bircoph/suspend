@@ -3,6 +3,7 @@
 #CONFIG_SPLASHY=yes
 #CONFIG_UDEV=yes
 #CONFIG_RESUME_DYN=yes
+#CONFIG_EMBEDDED_LIBX86=yes
 
 SUSPEND_DIR=/usr/local/sbin
 RESUME_DIR=/usr/local/lib/suspend
@@ -19,6 +20,10 @@ ARCH:=$(shell uname -m)
 CC_FLAGS=-I/usr/local/include -DS2RAM $(CFLAGS)
 LD_FLAGS=-L/usr/local/lib
 
+ifdef CONFIG_EMBEDDED_LIBX86
+CC_FLAGS += -Ilibx86/
+endif
+
 BINARIES=s2disk s2both s2ram swap-offset resume
 BINARIES_MIN=s2disk swap-offset
 
@@ -27,12 +32,6 @@ SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o
 
 S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci -lz
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
-
-ifeq ($(ARCH), x86_64)
-S2RAM_OBJ+=vbetool/thunk.o vbetool/x86emu/libx86emu.a 
-else
-S2RAM_OBJ+=vbetool/lrmi.o
-endif
 
 ifndef CONFIG_RESUME_DYN
 STATIC_LD_FLAGS = -static
@@ -73,16 +72,25 @@ STATIC_CC_FLAGS=$(shell directfb-config --cflags)\
 endif
 endif
 
+###
+ifdef CONFIG_EMBEDDED_LIBX86
+ifeq ($(ARCH), x86_64)
+LIBX86_MAKE = BACKEND=x86emu
+endif
+
+S2RAM_OBJ += libx86/libx86.a 
+else
+S2RAM_LD_FLAGS += -lx86
+endif
+
 all: $(BINARIES)
 
 clean:
-	rm -f $(BINARIES) suspend-keygen suspend.keys *.o vbetool/*.o vbetool/x86emu/*.o vbetool/x86emu/*.a
+	make -C libx86 clean || true
+	rm -f $(BINARIES) suspend-keygen suspend.keys *.o vbetool/*.o
 
 
 #### Rules for objects
-vbetool/x86emu/libx86emu.a:
-	make -C vbetool/x86emu -f makefile.linux
-
 s2ram-both.o: s2ram.c s2ram.h whitelist.c
 	$(CC) $(CC_FLAGS) -DCONFIG_BOTH -c $< -o $@
 
@@ -97,7 +105,14 @@ config.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/x86-common.o vbetool
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 # Simple object without header
-vbetool/lrmi.o vbetool/thunk.o dmidecode.o radeontool.o : %.o: %.c
+dmidecode.o radeontool.o : %.o: %.c
+	$(CC) $(CC_FLAGS) -c $< -o $@
+
+libx86/libx86.a:
+	ln -sf lrmi.h libx86/libx86.h
+	make -C libx86 $(LIBX86_MAKE) static
+
+libx86/lrmi.o libx86/thunk.o: %.o: %.c
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 

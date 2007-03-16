@@ -20,4 +20,3 @@ void vbetool_init(void);
 char *__save_state(int *);
 void restore_state_from(char *);
 int __get_mode(void);
-void set_vbe_mode(int);

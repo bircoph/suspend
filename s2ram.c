@@ -291,7 +291,7 @@ void s2ram_resume(void)
 	if (vbe_mode >= 0) {
 		vbetool_init();
 		printf("Calling set_vbe_mode\n");
-		set_vbe_mode(vbe_mode);
+		do_set_mode(vbe_mode, 0);
 	}
 	if (flags & RADEON_OFF) {
 		printf("Calling radeon_cmd_light(1)\n");

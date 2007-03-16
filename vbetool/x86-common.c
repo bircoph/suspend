@@ -33,8 +33,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "include/lrmi.h"
 
-#define REAL_MEM_BASE 	((void *)0x1000)
-#define REAL_MEM_SIZE 	0xa0000
+#define REAL_MEM_BASE 	((void *)0x10000)
+#define REAL_MEM_SIZE 	0x90000
 #define REAL_MEM_BLOCKS 	0x100
 
 struct mem_block {
