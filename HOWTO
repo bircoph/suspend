@@ -15,9 +15,10 @@ I. Quick start
 
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
-(e) [optionally] Marc Lehmann's libLZF library (for image compression)
-(f) [optionally] libgcrypt (for image encryption)
-(g) [optionally] libsplashy (for user space splash)
+(e) libx86, a hardware-independent library for executing real-mode x86 code
+(f) [optionally] Marc Lehmann's libLZF library (for image compression)
+(g) [optionally] libgcrypt (for image encryption)
+(h) [optionally] libsplashy (for user space splash)
 
 2) Basic steps
 
@@ -41,7 +42,23 @@ installation script provided in this package.
 The kernel installation procedure will depend on what Linux distribution
 you use and should be documented elsewhere.
 
-(b) [optionally] Install the Marc Lehmann's libLZF library
+(b) Install libx86 developement packages
+
+If libx86 is not installed on your system (Debian: libx86-dev) you can download
+the tarball from http://www.codon.org.uk/~mjg59/libx86/downloads/. Unpack it,
+change into the resulting directory. Then run
+
+$ make
+
+or if you're building for an x86_64 
+
+$ make BACKEND=x86emu
+
+Next, become root and run
+
+# make install DESTDIR=/usr/local
+
+(c) [optionally] Install the Marc Lehmann's libLZF library
 
 If you want to use the image compression functionality and libLZF it's not
 installed on your system, download the tarball from
@@ -58,7 +75,7 @@ Next, become root and run
 [This will put the lzf.h file into /usr/local/include, the library
 into /usr/local/lib, and the lzf binary into /usr/local/bin.]
 
-(c) [optionally] Install libgrypt
+(d) [optionally] Install libgrypt
 
 If you want to use the image encryption functionality of the suspend
 tools, you'll need libgcrypt to build them.  If you have installed

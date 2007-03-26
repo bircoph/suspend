@@ -37,17 +37,12 @@ can resume the system from disk using the resume tool otherwise  However, this
 is only possible if your box is present in the s2ram whitelist.
 
 To build the s2ram and s2both tools you will need the pciutils-devel
-(pciutils-dev) package and the libx86 which are necessary to compile the
-vbetool code (the vbetool code is based on vbetool-1.0 from 
+(pciutils-dev) package and the libx86-dev package (which you can get from 
+http://www.codon.org.uk/~mjg59/libx86/downloads/). They are necessary to 
+compile the vbetool code (the vbetool code is based on vbetool-1.0 from 
 http://www.codon.org.uk/~mjg59/vbetool/). With newer pciutils (2.2.4 and
 above) you also have to install the zlib development package (zlib-devel on
 SUSE, zlib1g-dev on Debian).
-You can build against a system wide installed libx86 or against an locally
-unpacked tarball inside the suspend source directory. To build against the
-locally unpacked tarball, get it from http://www.codon.org.uk/~mjg59/libx86,
-unpack it inside the suspend directory and create a link to that directory
-with "ln -s libx86-0.99 libx86". Then edit the Makefile and uncomment the
-CONFIG_EMBEDDED_LIBX86=yes line.
 
 For debugging, see http://www.opensuse.org/ACPI_Suspend_debugging and
 http://en.opensuse.org/S2ram .

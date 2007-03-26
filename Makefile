@@ -3,7 +3,6 @@
 #CONFIG_SPLASHY=yes
 #CONFIG_UDEV=yes
 #CONFIG_RESUME_DYN=yes
-#CONFIG_EMBEDDED_LIBX86=yes
 
 SUSPEND_DIR=/usr/local/sbin
 RESUME_DIR=/usr/local/lib/suspend
@@ -20,17 +19,13 @@ ARCH:=$(shell uname -m)
 CC_FLAGS=-I/usr/local/include -DS2RAM $(CFLAGS)
 LD_FLAGS=-L/usr/local/lib
 
-ifdef CONFIG_EMBEDDED_LIBX86
-CC_FLAGS += -Ilibx86/
-endif
-
 BINARIES=s2disk s2both s2ram swap-offset resume
 BINARIES_MIN=s2disk swap-offset
 
-S2RAM_OBJ=vt.o vbetool/x86-common.o vbetool/vbetool.o radeontool.o dmidecode.o
+S2RAM_OBJ=vt.o vbetool/vbetool.o radeontool.o dmidecode.o
 SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o 
 
-S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci -lz
+S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci -lz -lx86
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
 
 ifndef CONFIG_RESUME_DYN
@@ -72,23 +67,12 @@ STATIC_CC_FLAGS=$(shell directfb-config --cflags)\
 endif
 endif
 
-###
-ifdef CONFIG_EMBEDDED_LIBX86
-ifeq ($(ARCH), x86_64)
-LIBX86_MAKE = BACKEND=x86emu
-endif
 
-S2RAM_OBJ += libx86/libx86.a 
-else
-S2RAM_LD_FLAGS += -lx86
-endif
 
-all: $(BINARIES)
+all: $(BINARIES) 
 
-clean:
-	make -C libx86 clean || true
+clean: 
 	rm -f $(BINARIES) suspend-keygen suspend.keys *.o vbetool/*.o
-
 
 #### Rules for objects
 s2ram-both.o: s2ram.c s2ram.h whitelist.c
@@ -101,20 +85,12 @@ md5.o encrypt.o: %.o : %.c %.h md5.h
 	$(CC) $(CC_FLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c $< -o $@
 
 # Simple objects with header
-config.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/x86-common.o vbetool/vbetool.o: %.o : %.c %.h
+config.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/vbetool.o: %.o : %.c %.h
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 # Simple object without header
 dmidecode.o radeontool.o : %.o: %.c
 	$(CC) $(CC_FLAGS) -c $< -o $@
-
-libx86/libx86.a:
-	ln -sf lrmi.h libx86/libx86.h
-	make -C libx86 $(LIBX86_MAKE) static
-
-libx86/lrmi.o libx86/thunk.o: %.o: %.c
-	$(CC) $(CC_FLAGS) -c $< -o $@
-
 
 #### Rules for binaries
 s2disk:	$(SWSUSP_OBJ) suspend.c
@@ -169,3 +145,4 @@ install-minimal: $(patsubst %,install-%,$(BINARIES_MIN)) $(SNAPSHOT) install-con
 install: $(patsubst %,install-%,$(BINARIES)) $(SNAPSHOT) install-conf
 
 
+.PHONY: clean install install-minimal install-resume-on-initrd install-resume-new-initrd
