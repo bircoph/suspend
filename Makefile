@@ -64,6 +64,8 @@ STATIC_LD_FLAGS += -lsplashycnf \
 		$(shell pkg-config --static --libs glib-2.0)
 STATIC_CC_FLAGS=$(shell directfb-config --cflags)\
 		$(shell pkg-config --static --cflags glib-2.0)
+else
+SWSUSP_LD_FLAGS += -lgcc_s
 endif
 endif
 
