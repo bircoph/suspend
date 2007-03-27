@@ -164,6 +164,9 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	/* reported by Thomas Halva Labella <hlabella@ulb.ac.be> */
 	{ "FUJITSU SIEMENS",		"Amilo A7645 ",		"",	"", VBE_SAVE|S3_BIOS|S3_MODE },
+	/* Reiner Herrmann <reiner@reiner-h.de>, this one realls needs VBE_SAVE
+	   since there are many different models of the "AMILO M" series, i do a very exact match */
+	{ "FUJITSU SIEMENS",		"AMILO M        ",	"-1 *",	"R01-S0Z *", VBE_POST|VBE_SAVE },
 	/* Markus Meyer <markus.meyer@koeln.de>, Christian Illy <christian.illy@gmx.de> */
 	{ "FUJITSU SIEMENS",		"Amilo Si 1520",	"",	"", S3_BIOS|S3_MODE },
 	/* Aleksandar Markovic <acojlo@gmail.com> */
@@ -177,6 +180,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
 	/* This is a desktop with onboard i810 video */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_MODE },
+	/* Christoph Wiesmeyr <christoph.wiesmeyr@liwest.at> */
+	{ "GERICOM",			"259IA1",		"",	"", 0 },
 	/* From: Einon <einon@animehq.hu>, seems to work only from X :-( */
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
@@ -184,6 +189,8 @@ struct machine_entry whitelist[] = {
 
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
+	/* Rene Seindal <rene@seindal.dk> */
+	{ "Hewlett-Packard",		"HP Compaq nc4400*",	"",	"68YHV*", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	/* there seem to be versions with a " " after Hewlett-Packard and without. */
@@ -200,6 +207,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard ",		"HP compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* François Münch <francois.munch@free.fr> */
 	{ "Hewlett-Packard ",		"Compaq nx 7010 (PG588EA#*","",	"", S3_BIOS },
+	/* Valent Turkovic <valent.turkovic@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq nx7300 (RU374ES#*",	"",	"", VBE_POST|VBE_MODE },
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
@@ -333,6 +342,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
 	/* From: Jim <jim.t@vertigo.net.au> */
 	{ "TOSHIBA",			"SatellitePro4600",	"",	"", 0 },
+	/* Bram Senders <bram@luon.net> */
+	{ "TOSHIBA",			"SP4600",	"Version 1.0",	"", 0 },
 	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
 	/* Stefan Seyfried has one of those :-) S3_BIOS leads to "melting screen" */
 	{ "TOSHIBA",			"TECRA 8200",		"",	"", S3_MODE },
@@ -346,11 +357,18 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-FS215B",	"",	"", 0 },
 	/* Joseph Smith <joe@uwcreations.com> */
 	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
+	/* 2xMattia Dongili <malattia@linux.it> */
+	{ "Sony Corporation",		"VGN-SZ72B_B",		"",	"", VBE_MODE },
+	{ "Sony Corporation",		"VGN-UX50",		"",	"", VBE_MODE },
+	/* Stephan Martin <stephan.martin@open-xchange.com> */
+	{ "Sony Corporation",		"VGN-TX3XP_L",		"",	"", S3_BIOS|S3_MODE },
 	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "Sony Corporation",		"PCG-FX405*",		"",	"", S3_BIOS },
 	/* Stefan Nobis <stefan@snobis.de> */
 	{ "Sony Corporation",		"PCG-FX601*",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
+	/* Mattia Dongili <malattia@linux.it> */
+	{ "Sony Corporation    ",	"PCG-GR7_K(J)        ",	"",	"", 0 },
 
 	/* Gregory Colpart <reg@evolix.fr> 'Transtec Levio 210' */
 	{ "transtec AG",		"MS-1057",		"",	"", S3_BIOS|S3_MODE },
