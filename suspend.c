@@ -49,6 +49,11 @@
 #include "s2ram.h"
 #endif
 
+#define suspend_error(msg, args...) \
+do { \
+	fprintf(stderr, "suspend: " msg " Reason: %m\n", ## args); \
+} while (0);
+
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static loff_t resume_offset;
@@ -729,7 +734,7 @@ static void suspend_shutdown(int snapshot_fd)
 		int ret = platform_enter(snapshot_fd);
 		if (ret < 0)
 			fprintf(stderr, "suspend: pm_ops->enter returned"
-				" error %d, calling power_off\n", ret);
+				" error %d, calling power_off\n", errno);
 	}
 	power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
@@ -769,7 +774,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		int ret = platform_prepare(snapshot_fd);
 		if (ret < 0) {
 			fprintf(stderr, "suspend: pm_ops->prepare returned "
-				"error %d\n", ret);
+				"error %d\n", errno);
 			use_platform_suspend = 0;
 		}
 	}
@@ -906,13 +911,13 @@ static int prepare_console(int *orig_vc, int *new_vc)
 		return fd;
 	error = ioctl(fd, VT_ACTIVATE, vt);
 	if (error) {
-		fprintf(stderr, "Could not activate the VT %d\n", vt);
+		suspend_error("Could not activate the VT %d.", vt);
 		fflush(stderr);
 		goto Close_fd;
 	}
 	error = ioctl(fd, VT_WAITACTIVE, vt);
 	if (error) {
-		fprintf(stderr, "VT %d activation failed\n", vt);
+		suspend_error("VT %d activation failed.", vt);
 		fflush(stderr);
 		goto Close_fd;
 	}
@@ -932,8 +937,8 @@ static int prepare_console(int *orig_vc, int *new_vc)
 		tiocl[0] = TIOCL_SETKMSGREDIRECT;
 		tiocl[1] = vt;
 		if (ioctl(fd, TIOCLINUX, tiocl)) {
-			fprintf(stderr, "Failed to redirect kernel messages to VT %d\n"
-					"Reason: %s\n", vt, strerror(errno));
+			suspend_error("Failed to redirect kernel messages "
+				"to VT %d.", vt);
 			fflush(stderr);
 			set_kmsg_redirect = 0;
 		}
@@ -956,13 +961,13 @@ static void restore_console(int fd, int orig_vc)
 
 	error = ioctl(fd, VT_ACTIVATE, orig_vc);
 	if (error) {
-		fprintf(stderr, "Could not activate the VT %d\n", orig_vc);
+		suspend_error("Could not activate the VT %d.", orig_vc);
 		fflush(stderr);
 		goto Close_fd;
 	}
 	error = ioctl(fd, VT_WAITACTIVE, orig_vc);
 	if (error) {
-		fprintf(stderr, "VT %d activation failed\n", orig_vc);
+		suspend_error("VT %d activation failed.", orig_vc);
 		fflush(stderr);
 	}
 	if (set_kmsg_redirect) {
@@ -1233,7 +1238,7 @@ int main(int argc, char *argv[])
 		ret = open("/dev/null", O_RDWR);
 		if (ret < 0) {
 			ret = errno;
-			fprintf(stderr, "suspend: Could not open /dev/null\n");
+			suspend_error("Could not open /dev/null.");
 			return ret;
 		}
 	} while (ret < 3);
@@ -1272,7 +1277,7 @@ int main(int argc, char *argv[])
 	mem_pool = malloc(mem_size);
 	if (!mem_pool) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not allocate memory\n");
+		suspend_error("Could not allocate memory.");
 		return ret;
 	}
 #ifdef CONFIG_ENCRYPT
@@ -1300,20 +1305,20 @@ int main(int argc, char *argv[])
 
 	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not lock myself\n");
+		suspend_error("Could not lock myself.");
 		return ret;
 	}
 
 	snprintf(chroot_path, MAX_STR_LEN, "/proc/%d", getpid());
 	if (mount("none", chroot_path, "tmpfs", 0, NULL)) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not mount tmpfs on %s\n", chroot_path);
+		suspend_error("Could not mount tmpfs on %s.", chroot_path);
 		return ret;
 	}
 
 	ret = 0;
 	if (stat(resume_dev_name, &stat_buf)) {
-		fprintf(stderr, "suspend: Could not stat the resume device file\n");
+		suspend_error("Could not stat the resume device file.");
 		ret = ENODEV;
 		goto Umount;
 	}
@@ -1324,26 +1329,25 @@ int main(int argc, char *argv[])
 	}
 	if (chdir(chroot_path)) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not change directory to %s\n",
+		suspend_error("Could not change directory to %s.",
 			chroot_path);
 		goto Umount;
 	}
 	resume_dev = stat_buf.st_rdev;
 	if (mknod("resume", S_IFBLK | 0600, resume_dev)) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not create %s/%s\n",
-			chroot_path, "resume");
+		suspend_error("Could not create %s/%s.", chroot_path, "resume");
 		goto Umount;
 	}
 	resume_fd = open("resume", O_RDWR);
 	if (resume_fd < 0) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not open the resume device\n");
+		suspend_error("Could not open the resume device.");
 		goto Umount;
 	}
 
 	if (stat(snapshot_dev_name, &stat_buf)) {
-		fprintf(stderr, "suspend: Could not stat the snapshot device file\n");
+		suspend_error("Could not stat the snapshot device file.");
 		ret = ENODEV;
 		goto Close_resume_fd;
 	}
@@ -1356,21 +1360,21 @@ int main(int argc, char *argv[])
 	snapshot_fd = open(snapshot_dev_name, O_RDONLY);
 	if (snapshot_fd < 0) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not open the snapshot device\n");
+		suspend_error("Could not open the snapshot device.");
 		goto Close_resume_fd;
 	}
 
 	if (set_swap_file(snapshot_fd, resume_dev, resume_offset)) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not use the resume device "
-			"(try swapon -a)\n");
+		suspend_error("Could not use the resume device "
+			"(try swapon -a).");
 		goto Close_snapshot_fd;
 	}
 
 	vt_fd = prepare_console(&orig_vc, &suspend_vc);
 	if (vt_fd < 0) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not open a virtual terminal\n");
+		suspend_error("Could not open a virtual terminal.");
 		goto Close_snapshot_fd;
 	}
 
@@ -1378,7 +1382,7 @@ int main(int argc, char *argv[])
 
 	if (lock_vt() < 0) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not lock the terminal\n");
+		suspend_error("Could not lock the terminal.");
 		goto Restore_console;
 	}
 
@@ -1435,7 +1439,7 @@ Close_resume_fd:
 Umount:
 	if (chdir("/")) {
 		ret = errno;
-		fprintf(stderr, "suspend: Could not change directory to /\n");
+		suspend_error("Could not change directory to /");
 	} else {
 		umount(chroot_path);
 	}
