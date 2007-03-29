@@ -171,6 +171,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Amilo Si 1520",	"",	"", S3_BIOS|S3_MODE },
 	/* Aleksandar Markovic <acojlo@gmail.com> */
 	{ "FUJITSU SIEMENS",		"AMILO PRO V2030",	"",	"", VBE_POST|VBE_MODE },
+	/* Florian Herrmann <florian-herrmann@gmx.de> */
+	{ "FUJITSU SIEMENS",		"AMILO Pro V2040",	"",	"", 0 },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
@@ -316,6 +318,8 @@ struct machine_entry whitelist[] = {
 	/* Hugo Costelha */
 	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
 
+	/* Jeremie Delaitre <jeremie.delaitre@gmail.com> */
+	{ "SAMSUNG ELECTRONICS CO., LTD.",	"Q35/Q36",	"",	"", S3_BIOS|S3_MODE },
 	/* Daniel Koester <koester@math.uni-augsburg.de> does not yet work from text mode */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R55S *",	"",	"", 0 },
 	/* Stephen Denham <stephen.denham@gmail.com> */
