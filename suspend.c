@@ -204,7 +204,7 @@ static inline int free_swap_pages(int dev)
 	return ioctl(dev, SNAPSHOT_FREE_SWAP_PAGES, 0);
 }
 
-static inline int set_swap_file(int dev, dev_t blkdev, loff_t offset)
+static inline int set_swap_file(int dev, u_int32_t blkdev, loff_t offset)
 {
 	struct resume_swap_area swap;
 	int error;
