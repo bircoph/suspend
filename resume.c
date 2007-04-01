@@ -746,11 +746,12 @@ static inline int get_config(int argc, char *argv[])
 	char *conf_name = CONFIG_FILE;
 	int set_off = 0;
 	unsigned long long int off = 0;
+	const char *optstring = "hf:o:";
 
-	while ((i = getopt_long(argc, argv, "hf:o:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
-			usage("resume", options);
+			usage("resume", options, optstring);
 			exit(EXIT_SUCCESS);
 		case 'f':
 			conf_name = optarg;
@@ -760,7 +761,7 @@ static inline int get_config(int argc, char *argv[])
 			set_off = 1;
 			break;
 		default:
-			usage("resume", options);
+			usage("resume", options, optstring);
 			return -EINVAL;
 		}
 	}

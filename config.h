@@ -21,6 +21,6 @@ struct config_par {
 
 int parse(char *my_name, char *file_name, int parc, struct config_par *parv);
 
-void usage(char *my_name, struct option options[]);
+void usage(char *my_name, struct option options[], const char *short_options);
 
 #define CONFIG_FILE	"/etc/suspend.conf"

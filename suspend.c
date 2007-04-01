@@ -1182,11 +1182,12 @@ static inline int get_config(int argc, char *argv[])
 	unsigned long long int off = 0;
 	int set_size = 0;
 	unsigned long int im_size = 0;
+	const char *optstring="hf:s:o:";
 
-	while ((i = getopt_long(argc, argv, "hf:s:o:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
-			usage("suspend", options);
+			usage("suspend", options, optstring);
 			exit(0);
 		case 'f':
 			conf_name = optarg;
@@ -1200,7 +1201,7 @@ static inline int get_config(int argc, char *argv[])
 			set_off = 1;
 			break;
 		default:
-			usage("suspend", options);
+			usage("suspend", options, optstring);
 			return -EINVAL;
 		}
 	}
