@@ -25,10 +25,10 @@ static unsigned char vga_pci_state[256];
 static struct pci_dev vga_dev;
 static struct pci_access *pacc;
 /* Flags set from whitelist */
-static int flags, vbe_mode = -1;
+static int flags = 0, force = 0, vbe_mode = -1;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
-/* return codes for s2ram_prepare */
+/* return codes for s2ram_is_supported */
 #define S2RAM_OK	0
 #define S2RAM_FAIL	1
 #define S2RAM_NOFB	126
@@ -229,18 +229,21 @@ int s2ram_hacks(void)
 	return 0;
 }
 
-int s2ram_prepare(void)
+int s2ram_is_supported(void)
 {
-	int ret, id;
+	int ret = 0, id;
 
-	dmi_scan();
-	id = machine_match();
-	ret = s2ram_check(id);
+	if (flags && !force) {
+		printf("acpi_sleep, vbe_save, vbe_post, radeontool and pci_save"
+			" parameter must be used with --force\n\n");
+		return EINVAL;
+	}
 
-	if (ret)
-		return ret;
-
-	ret = s2ram_hacks();
+	if (!force) {
+		dmi_scan();
+		id = machine_match();
+		ret = s2ram_check(id);
+	} 
 
 	return ret;
 }
@@ -299,6 +302,43 @@ void s2ram_resume(void)
 	}
 }
 
+void s2ram_add_flag(int opt, const char *opt_arg)
+{
+	/* The characters are the `deprecated' short options. They will not
+	 * clash with the new labels untill we reach quirk 65... */
+	switch (opt) {
+		case 1:
+		case 'f':
+			force = 1;
+			break;
+		case 2:
+		case 's':
+			flags |= VBE_SAVE;
+			break;
+		case 3:
+		case 'p':
+			flags |= VBE_POST;
+			break;
+		case 4:
+		case 'm':
+			flags |= VBE_MODE;
+			break;
+		case 5:
+		case 'r':
+			flags |= RADEON_OFF;
+			break;
+		case 6:
+		case 'v':
+			flags |= PCI_SAVE;
+			break;
+		case 7:
+		case 'a':
+			flags |= (atoi(optarg) & (S3_BIOS | S3_MODE));
+			break;
+
+	}
+}
+
 #ifndef CONFIG_BOTH
 static void usage(void)
 {
@@ -328,23 +368,17 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
-	int i, id = -1, ret = 0, test_mode = 0, force = 0;
+	int i, id = -1, ret = 0, test_mode = 0;
 	int active_console = -1;
 	struct option options[] = {
 		{ "test",	no_argument,		NULL, 'n'},
 		{ "help",	no_argument,		NULL, 'h'},
-		{ "force",	no_argument,		NULL, 'f'},
-		{ "vbe_save",	no_argument,		NULL, 's'},
-		{ "vbe_post",	no_argument,		NULL, 'p'},
-		{ "vbe_mode",	no_argument,		NULL, 'm'},
-		{ "radeontool",	no_argument,		NULL, 'r'},
 		{ "identify",	no_argument,		NULL, 'i'},
-		{ "acpi_sleep",	required_argument,	NULL, 'a'},
-		{ "pci_save",	no_argument,		NULL, 'v'},
+		HACKS_LONG_OPTS
 		{ NULL,		0,			NULL,  0 }
 	};
 
-	while ((i = getopt_long(argc, argv, "nhfspmriva:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, "nhi" "fspmrva:", options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage();
@@ -356,47 +390,26 @@ int main(int argc, char *argv[])
 		case 'n':
 			test_mode = 1;
 			break;
-		case 'f':
-			force = 1;
-			break;
-		case 's':
-			flags |= VBE_SAVE;
-			break;
-		case 'p':
-			flags |= VBE_POST;
-			break;
-		case 'm':
-			flags |= VBE_MODE;
-			break;
-		case 'r':
-			flags |= RADEON_OFF;
-			break;
-		case 'a':
-			flags |= (atoi(optarg) & (S3_BIOS | S3_MODE));
-			break;
-		case 'v':
-			flags |= PCI_SAVE;
+		case '?':
+			usage();
 			break;
 		default:
-			usage();
+			s2ram_add_flag(i,optarg);
 			break;
 		}
 	}
-	if (flags && !force) {
-		printf("acpi_sleep, vbe_save, vbe_post and radeontool parameter "
-		       "must be used with --force\n\n");
-		usage();
-	}
+
 	if (force && test_mode) {
 		printf("force and test mode do not make sense together.\n\n");
 		usage();
 	}
 
-	if (!force) {
-		dmi_scan();
-		id = machine_match();
-		ret = s2ram_check(id);
+	if (test_mode) {
+		machine_known(id);
+		goto out;
 	}
+
+	ret = s2ram_is_supported();
 
 	if (ret == S2RAM_UNKNOWN) {
 		printf("Machine is unknown.\n");
@@ -406,11 +419,6 @@ int main(int argc, char *argv[])
 
 	if (ret == S2RAM_NOFB)
 		printf("This machine can only suspend without framebuffer.\n");
-
-	if (test_mode) {
-		machine_known(id);
-		goto out;
-	}
 
 	if (ret)
 		goto out;

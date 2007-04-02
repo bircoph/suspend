@@ -1174,6 +1174,9 @@ static inline int get_config(int argc, char *argv[])
 		{ "config",		required_argument,	NULL, 'f'},
 		{ "image_size",		required_argument,	NULL, 's'},
 		{ "resume_offset",	required_argument,	NULL, 'o'},
+#ifdef CONFIG_BOTH
+		HACKS_LONG_OPTS
+#endif
 		{ NULL,			0,			NULL,  0 }
 	};
 	int i, error;
@@ -1182,7 +1185,7 @@ static inline int get_config(int argc, char *argv[])
 	unsigned long long int off = 0;
 	int set_size = 0;
 	unsigned long int im_size = 0;
-	const char *optstring="hf:s:o:";
+	const char *optstring = "hf:s:o:";
 
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
@@ -1200,11 +1203,29 @@ static inline int get_config(int argc, char *argv[])
 			off = atoll(optarg);
 			set_off = 1;
 			break;
-		default:
+		case '?':
 			usage("suspend", options, optstring);
 			return -EINVAL;
+#ifdef CONFIG_BOTH
+		default:
+			s2ram_add_flag(i,optarg);
+			break;
+#endif
 		}
 	}
+
+#ifdef CONFIG_BOTH
+	s2ram = s2ram_is_supported();
+	/* s2ram_is_supported returns EINVAL if there was something wrong
+	 * with the options that where added with s2ram_add_flag.
+	 * On any other error (unsupported) we will just continue with s2disk.
+	 */
+	if (s2ram == EINVAL)
+		return EINVAL;
+	
+	s2ram = !s2ram;
+#endif
+
 	error = parse("suspend", conf_name, PARAM_NO, parameters);
 	if (error) {
 		fprintf(stderr, "suspend: Could not parse config file\n");
@@ -1390,8 +1411,9 @@ int main(int argc, char *argv[])
 	splash.progress(5);
 
 #ifdef CONFIG_BOTH
-	/* If s2ram_prepare returns != 0, better not try to suspend to RAM */
-	s2ram = !s2ram_prepare();
+	/* If s2ram_hacks returns != 0, better not try to suspend to RAM */
+	if (s2ram) 
+		s2ram = !s2ram_hacks();
 #endif
 #ifdef CONFIG_ENCRYPT
         if (encrypt && ! use_RSA) {
