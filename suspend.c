@@ -52,7 +52,7 @@
 #define suspend_error(msg, args...) \
 do { \
 	fprintf(stderr, "%s: " msg " Reason: %m\n", my_name, ## args); \
-} while (0);
+} while (0)
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
