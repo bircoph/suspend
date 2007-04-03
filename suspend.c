@@ -51,7 +51,7 @@
 
 #define suspend_error(msg, args...) \
 do { \
-	fprintf(stderr, "suspend: " msg " Reason: %m\n", ## args); \
+	fprintf(stderr, "%s: " msg " Reason: %m\n", my_name, ## args); \
 } while (0);
 
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
@@ -88,6 +88,7 @@ static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
 static struct vt_mode orig_vtm;
 static int vfd;
+char *my_name;
 
 static struct config_par parameters[PARAM_NO] = {
 	{
@@ -184,7 +185,7 @@ static inline loff_t check_free_swap(int dev)
 	if (!error)
 		return free_swap;
 	else
-		printf("Error: errno = %d\n", errno);
+		suspend_error("check_free_swap failed.");
 	return 0;
 }
 
@@ -462,12 +463,12 @@ static int save_image(struct swap_map_handle *handle,
 	abort_possible = !splash.prepare_abort(&savedtrm, &newtrm);
 
 	if (abort_possible)
-		printf("suspend: Saving %u image data pages "
+		printf("%s: Saving %u image data pages "
 			"(press " ABORT_KEY_NAME " to abort) ...     ",
-			nr_pages);
+			my_name, nr_pages);
 	else
-		printf("suspend: Saving image data pages (%u pages) ...     ",
-			nr_pages);
+		printf("%s: Saving image data pages (%u pages) ...     ",
+			my_name, nr_pages);
 
 	m = nr_pages / 100;
 	if (!m)
@@ -525,7 +526,7 @@ static int enough_swap(int dev, unsigned long size)
 {
 	loff_t free_swap = check_free_swap(dev);
 
-	printf("suspend: Free swap: %lu kilobytes\n",
+	printf("%s: Free swap: %lu kilobytes\n", my_name,
 		(unsigned long)free_swap / 1024);
 	return free_swap > size;
 }
@@ -572,16 +573,16 @@ int write_image(int snapshot_fd, int resume_fd)
 	int error;
  	struct timeval begin;
 
-	printf("suspend: System snapshot ready. Preparing to write\n");
+	printf("%s: System snapshot ready. Preparing to write\n", my_name);
 	start = get_swap_page(snapshot_fd);
 	if (!start)
 		return -ENOSPC;
 	error = read(snapshot_fd, header, page_size);
 	if (error < (int)page_size)
 		return error < 0 ? error : -EFAULT;
-	printf("suspend: Image size: %lu kilobytes\n", header->size / 1024);
+	printf("%s: Image size: %lu kilobytes\n", my_name, header->size / 1024);
 	if (!enough_swap(snapshot_fd, header->size) && !compress) {
-		fprintf(stderr, "suspend: Not enough free swap\n");
+		fprintf(stderr, "%s: Not enough free swap\n", my_name);
 		return -ENOSPC;
 	}
 	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
@@ -641,8 +642,8 @@ No_RSA:
 					header->image_flags |= IMAGE_ENCRYPTED;
 			}
 			if (error)
-				fprintf(stderr,"suspend: libgcrypt error: %s\n",
-						gcry_strerror(error));
+				fprintf(stderr,"%s: libgcrypt error: %s\n",
+						my_name, gcry_strerror(error));
 		}
 #endif
 		if (!error) {
@@ -668,7 +669,7 @@ No_RSA:
 		if (compress) {
 			double delta = header->size - compr_diff;
 
-			printf("suspend: Compression ratio %4.2lf\n",
+			printf("%s: Compression ratio %4.2lf\n", my_name,
 				delta / header->size);
 		}
 		printf( "S" );
@@ -733,8 +734,7 @@ static void suspend_shutdown(int snapshot_fd)
 	} else if (use_platform_suspend) {
 		int ret = platform_enter(snapshot_fd);
 		if (ret < 0)
-			fprintf(stderr, "suspend: pm_ops->enter returned"
-				" error %d, calling power_off\n", errno);
+			suspend_error("pm_ops->enter failed, calling power_off.");
 	}
 	power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
@@ -755,7 +755,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	else
 		image_size = avail_swap;
 	if (!avail_swap) {
-		fprintf(stderr, "suspend: No swap space for suspend\n");
+		fprintf(stderr, "%s: No swap space for suspend\n", my_name);
 		return ENOSPC;
 	}
 
@@ -773,13 +773,13 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	if (use_platform_suspend) {
 		int ret = platform_prepare(snapshot_fd);
 		if (ret < 0) {
-			fprintf(stderr, "suspend: pm_ops->prepare returned "
-				"error %d\n", errno);
+			suspend_error("pm_ops->prepare failed, using "
+				"'shutdown mode = shutdown'.");
 			use_platform_suspend = 0;
 		}
 	}
 
-	printf("suspend: Snapshotting system\n");
+	printf("%s: Snapshotting system\n", my_name);
 	attempts = 2;
 	do {
 		if (set_image_size(snapshot_fd, image_size)) {
@@ -790,7 +790,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 			if (!in_suspend) {
 				/* first unblank the console, see console_codes(4) */
 				printf("\e[13]");
-				printf("suspend: returned to userspace\n");
+				printf("%s: returned to userspace\n", my_name);
 				free_snapshot(snapshot_fd);
 				break;
 			}
@@ -1190,7 +1190,7 @@ static inline int get_config(int argc, char *argv[])
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
-			usage("suspend", options, optstring);
+			usage(my_name, options, optstring);
 			exit(0);
 		case 'f':
 			conf_name = optarg;
@@ -1204,7 +1204,7 @@ static inline int get_config(int argc, char *argv[])
 			set_off = 1;
 			break;
 		case '?':
-			usage("suspend", options, optstring);
+			usage(my_name, options, optstring);
 			return -EINVAL;
 #ifdef CONFIG_BOTH
 		default:
@@ -1226,9 +1226,9 @@ static inline int get_config(int argc, char *argv[])
 	s2ram = !s2ram;
 #endif
 
-	error = parse("suspend", conf_name, PARAM_NO, parameters);
+	error = parse(my_name, conf_name, PARAM_NO, parameters);
 	if (error) {
-		fprintf(stderr, "suspend: Could not parse config file\n");
+		fprintf(stderr, "%s: Could not parse config file\n", my_name);
 		return error;
 	}
 	if (set_off)
@@ -1265,6 +1265,12 @@ int main(int argc, char *argv[])
 		}
 	} while (ret < 3);
 	close(ret);
+
+	my_name = strrchr(argv[0], '/');
+	if (! my_name)
+		my_name = argv[0];
+	else
+		my_name++;
 
 	ret = get_config(argc, argv);
 	if (ret)
@@ -1304,13 +1310,13 @@ int main(int argc, char *argv[])
 	}
 #ifdef CONFIG_ENCRYPT
 	if (encrypt) {
-		printf("suspend: libgcrypt version: %s\n",
+		printf("%s: libgcrypt version: %s\n", my_name,
 			gcry_check_version(NULL));
 		gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
 		ret = gcry_cipher_open(&cipher_handle, IMAGE_CIPHER,
 				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret) {
-			fprintf(stderr, "suspend: libgcrypt error %s\n",
+			fprintf(stderr, "%s: libgcrypt error %s\n", my_name, 
 				gcry_strerror(ret));
 			encrypt = 0;
 		}
@@ -1345,7 +1351,7 @@ int main(int argc, char *argv[])
 		goto Umount;
 	}
 	if (!S_ISBLK(stat_buf.st_mode)) {
-		fprintf(stderr, "suspend: Invalid resume device\n");
+		fprintf(stderr, "%s: Invalid resume device\n", my_name);
 		ret = EINVAL;
 		goto Umount;
 	}
@@ -1375,7 +1381,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (!S_ISCHR(stat_buf.st_mode)) {
-		fprintf(stderr, "suspend: Invalid snapshot device\n");
+		fprintf(stderr, "%s: Invalid snapshot device\n", my_name);
 		ret = EINVAL;
 		goto Close_resume_fd;
 	}
