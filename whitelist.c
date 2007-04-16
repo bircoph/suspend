@@ -189,6 +189,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK T4010",	"",	"", S3_BIOS|S3_MODE },
+	/* Jay <jay@jay.cz> */
+	{ "FUJITSU SIEMENS",		"LIFEBOOK T4210",	"",	"", S3_BIOS|S3_MODE|PCI_SAVE },
 	/* Tomas Pospisek <tpo@sourcepole.ch> */
 	{ "Fujitsu Siemens",		"P6VAP-AP",		"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
