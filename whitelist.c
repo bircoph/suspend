@@ -15,6 +15,8 @@ struct machine_entry
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GF           ","", VBE_POST|VBE_SAVE },
+	/* Michael Wagner <michael-wagner@gmx.de> */
+	{ "4MBOL&S",			"7521 *"	"REV. A0",	"", 0 },
 	/* Alexander Wirt */
 	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
 	/* Julien BLACHE jb@jblache.org */
@@ -65,6 +67,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc. ",	"A6U       ",		"",	"", VBE_POST|VBE_MODE },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
+	/* Peter Suetterlin <P.Suetterlin@astro.uu.nl>, VBE_MODE does not work */
+	{ "ASUSTeK Computer Inc.        ",	"M3N       ",	"",	"", VBE_POST|VBE_SAVE },
 	/* Manfred Tremmel, https://bugzilla.novell.com/show_bug.cgi?id=171107 */
 	{ "ASUSTeK Computer Inc.        ",	"M6N       ",	"",	"", S3_BIOS|S3_MODE },
 	{ "ASUSTeK Computer Inc.        ",	"M6Ne      ",	"",	"", S3_MODE },
@@ -89,6 +93,8 @@ struct machine_entry whitelist[] = {
 	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
 	/* Ross Patterson <me@rpatterson.net> */
 	{ "AVERATEC",			"1000 Series",		"",	"", S3_BIOS|S3_MODE },
+	/* Sebastian Maus <sebastian.maus@bluemars.net> */
+	{ "BENQ",			"JoyBook 7000",	"GRASSHOPPER2",	"", S3_BIOS|S3_MODE },
 	/* Andreas Schmitz */
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	/* Gilles Grandou <gilles@grandou.net> */
@@ -100,6 +106,8 @@ struct machine_entry whitelist[] = {
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Compaq*",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
+	/* Struan Bartlett <struan.bartlett@NewsNow.co.uk> */
+	{ "Dell Inc.                ",	"Dell DXP051 *",	"",	"", 0 },
 	/* From bug 1544913@sf.net, Andrei - amaces */
 	{ "Dell Computer Corporation",  "Inspiron 1150*",       "",     "", 0 },
 	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
@@ -160,6 +168,8 @@ struct machine_entry whitelist[] = {
 
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
+	/* stan ioan-eugen <stan.ieugen@gmail.com> */
+	{ "FUJITSU SIEMENS",		"Amilo A1667G Serie",	"",	"", S3_BIOS },
 	/* Those two x86_64 amilos are a bit strange. I seldom see s3_bios + vbe_* ... */
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	/* reported by Thomas Halva Labella <hlabella@ulb.ac.be> */
@@ -173,6 +183,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"AMILO PRO V2030",	"",	"", VBE_POST|VBE_MODE },
 	/* Florian Herrmann <florian-herrmann@gmx.de> */
 	{ "FUJITSU SIEMENS",		"AMILO Pro V2040",	"",	"", 0 },
+	/* Arild Haugstad <arild.haugstad@gmx.net> */
+	{ "FUJITSU SIEMENS",		"AMILO Pro V3205",	"",	"", S3_BIOS },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
@@ -184,6 +196,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_MODE },
 	/* Christoph Wiesmeyr <christoph.wiesmeyr@liwest.at> */
 	{ "GERICOM",			"259IA1",		"",	"", 0 },
+	/* booiiing@gmail.com */
+	{ "Gericom",			"HUMMER",	"",	"1.03   ",  VBE_POST|VBE_MODE },
 	/* From: Einon <einon@animehq.hu>, seems to work only from X :-( */
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
@@ -302,6 +316,8 @@ struct machine_entry whitelist[] = {
 	   i do not dare to wildcard anything here :-( */
 	/* Aviv Ben-Yosef <aviv.by@gmail.com> */
 	{ "LENOVO",			"07686VG",	"3000 N100 *",	"", 0 },
+	/* Bogdan <boogi77@o2.pl> */
+	{ "LENOVO",			"076831G",	"3000 N100 *",	"", 0 },
 	/* Ted Percival <ted@midg3t.net> */
 	{ "LENOVO",			"07687MM",	"3000 N100 *",	"", S3_MODE },
 
@@ -315,6 +331,8 @@ struct machine_entry whitelist[] = {
 	{ "MAXDATA",			"IMPERIO4045A *",	"",	"", 0 },
 	/* Jan Gerrit <JanGerrit@Burg-Borgholz.de> */
 	{ "MAXDATA",			"PRO600IW",		"",	"", S3_BIOS|S3_MODE },
+	/* "Alex V. Myltsev" <avm@altlinux.ru */
+	{ "NCA_GROUP_LTD",		"iRU_Notebook",		"0106",	"", VBE_POST|VBE_MODE },
 	/* Hugo Costelha */
 	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
 
@@ -361,11 +379,10 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-FS215B",	"",	"", 0 },
 	/* Joseph Smith <joe@uwcreations.com> */
 	{ "Sony Corporation",		"VGN-FS660_W",		"",	"", 0 },
-	/* 2xMattia Dongili <malattia@linux.it> */
-	{ "Sony Corporation",		"VGN-SZ72B_B",		"",	"", VBE_MODE },
-	{ "Sony Corporation",		"VGN-UX50",		"",	"", VBE_MODE },
 	/* Stephan Martin <stephan.martin@open-xchange.com> */
 	{ "Sony Corporation",		"VGN-TX3XP_L",		"",	"", S3_BIOS|S3_MODE },
+	/* Mattia Dongili <malattia@linux.it> */
+	{ "Sony Corporation",		"VGN-UX50",		"",	"", VBE_MODE },
 	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "Sony Corporation",		"PCG-FX405*",		"",	"", S3_BIOS },
 	/* Stefan Nobis <stefan@snobis.de> */
