@@ -22,7 +22,7 @@ LD_FLAGS=-L/usr/local/lib
 BINARIES=s2disk s2both s2ram swap-offset resume
 BINARIES_MIN=s2disk swap-offset
 
-S2RAM_OBJ=vt.o vbetool/vbetool.o radeontool.o dmidecode.o
+S2RAM_OBJ=vt.o config.o vbetool/vbetool.o radeontool.o dmidecode.o
 SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o 
 
 S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci -lz -lx86

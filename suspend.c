@@ -32,7 +32,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <termios.h>
-#include <getopt.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
 #else
@@ -1169,15 +1168,22 @@ static int lock_vt(void)
 /* Parse the command line and/or configuration file */
 static inline int get_config(int argc, char *argv[])
 {
-	static struct option options[] = {
-		{ "help",		no_argument,		NULL, 'h'},
-		{ "config",		required_argument,	NULL, 'f'},
-		{ "image_size",		required_argument,	NULL, 's'},
-		{ "resume_offset",	required_argument,	NULL, 'o'},
+	static struct option_descr options[] = {
+	    {	{ "help",		no_argument,		NULL, 'h'}, 
+		"\t\t\tthis message."},
+	    { 	{ "config",		required_argument,	NULL, 'f'},
+		"\t\talternative configuration file."},
+	    {	{ "image_size",		required_argument,	NULL, 's'},
+		"\tdesired size of the image."},
+	    {	{ "resume_device",	required_argument,	NULL, 'r'},
+		"device that contains swap area."},
+	    {	{ "resume_offset",	required_argument,	NULL, 'o'},
+		"offset of swap file in resume device."},
 #ifdef CONFIG_BOTH
-		HACKS_LONG_OPTS
+	    HACKS_LONG_OPTS,
 #endif
-		{ NULL,			0,			NULL,  0 }
+	    {	{ NULL,			0,			NULL,  0 },
+		""}
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
@@ -1185,9 +1191,11 @@ static inline int get_config(int argc, char *argv[])
 	unsigned long long int off = 0;
 	int set_size = 0;
 	unsigned long int im_size = 0;
-	const char *optstring = "hf:s:o:";
+	char *rdev = NULL;
+	int set_rdev = 0;
+	const char *optstring = "hf:s:o:r:";
 
-	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, (struct option *) options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage(my_name, options, optstring);
@@ -1202,6 +1210,10 @@ static inline int get_config(int argc, char *argv[])
 		case 'o':
 			off = atoll(optarg);
 			set_off = 1;
+			break;
+		case 'r':
+			rdev  = optarg;
+			set_rdev = 1;
 			break;
 		case '?':
 			usage(my_name, options, optstring);
@@ -1231,6 +1243,9 @@ static inline int get_config(int argc, char *argv[])
 		fprintf(stderr, "%s: Could not parse config file\n", my_name);
 		return error;
 	}
+	if (set_rdev)
+		strncpy(resume_dev_name, rdev, MAX_STR_LEN -1);
+
 	if (set_off)
 		resume_offset = off;
 

@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <errno.h>
 #ifdef CONFIG_COMPRESS
 #include <lzf.h>
@@ -736,19 +735,26 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 /* Parse the command line and/or configuration file */
 static inline int get_config(int argc, char *argv[])
 {
-	static struct option options[] = {
-		{ "help",		no_argument,		NULL, 'h'},
-		{ "config",		required_argument,	NULL, 'f'},
-		{ "resume_offset",	required_argument,	NULL, 'o'},
-		{ NULL,			0,			NULL,  0 }
+	static struct option_descr options[] = {
+		{   { "help",		no_argument,		NULL, 'h'},
+		    "\t\t\tthis text." },
+		{   { "config",		required_argument,	NULL, 'f'},
+		    "\t\talternative configuration file." },
+		{   { "resume_device",	required_argument,	NULL, 'r'},
+		    "device that contains swap area"},
+		{   { "resume_offset",	required_argument,	NULL, 'o'},
+		    "offset of swap file in resume device."},
+		{   { NULL,		0,			NULL,  0 }, ""}
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
 	int set_off = 0;
 	unsigned long long int off = 0;
-	const char *optstring = "hf:o:";
+	int set_rdev = 0;
+	char *rdev = NULL;
+	const char *optstring = "hf:o:r:";
 
-	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, (struct option *)options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage("resume", options, optstring);
@@ -760,6 +766,10 @@ static inline int get_config(int argc, char *argv[])
 			off = atoll(optarg);
 			set_off = 1;
 			break;
+		case 'r':
+			rdev  = optarg;
+			set_rdev = 1;
+			break;
 		default:
 			usage("resume", options, optstring);
 			return -EINVAL;
@@ -770,6 +780,9 @@ static inline int get_config(int argc, char *argv[])
 		fprintf(stderr, "resume: Could not parse config file\n");
 		return error;
 	}
+	if (set_rdev)
+		strncpy(resume_dev_name, rdev, MAX_STR_LEN -1);
+
 	if (set_off)
 		resume_offset = off;
 

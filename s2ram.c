@@ -19,6 +19,7 @@
 #include "vbetool/vbetool.h"
 #include "vt.h"
 #include "s2ram.h"
+#include "config.h"
 
 static void *vbe_buffer;
 static unsigned char vga_pci_state[256];
@@ -340,48 +341,28 @@ void s2ram_add_flag(int opt, const char *opt_arg)
 }
 
 #ifndef CONFIG_BOTH
-static void usage(void)
-{
-	printf("Usage: s2ram [-nhi] [-fspmrav]\n"
-	       "\n"
-	       "Options:\n"
-	       "    -h, --help:       this text.\n"
-	       "    -n, --test:       test if the machine is in the database.\n"
-	       "                      returns 0 if known and supported\n"
-	       "    -i, --identify:   prints a string that identifies the machine.\n"
-	       "    -f, --force:      force suspending, even on unknown machines.\n"
-	       "\n"
-	       "the following options are only available with --force:\n"
-	       "    -s, --vbe_save:   save VBE state before suspending and "
-				       "restore after resume.\n"
-	       "    -p, --vbe_post:   VBE POST the graphics card after resume\n"
-	       "    -m, --vbe_mode:   get VBE mode before suspend and set it after resume\n"
-	       "    -r, --radeontool: turn off the backlight on radeons "
-				       "before suspending.\n"
-	       "    -a, --acpi_sleep: set the acpi_sleep parameter before "
-				       "suspend\n"
-	       "                      1=s3_bios, 2=s3_mode, 3=both\n"
-	       "    -v, --pci_save:   save the PCI config space for the VGA card.\n"
-	       "\n");
-	exit(1);
-}
-
 int main(int argc, char *argv[])
 {
 	int i, id = -1, ret = 0, test_mode = 0;
 	int active_console = -1;
-	struct option options[] = {
-		{ "test",	no_argument,		NULL, 'n'},
-		{ "help",	no_argument,		NULL, 'h'},
-		{ "identify",	no_argument,		NULL, 'i'},
-		HACKS_LONG_OPTS
-		{ NULL,		0,			NULL,  0 }
+	struct option_descr options[] = {
+	    {	{ "help",	no_argument,		NULL, 'h'},
+		"\tthis text." },
+	    {	{ "test",	no_argument,		NULL, 'n'},
+		"\ttest if the machine is in the database." },
+	    {	{ "identify",	no_argument,		NULL, 'i'},
+		"prints a string that identifies the machine." },
+	    HACKS_LONG_OPTS,
+	    {	{ NULL,		0,			NULL,  0 },
+		"" }
 	};
+	const char *optstring = "hni" "fspmrva:";
 
-	while ((i = getopt_long(argc, argv, "nhi" "fspmrva:", options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, (struct option *)options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
-			usage();
+			usage("s2ram", options, optstring);
+			exit(0);
 			break;
 		case 'i':
 			dmi_scan();
@@ -391,7 +372,8 @@ int main(int argc, char *argv[])
 			test_mode = 1;
 			break;
 		case '?':
-			usage();
+			usage("s2ram", options, optstring);
+			exit(1);
 			break;
 		default:
 			s2ram_add_flag(i,optarg);
@@ -401,7 +383,8 @@ int main(int argc, char *argv[])
 
 	if (force && test_mode) {
 		printf("force and test mode do not make sense together.\n\n");
-		usage();
+		usage("s2ram", options, optstring);
+		exit(1);
 	}
 
 	if (test_mode) {

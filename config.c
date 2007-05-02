@@ -104,23 +104,24 @@ int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
 	return error;
 }
 
-void usage(char *my_name, struct option *options, const char *short_options)
+void usage(char *my_name, struct option_descr *options, const char *short_options)
 {
-	struct option *opt;
+	struct option_descr *opt;
 
-	printf("Usage: %s\t", my_name);
-	for (opt = options; opt->name; opt++) 
+	printf("Usage: %s [options]", my_name);
+	for (opt = options; opt->o.name; opt++) 
 	{
-		if (strchr(short_options,opt->val))
-			printf("[-%c|--%s", opt->val, opt->name);
+		if (strchr(short_options,opt->o.val))
+			printf("\n  -%c, --%s", opt->o.val, opt->o.name);
 		else
-			printf("[--%s", opt->name);
+			printf("\n  --%s", opt->o.name);
 
-		if (opt->has_arg)
-			printf(" <%s>]\n\t\t", opt->name);
-		else
-			printf("]\n\t\t");
+		if (opt->o.has_arg)
+			printf(" <%s>", opt->o.name);
+
+		if (strlen(opt->descr))
+			printf("\t%s",opt->descr);
 	}
 
-	printf("[<resume_device>]\n");
+	printf("\n");
 }
