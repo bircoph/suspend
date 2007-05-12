@@ -806,6 +806,8 @@ int main(int argc, char *argv[])
 
 	if (splash_param != 'y' && splash_param != 'Y')
 		splash_param = 0;
+	else
+		splash_param = SPL_RESUME;
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;

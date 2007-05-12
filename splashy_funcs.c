@@ -11,22 +11,27 @@
 
 #ifdef CONFIG_SPLASHY
 #include <string.h>
-
+#include <stdio.h>
 #include <splashy.h>
 
+#include "splash.h"
 #include "encrypt.h"
 #include "splashy_funcs.h"
 
-int splashy_open() //char *mode)
+int splashy_open(int mode)
 {
-	char * mode="suspend";
-	/* Do some detecting logic here ... */
-	if (!splashy_init (NULL,mode))
+	int ret;
+	if ((ret = splashy_init (NULL,(mode==SPL_RESUME?"resume":"suspend"))) < 0)
+	{
+		fprintf(stderr,"splashy_init: error %d",ret);
 		return -1;
-
-	if (splashy_start_splash () < 0)
-		return -1;
-
+	}
+	
+	if ((ret = splashy_start_splash ()) < 0) {
+		fprintf(stderr,"splashy_start_splash: error %d",ret);
+		return -2;
+	}
+	
 	return 0;
 }
 

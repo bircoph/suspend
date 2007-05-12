@@ -1303,6 +1303,8 @@ int main(int argc, char *argv[])
 #endif
 	if (splash_param != 'y' && splash_param != 'Y')
 		splash_param = 0;
+	else
+		splash_param = SPL_SUSPEND;
 
 	if (early_writeout != 'n' && early_writeout != 'N')
 		early_writeout = 1;

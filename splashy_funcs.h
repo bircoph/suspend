@@ -13,7 +13,7 @@
 #define SPLASHY_FUNCS_H
 #ifdef CONFIG_SPLASHY
 
-int splashy_open(void);
+int splashy_open(int mode);
 int splashy_finish(void);
 int splashy_progress(int p);
 void splashy_read_password(char *, int);

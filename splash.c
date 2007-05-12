@@ -11,13 +11,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <termios.h>
 
 #include "splash.h"
 #include "bootsplash.h"
 #include "splashy_funcs.h"
 #include "encrypt.h"
-#include <unistd.h>
-#include <termios.h>
 
 /**
  *	dummy functions in case if no splash system was found or
@@ -66,10 +66,8 @@ static void restore_abort(struct termios *oldtrm)
 }
 
 /* Tries to find a splash system and initializes interface functions */
-void splash_prepare(struct splash *splash, int enabled)
+void splash_prepare(struct splash *splash, int mode)
 {
-	int error = 0;
-
 	splash->finish      = splash_dummy_int_void;
 	splash->progress    = splash_dummy_int_int;
 	splash->switch_to   = splash_dummy_void_void;
@@ -82,19 +80,19 @@ void splash_prepare(struct splash *splash, int enabled)
 	splash->prepare_abort	= prepare_abort;
 	splash->restore_abort	= restore_abort;
 	splash->key_pressed	= key_pressed;
-	if (!enabled)
+	if (!mode)
 		return;
 
 	printf("Looking for splash system... ");
 
-	if (!(error = bootsplash_open())) {
+	if (!bootsplash_open()) {
 		splash->finish      = bootsplash_finish;
 		splash->progress    = bootsplash_progress;
 		splash->switch_to   = bootsplash_switch_to;
 		splash->dialog	    = bootsplash_dialog;
 		splash->read_password = bootsplash_read_password;
 #ifdef CONFIG_SPLASHY
-	} else if (!splashy_open()) {
+	} else if (!splashy_open(mode)) {
 		splash->finish      = splashy_finish;
 		splash->progress    = splashy_progress;
 		splash->dialog	    = splashy_dialog;

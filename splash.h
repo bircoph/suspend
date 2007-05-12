@@ -12,6 +12,9 @@
 #ifndef SPLASH_H
 #define SPLASH_H
 
+#define SPL_SUSPEND 1
+#define SPL_RESUME 2
+
 #include <termios.h>
 
 /* generic interface functions for an arbitary splash method */
@@ -26,6 +29,6 @@ struct splash {
 	void (*restore_abort) (struct termios *);
 };
 
-void splash_prepare(struct splash *splash, int enabled);
+void splash_prepare(struct splash *splash, int mode);
 
 #endif /* SPLASH_H */
