@@ -19,6 +19,29 @@
 #include "config.h"
 
 
+/* Actually enter the suspend. May be ran on frozen system. */
+int s2ram_generic_do(void)
+{
+	int ret = 0;
+	FILE *f = fopen("/sys/power/state", "w");
+	if (!f) {
+		printf("/sys/power/state does not exist; what kind of ninja mutant machine is this?\n");
+		return ENODEV;
+	}
+	if (fprintf(f, "mem") < 0) {
+		ret = errno;
+		perror("s2ram_do");
+	}
+	/* usually only fclose fails, not fprintf, so it does not matter
+	 * that we might overwrite the previous error.
+	 */
+	if (fclose(f) < 0) {
+		ret = errno;
+		perror("s2ram_do");
+	}
+	return ret;
+} 
+
 #ifndef CONFIG_BOTH
 int main(int argc, char *argv[])
 {

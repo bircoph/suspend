@@ -28,8 +28,8 @@ SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o
 S2RAM_LD_FLAGS = $(LD_FLAGS)
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
 ifeq ($(ARCH), x86)
-       S2RAM_OBJ += s2ram-x86.o dmidecode.o radeontool.o vbetool/vbetool.o
-       S2RAM_LD_FLAGS += -lx86 -lpci -lz
+S2RAM_OBJ += s2ram-x86.o dmidecode.o radeontool.o vbetool/vbetool.o
+S2RAM_LD_FLAGS += -lx86 -lpci -lz
 endif
 
 ifndef CONFIG_RESUME_DYN
@@ -84,6 +84,9 @@ clean:
 s2ram-x86.o: %.o : %.c %.h whitelist.c
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
+s2ram-both.o: s2ram.c s2ram.h
+	$(CC) $(CC_FLAGS) -DCONFIG_BOTH -c $< -o $@
+
 md5.o encrypt.o: %.o : %.c %.h md5.h
 	$(CC) $(CC_FLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c $< -o $@
 
@@ -102,7 +105,7 @@ s2disk:	$(SWSUSP_OBJ) suspend.c
 s2ram:	$(S2RAM_OBJ) s2ram.c
 	$(CC) -g $(CC_FLAGS) -include s2ram-$(ARCH).h $^ -o $@ $(S2RAM_LD_FLAGS)
 
-s2both:	$(SWSUSP_OBJ) $(S2RAM_OBJ) suspend.c 
+s2both:	$(SWSUSP_OBJ) $(S2RAM_OBJ) s2ram-both.o suspend.c 
 	$(CC) -g $(CC_FLAGS) -include s2ram-$(ARCH).h -DCONFIG_BOTH  $^ -o $@ $(SWSUSP_LD_FLAGS) $(S2RAM_LD_FLAGS)
 
 resume:	resume.c $(SWSUSP_OBJ)
