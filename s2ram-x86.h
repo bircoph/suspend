@@ -34,5 +34,4 @@
     	{\
 		"acpi_sleep\0set the acpi_sleep parameter before suspend\n\t\t\t1=s3_bios, 2=s3_mode, 3=both",\
 		required_argument,	NULL, 7 \
-	}
-
+	},

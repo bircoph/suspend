@@ -30,6 +30,8 @@ SWSUSP_LD_FLAGS = $(LD_FLAGS)
 ifeq ($(ARCH), x86)
 S2RAM_OBJ += s2ram-x86.o dmidecode.o radeontool.o vbetool/vbetool.o
 S2RAM_LD_FLAGS += -lx86 -lpci -lz
+else ifeq ($(ARCH), ppc)
+S2RAM_OBJ += s2ram-ppc.o
 endif
 
 ifndef CONFIG_RESUME_DYN
@@ -91,7 +93,7 @@ md5.o encrypt.o: %.o : %.c %.h md5.h
 	$(CC) $(CC_FLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c $< -o $@
 
 # Simple objects with header
-config.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/vbetool.o: %.o : %.c %.h
+config.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/vbetool.o s2ram-ppc.o: %.o : %.c %.h
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 # Simple object without header

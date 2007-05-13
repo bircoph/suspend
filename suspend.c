@@ -1190,7 +1190,7 @@ static inline int get_config(int argc, char *argv[])
 		       required_argument,	NULL, 's'
 		   },
 #ifdef CONFIG_BOTH
-		   HACKS_LONG_OPTS,
+		   HACKS_LONG_OPTS
 #endif
 		   { NULL,		0,			NULL,  0 }
 	};

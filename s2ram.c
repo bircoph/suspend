@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 		    "identify\0prints a string that identifies the machine.",
 		    no_argument,    NULL,   'i'
 		},
-		HACKS_LONG_OPTS,
+		HACKS_LONG_OPTS
 	    	{   NULL,   0,	    NULL,   0	}
 	};
 	const char *optstring = "hni" "fspmrva:";
