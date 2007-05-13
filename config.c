@@ -104,23 +104,27 @@ int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
 	return error;
 }
 
-void usage(char *my_name, struct option_descr *options, const char *short_options)
+/* We're abusing struct option a bit. usage() expects an \0 in the
+ * name string, and after that a comment.
+ */
+void usage(char *my_name, struct option *options, const char *short_options)
 {
-	struct option_descr *opt;
+	struct option *opt;
 
 	printf("Usage: %s [options]", my_name);
-	for (opt = options; opt->o.name; opt++) 
+	for (opt = options; opt->name; opt++) 
 	{
-		if (strchr(short_options,opt->o.val))
-			printf("\n  -%c, --%s", opt->o.val, opt->o.name);
+		const char *descr = opt->name + strlen(opt->name) + 1;
+		if (strchr(short_options,opt->val))
+			printf("\n  -%c, --%s", opt->val, opt->name);
 		else
-			printf("\n  --%s", opt->o.name);
+			printf("\n  --%s", opt->name);
 
-		if (opt->o.has_arg)
-			printf(" <%s>", opt->o.name);
+		if (opt->has_arg)
+			printf(" <%s>", opt->name);
 
-		if (strlen(opt->descr))
-			printf("\t%s",opt->descr);
+		if (strlen(descr))
+			printf("\t%s",descr);
 	}
 
 	printf("\n");

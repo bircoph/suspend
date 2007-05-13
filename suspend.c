@@ -1168,22 +1168,31 @@ static int lock_vt(void)
 /* Parse the command line and/or configuration file */
 static inline int get_config(int argc, char *argv[])
 {
-	static struct option_descr options[] = {
-	    {	{ "help",		no_argument,		NULL, 'h'}, 
-		"\t\t\tthis message."},
-	    { 	{ "config",		required_argument,	NULL, 'f'},
-		"\t\talternative configuration file."},
-	    {	{ "image_size",		required_argument,	NULL, 's'},
-		"\tdesired size of the image."},
-	    {	{ "resume_device",	required_argument,	NULL, 'r'},
-		"device that contains swap area."},
-	    {	{ "resume_offset",	required_argument,	NULL, 'o'},
-		"offset of swap file in resume device."},
+	static struct option options[] = {
+		   { 
+		       "help\0\t\t\tthis text",
+		       no_argument,		NULL, 'h'
+		   },
+		   { 
+		       "config\0\t\talternative configuration file.",
+		       required_argument,	NULL, 'f'
+		   },
+		   { 
+		       "resume_device\0device that contains swap area",	
+		       required_argument,	NULL, 'r'
+		   },
+		   { 
+		       "resume_offset\0offset of swap file in resume device.",	
+		       required_argument,	NULL, 'o'
+		   },
+		   { 
+		       "image_size\0\tdesired size of the image.",
+		       required_argument,	NULL, 's'
+		   },
 #ifdef CONFIG_BOTH
-	    HACKS_LONG_OPTS,
+		   HACKS_LONG_OPTS,
 #endif
-	    {	{ NULL,			0,			NULL,  0 },
-		""}
+		   { NULL,		0,			NULL,  0 }
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
@@ -1195,7 +1204,7 @@ static inline int get_config(int argc, char *argv[])
 	int set_rdev = 0;
 	const char *optstring = "hf:s:o:r:";
 
-	while ((i = getopt_long(argc, argv, optstring, (struct option *) options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage(my_name, options, optstring);

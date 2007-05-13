@@ -345,20 +345,25 @@ int main(int argc, char *argv[])
 {
 	int i, id = -1, ret = 0, test_mode = 0;
 	int active_console = -1;
-	struct option_descr options[] = {
-	    {	{ "help",	no_argument,		NULL, 'h'},
-		"\tthis text." },
-	    {	{ "test",	no_argument,		NULL, 'n'},
-		"\ttest if the machine is in the database." },
-	    {	{ "identify",	no_argument,		NULL, 'i'},
-		"prints a string that identifies the machine." },
-	    HACKS_LONG_OPTS,
-	    {	{ NULL,		0,			NULL,  0 },
-		"" }
+	struct option options[] = {
+	    	{ 
+		    "help\0\tthis text.",	
+		    no_argument,    NULL,   'h'
+		},
+	    	{ 
+		    "test\0\ttest if the machine is in the database.", 
+		    no_argument,    NULL,   'n'
+		},
+	    	{ 
+		    "identify\0prints a string that identifies the machine.",
+		    no_argument,    NULL,   'i'
+		},
+		HACKS_LONG_OPTS,
+	    	{   NULL,   0,	    NULL,   0	}
 	};
 	const char *optstring = "hni" "fspmrva:";
 
-	while ((i = getopt_long(argc, argv, optstring, (struct option *)options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage("s2ram", options, optstring);

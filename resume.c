@@ -735,16 +735,24 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 /* Parse the command line and/or configuration file */
 static inline int get_config(int argc, char *argv[])
 {
-	static struct option_descr options[] = {
-		{   { "help",		no_argument,		NULL, 'h'},
-		    "\t\t\tthis text." },
-		{   { "config",		required_argument,	NULL, 'f'},
-		    "\t\talternative configuration file." },
-		{   { "resume_device",	required_argument,	NULL, 'r'},
-		    "device that contains swap area"},
-		{   { "resume_offset",	required_argument,	NULL, 'o'},
-		    "offset of swap file in resume device."},
-		{   { NULL,		0,			NULL,  0 }, ""}
+	static struct option options[] = {
+		   { 
+		       "help\0\t\t\tthis text",
+		       no_argument,		NULL, 'h'
+		   },
+		   { 
+		       "config\0\t\talternative configuration file.",
+		       required_argument,	NULL, 'f'
+		   },
+		   { 
+		       "resume_device\0device that contains swap area",	
+		       required_argument,	NULL, 'r'
+		   },
+		   { 
+		       "resume_offset\0offset of swap file in resume device.",	
+		       required_argument,	NULL, 'o'
+		   },
+		   { NULL,		0,			NULL,  0 }
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
@@ -754,7 +762,7 @@ static inline int get_config(int argc, char *argv[])
 	char *rdev = NULL;
 	const char *optstring = "hf:o:r:";
 
-	while ((i = getopt_long(argc, argv, optstring, (struct option *)options, NULL)) != -1) {
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage("resume", options, optstring);
