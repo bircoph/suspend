@@ -14,7 +14,7 @@ CFLAGS := -O2 -Wall
 
 ###############################################################
 
-ARCH:=$(shell uname -m)
+ARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/ppc.*/ppc/)
 
 CC_FLAGS=-I/usr/local/include -DS2RAM $(CFLAGS)
 LD_FLAGS=-L/usr/local/lib
@@ -22,11 +22,15 @@ LD_FLAGS=-L/usr/local/lib
 BINARIES=s2disk s2both s2ram swap-offset resume
 BINARIES_MIN=s2disk swap-offset
 
-S2RAM_OBJ=vt.o config.o vbetool/vbetool.o radeontool.o dmidecode.o
+S2RAM_OBJ=vt.o config.o
 SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o 
 
-S2RAM_LD_FLAGS = $(LD_FLAGS) -lpci -lz -lx86
+S2RAM_LD_FLAGS = $(LD_FLAGS)
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
+ifeq ($(ARCH), x86)
+       S2RAM_OBJ += s2ram-x86.o dmidecode.o radeontool.o vbetool/vbetool.o
+       S2RAM_LD_FLAGS += -lx86 -lpci -lz
+endif
 
 ifndef CONFIG_RESUME_DYN
 STATIC_LD_FLAGS = -static
@@ -77,10 +81,7 @@ clean:
 	rm -f $(BINARIES) suspend-keygen suspend.keys *.o vbetool/*.o
 
 #### Rules for objects
-s2ram-both.o: s2ram.c s2ram.h whitelist.c
-	$(CC) $(CC_FLAGS) -DCONFIG_BOTH -c $< -o $@
-
-s2ram.o: s2ram.c s2ram.h whitelist.c
+s2ram-x86.o: %.o : %.c %.h whitelist.c
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 md5.o encrypt.o: %.o : %.c %.h md5.h
@@ -98,15 +99,14 @@ dmidecode.o radeontool.o : %.o: %.c
 s2disk:	$(SWSUSP_OBJ) suspend.c
 	$(CC) -g $(CC_FLAGS)  $^ -o $@ $(SWSUSP_LD_FLAGS)
 
-s2ram:	$(S2RAM_OBJ) s2ram.o
-	$(CC) -g $(CC_FLAGS)  $^ -o $@ $(S2RAM_LD_FLAGS)
+s2ram:	$(S2RAM_OBJ) s2ram.c
+	$(CC) -g $(CC_FLAGS) -include s2ram-$(ARCH).h $^ -o $@ $(S2RAM_LD_FLAGS)
 
-s2both:	$(SWSUSP_OBJ) $(S2RAM_OBJ) s2ram-both.o suspend.c 
-	$(CC) -g $(CC_FLAGS) -DCONFIG_BOTH  $^ -o $@ $(SWSUSP_LD_FLAGS) $(S2RAM_LD_FLAGS)
+s2both:	$(SWSUSP_OBJ) $(S2RAM_OBJ) suspend.c 
+	$(CC) -g $(CC_FLAGS) -include s2ram-$(ARCH).h -DCONFIG_BOTH  $^ -o $@ $(SWSUSP_LD_FLAGS) $(S2RAM_LD_FLAGS)
 
 resume:	resume.c $(SWSUSP_OBJ)
-	$(CC) $(CC_FLAGS) $(STATIC_CC_FLAGS) $^ -o $@ $(SWSUSP_LD_FLAGS) $(STATIC_LD_FLAGS)
-
+	$(CC) $(CC_FLAGS) $(STATIC_CC_FLAGS) $^ -o $@ $(SWSUSP_LD_FLAGS) $(STATIC_LD_FLAGS) 
 swap-offset: swap-offset.c
 	$(CC) $(CC_FLAGS) $< -o $@ $(LD_FLAGS)
 
