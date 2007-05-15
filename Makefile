@@ -14,7 +14,7 @@ CFLAGS := -O2 -Wall
 
 ###############################################################
 
-ARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/ppc.*/ppc/)
+ARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ -e s/ppc.*/ppc/)
 
 CC_FLAGS=-I/usr/local/include -DS2RAM $(CFLAGS)
 LD_FLAGS=-L/usr/local/lib
