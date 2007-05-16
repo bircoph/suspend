@@ -114,6 +114,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
 	/* Dell Inspiron 510m, Jose Carlos Garcia Sogo <jsogo@debian.org> */
 	{ "Dell Inc.",			"Inspiron 510m *",	"",	"", VBE_POST },
+	/* Dell Inspiron 600m, Gavrie Philipson <gavrie@gmail.com> */
+	{ "Dell Computer Corporation",  "Inspiron 600m *",      "",     "", VBE_POST|VBE_MODE },
 	/* Eric Sandall <eric@sandall.us> */
 	{ "Dell Computer Corporation",  "Inspiron 5100 *",	"",	"", NOFB },
 	/* VBE_POST|VBE_SAVE works on text console, but not under X. Tested by Chirag Rajyaguru */
@@ -230,6 +232,8 @@ struct machine_entry whitelist[] = {
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
+	/* Fatih Alabas https://bugzilla.novell.com/show_bug.cgi?id=230528 */
+	{ "Hewlett-Packard",		"Presario M2000 (EQ547PA#*",	"",	"", S3_BIOS|VBE_MODE },
 	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "Hewlett-Packard ",		"Presario R3000 *",	"",	"", S3_BIOS|S3_MODE },
 	/* Arthur Peters <amp@singingwizard.org> */
