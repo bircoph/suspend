@@ -348,7 +348,7 @@ struct machine_entry whitelist[] = {
 	/* Baruch Even <baruch@ev-en.org> */
 	{ "Micro-Star International",	"MS-1412",		"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* uswsusp@faxm0dem.org */
-	{ "MSI.",			"MS-7207PV",		"",	"", 0 }
+	{ "MSI.",			"MS-7207PV",		"",	"", 0 },
 	/* "Alex V. Myltsev" <avm@altlinux.ru */
 	{ "NCA_GROUP_LTD",		"iRU_Notebook",		"0106",	"", VBE_POST|VBE_MODE },
 	/* Hugo Costelha */
