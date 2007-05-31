@@ -103,6 +103,8 @@ struct machine_entry whitelist[] = {
 	   model description, so to make sure i also added the bios_version */
 	{ "Compaq",			"Armada                                     ",	"",	"1.35", 0 },
 	{ "Compaq",			"Armada    E500  *",	"",	"", 0 },
+	/* Martin Heimes <martin.heimes@gmx.de> */
+	{ "Compaq",			"Evo  D510 USDT",	"",	"", 0 },
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"",	"", VBE_POST|VBE_SAVE },
 	{ "Compaq*",			"N620c *",		"",	"", S3_BIOS|S3_MODE },
@@ -187,6 +189,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"AMILO Pro V2040",	"",	"", 0 },
 	/* Arild Haugstad <arild.haugstad@gmx.net> */
 	{ "FUJITSU SIEMENS",		"AMILO Pro V3205",	"",	"", S3_BIOS },
+	/* Steffen <mlsone@forevers.de> */
+	{ "FUJITSU SIEMENS",		"AMILO PRO V8010 *",	"",	"", VBE_POST|VBE_MODE },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
@@ -196,7 +200,9 @@ struct machine_entry whitelist[] = {
 	/* Tomas Pospisek <tpo@sourcepole.ch> */
 	{ "Fujitsu Siemens",		"P6VAP-AP",		"",	"", 0 },
 	{ "FUJITSU SIEMENS",		"Stylistic ST5000",	"",	"", S3_BIOS|S3_MODE },
-	/* This is a desktop with onboard i810 video */
+	/* Ulf Lange <mopp@gmx.net> */
+	{ "FUJITSU SIEMENS",		"SCENIC N300/N600",	"",	"", VBE_POST|VBE_MODE },
+	/* This is a desktop with onboard i810 video <seife@suse.de> */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_MODE },
 	/* Christoph Wiesmeyr <christoph.wiesmeyr@liwest.at> */
 	{ "GERICOM",			"259IA1",		"",	"", 0 },
@@ -223,6 +229,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nx6120 *",	"",	"68DTD*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nx6125 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
+	/* Benedikt Nimmervoll <nimmervoll.benedikt@googlemail.com> */
+	{ "Hewlett-Packard",		"HP Compaq nx6325 *",	"",	"68TT2*", VBE_POST|VBE_SAVE },
 	/* Michael Biebl <biebl@teco.edu> */
 	{ "Hewlett-Packard ",		"HP compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* François Münch <francois.munch@free.fr> */
@@ -337,10 +345,18 @@ struct machine_entry whitelist[] = {
 	{ "MAXDATA",			"IMPERIO4045A *",	"",	"", 0 },
 	/* Jan Gerrit <JanGerrit@Burg-Borgholz.de> */
 	{ "MAXDATA",			"PRO600IW",		"",	"", S3_BIOS|S3_MODE },
+	/* Baruch Even <baruch@ev-en.org> */
+	{ "Micro-Star International",	"MS-1412",		"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* uswsusp@faxm0dem.org */
+	{ "MSI.",			"MS-7207PV",		"",	"", 0 }
 	/* "Alex V. Myltsev" <avm@altlinux.ru */
 	{ "NCA_GROUP_LTD",		"iRU_Notebook",		"0106",	"", VBE_POST|VBE_MODE },
 	/* Hugo Costelha */
 	{ "NEC *",			"B7 *",			"",	"", VBE_SAVE }, 
+	/* Benoit Thiell <badzil@gmail.com> */
+	{ "NEC COMPUTERS INTERNATIONAL","NEC Versa Premium",	"FAB-2","", 0 },
+	/* Per Waago <waago@stud.ntnu.no> */
+	{ "Packard Bell NEC",	"00000000000000000000000", "P820008416","", 0 },
 
 	/* Jeremie Delaitre <jeremie.delaitre@gmail.com> */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"Q35/Q36",	"",	"", S3_BIOS|S3_MODE },
@@ -378,6 +394,8 @@ struct machine_entry whitelist[] = {
 	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
 	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
+	/* Dhananjaya Rao <phaze87@gmail.com> */
+	{ "Sony Corporation",		"VGN-B55G(I)"		"",	"", 0 },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 	/* Olivier Saier <osaier@gmail.com>, apparently S3_BIOS locks the machine hard */
 	{ "Sony Corporation",		"VGN-FS115Z",		"",	"", S3_MODE },
@@ -402,6 +420,8 @@ struct machine_entry whitelist[] = {
 	/* Joachim Gleissner */
 	{ "transtec AG",		"MS-1034",		"",	"", S3_BIOS|S3_MODE },
 
+	/* Clevo D470K, Jasper Mackenzie <scarletpimpernal@hotmail.com> */
+	{ "VIA",			"K8T400",	"VT8204B ",	"", S3_BIOS|S3_MODE },
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
 
