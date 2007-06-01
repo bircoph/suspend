@@ -99,6 +99,9 @@ struct machine_entry whitelist[] = {
 	{ "BenQ           ",		"Joybook R22",		"",	"", S3_BIOS|S3_MODE },
 	/* Gilles Grandou <gilles@grandou.net> */
 	{ "CLEVO",			"D500P",		"",	"", VBE_POST|NOFB },
+	/* Leszek Kubik <leszek.kubik@googlemail.com> */
+	{ "COMPAL          ",		"HEL80I          ",	"",	"", 0 },
+
 	/* This Armada m300, reported by benoit.monin@laposte.net seems not to have a useful
 	   model description, so to make sure i also added the bios_version */
 	{ "Compaq",			"Armada                                     ",	"",	"1.35", 0 },
@@ -169,6 +172,8 @@ struct machine_entry whitelist[] = {
 
 	/* Michael Dickson <mike@communicatezing.com> */
 	{ "ECS",			"536",			"",	"", VBE_POST|NOFB },
+	/* Michael Bunk <michael.bunk@gmail.com> */
+	{ "Elitegroup Co.",		"ECS G320",		"",	"", VBE_POST|VBE_MODE },
 
 	/* Andi Kleen, reported to work in 64bit mode */
 	{ "FUJITSU",			"LifeBook S2110",	"",	"", S3_BIOS },
@@ -178,6 +183,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Amilo A7640 ",		"",	"", VBE_POST|VBE_SAVE|S3_BIOS },
 	/* reported by Thomas Halva Labella <hlabella@ulb.ac.be> */
 	{ "FUJITSU SIEMENS",		"Amilo A7645 ",		"",	"", VBE_SAVE|S3_BIOS|S3_MODE },
+	/* Chris Hammond <christopher.hammond@gmail.com> Amilo A 1630 */
+	{ "FUJITSU SIEMENS",		"Amilo A Series",	"0.01",	"", VBE_POST|VBE_SAVE },
 	/* Reiner Herrmann <reiner@reiner-h.de>, this one realls needs VBE_SAVE
 	   since there are many different models of the "AMILO M" series, i do a very exact match */
 	{ "FUJITSU SIEMENS",		"AMILO M        ",	"-1 *",	"R01-S0Z *", VBE_POST|VBE_SAVE },
@@ -212,6 +219,8 @@ struct machine_entry whitelist[] = {
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
 	{ "MTC",			"Montara-GML ",	"FAB-2",	"", 0 },
+	/* Josef Zenisek <jzenisek@gmx.de> */
+	{ "Gigabyte Technology Co., Ltd.",	"945GZM-S2",	"",	"", 0 },
 
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
@@ -303,6 +312,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2529*",		"",	"", S3_BIOS|S3_MODE },
 	/* A21m, Raymund Will */
 	{ "IBM",			"2628*",		"",	"", 0 },
+	/* A31p, Till D"orges <td@pre-secure.de> */
+	{ "IBM",			"2653*",		"",	"", RADEON_OFF },
 	/* X60 / X60s */
 	{ "LENOVO",			"1702*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1704*",		"",	"", S3_BIOS|S3_MODE },
@@ -384,6 +395,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite M30X",	"",	"", S3_BIOS },
 	/* Michaell Gurski */
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
+	/* Antonis Tsolomitis <atsol@aegean.gr> */
+	{ "TOSHIBA",			"Satellite P10",	"",	"", S3_BIOS|NOFB },
 	/* From: Jim <jim.t@vertigo.net.au> */
 	{ "TOSHIBA",			"SatellitePro4600",	"",	"", 0 },
 	/* Bram Senders <bram@luon.net> */
@@ -411,6 +424,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"PCG-FX405*",		"",	"", S3_BIOS },
 	/* Stefan Nobis <stefan@snobis.de> */
 	{ "Sony Corporation",		"PCG-FX601*",		"",	"", S3_BIOS|S3_MODE },
+	/* Marco Nenciarini <mnencia@prato.linux.it> */
+	{ "Sony Corporation",		"PCG-GRT916Z*",		"",	"", 0 },
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
 	/* Mattia Dongili <malattia@linux.it> */
 	{ "Sony Corporation    ",	"PCG-GR7_K(J)        ",	"",	"", 0 },
