@@ -124,6 +124,8 @@ void machine_known(void)
 		identify_machine();
 	}
 
+	s2ram_check(i);
+
 	printf("Machine matched entry %d:\n"
 	       "    sys_vendor   = '%s'\n"
 	       "    sys_product  = '%s'\n"
@@ -131,7 +133,7 @@ void machine_known(void)
 	       "    bios_version = '%s'\n", i,
 	       whitelist[i].sys_vendor, whitelist[i].sys_product,
 	       whitelist[i].sys_version, whitelist[i].bios_version);
-	printf("Fixes: 0x%x  %s%s%s%s%s%s%s%s\n", flags,
+	printf("Fixes: 0x%x  %s%s%s%s%s%s%s%s%s\n", flags,
 	       (flags & VBE_SAVE) ? "VBE_SAVE " : "",
 	       (flags & VBE_POST) ? "VBE_POST " : "",
 	       (flags & VBE_MODE) ? "VBE_MODE " : "",
@@ -139,11 +141,8 @@ void machine_known(void)
 	       (flags & S3_BIOS) ? "S3_BIOS " : "",
 	       (flags & S3_MODE) ? "S3_MODE " : "",
 	       (flags & NOFB) ? "NOFB " : "",
-	       (flags & PCI_SAVE) ? "PCI_SAVE " : "");
-	if (flags & UNSURE)
-		printf("Machine is in the whitelist but perhaps using "
-		       "vbetool unnecessarily.\n"
-		       "Please try to find minimal options.\n\n");
+	       (flags & PCI_SAVE) ? "PCI_SAVE " : "",
+	       (flags & UNSURE) ? "UNSURE " : "");
 	/* in case of a bugreport we might need to find a better match than
 	 * the one we already have (additional BIOS version e.g)...
 	 */
@@ -160,6 +159,12 @@ int s2ram_check(int id)
 		flags = whitelist[id].flags;
 		if ((flags & NOFB) && is_framebuffer())
 			ret = S2RAM_NOFB;
+		if (flags & UNSURE)
+			printf("ATTENTION:\nYour machine is in the whitelist "
+			       " but the entry has not been confirmed.\n"
+			       "Please try to find the best options and "
+			       "report them as explained on\n"
+			       "http://en.opensuse.org/S2ram.\n\n");
 	}
 
 	return ret;
