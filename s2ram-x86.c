@@ -116,6 +116,27 @@ static int machine_match(void)
 	return -1;
 }
 
+int s2ram_check(int id)
+{
+	int ret = S2RAM_OK;
+
+	if (id < 0) {
+		ret = S2RAM_UNKNOWN;
+	} else {
+		flags = whitelist[id].flags;
+		if ((flags & NOFB) && is_framebuffer())
+			ret = S2RAM_NOFB;
+		if (flags & UNSURE)
+			printf("ATTENTION:\nYour machine is in the whitelist "
+			       " but the entry has not been confirmed.\n"
+			       "Please try to find the best options and "
+			       "report them as explained on\n"
+			       "http://en.opensuse.org/S2ram.\n\n");
+	}
+
+	return ret;
+}
+
 void machine_known(void)
 {
 	int i = machine_match();
@@ -147,27 +168,6 @@ void machine_known(void)
 	 * the one we already have (additional BIOS version e.g)...
 	 */
 	identify_machine();
-}
-
-int s2ram_check(int id)
-{
-	int ret = S2RAM_OK;
-
-	if (id < 0) {
-		ret = S2RAM_UNKNOWN;
-	} else {
-		flags = whitelist[id].flags;
-		if ((flags & NOFB) && is_framebuffer())
-			ret = S2RAM_NOFB;
-		if (flags & UNSURE)
-			printf("ATTENTION:\nYour machine is in the whitelist "
-			       " but the entry has not been confirmed.\n"
-			       "Please try to find the best options and "
-			       "report them as explained on\n"
-			       "http://en.opensuse.org/S2ram.\n\n");
-	}
-
-	return ret;
 }
 
 int find_vga(void)
