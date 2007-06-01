@@ -27,7 +27,8 @@ uses the code out of vbetool and radeontool utilities, needed for handling
 quite a lot of graphics cards after the resume from RAM.  It also contains a
 whitelist of machines that are known to work with it.  Please refer to the
 document README.s2ram-whitelist in this package for more information about the
-s2ram whitelist.
+s2ram whitelist. You need libx86 installed to build s2ram, the HOWTO document
+explains how to install it.
 
 The s2both tool combines the functionalities of s2disk and s2ram.  With the
 help of it the system may be suspended to RAM after the suspend-to-disk
