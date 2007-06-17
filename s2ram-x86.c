@@ -137,12 +137,13 @@ int s2ram_check(int id)
 	return ret;
 }
 
-void machine_known(void)
+int machine_known(void)
 {
 	int i = machine_match();
 	if (i < 0) {
 		printf("Machine unknown\n");
 		identify_machine();
+		return 1;
 	}
 
 	s2ram_check(i);
@@ -168,6 +169,7 @@ void machine_known(void)
 	 * the one we already have (additional BIOS version e.g)...
 	 */
 	identify_machine();
+	return (flags & UNSURE);
 }
 
 int find_vga(void)

@@ -19,7 +19,7 @@ void map_radeon_cntl_mem(void);
 int s2ram_hacks(void);
 int s2ram_is_supported(void);
 void identify_machine(void);
-void machine_known(void);
+int machine_known(void);
 int s2ram_do(void);
 int s2ram_generic_do(void);
 void s2ram_resume(void);

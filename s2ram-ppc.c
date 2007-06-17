@@ -39,9 +39,10 @@ void identify_machine(void)
 	printf("We don't have quirks and hence no whitelist on powerpc\n");
 }
 
-void machine_known(void)
+int machine_known(void)
 {
 	printf("We don't have quirks and hence no whitelist on powerpc\n");
+	return 0;
 }
 
 int s2ram_hacks(void)

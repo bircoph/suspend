@@ -74,8 +74,8 @@ int main(int argc, char *argv[])
 			identify_machine();
 			exit(0);
 		case 'n':
-			machine_known();
-			exit(0);
+			ret = machine_known();
+			exit(ret);
 		case '?':
 			usage("s2ram", options, optstring);
 			exit(1);
