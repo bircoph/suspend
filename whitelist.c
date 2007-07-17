@@ -19,6 +19,8 @@ struct machine_entry whitelist[] = {
 	{ "4MBOL&S",			"7521 *"	"REV. A0",	"", 0 },
 	/* Alexander Wirt */
 	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
+	/* Marvin Stark <marv@der-marv.de> */
+	{ "Apple Computer, Inc.",	"MacBook2,1",		"",	"", VBE_POST },
 	/* Julien BLACHE jb@jblache.org */
 	{ "Apple Computer, Inc.",	"MacBookPro2,2",	"",	"", VBE_POST|VBE_MODE },
 	/* Felix Rommel, https://bugzilla.novell.com/show_bug.cgi?id=228572 */
@@ -32,6 +34,10 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"Aspire 3620",		"",	"", S3_BIOS|S3_MODE },
 	/* From: Witmaster <witmaster@op.pl> */
 	{ "Acer            ",		"Aspire 3690 *",	"",	"", S3_BIOS|S3_MODE },
+	/* Carlos Corbacho <cathectic@gmail.com> */
+	{ "Acer",			"Aspire 5020",		"",	"", VBE_POST },
+	/* Paul Kretek <pk@oz4.org> */
+	{ "Acer            ",		"Aspire 5500Z *",	"",	"", 0 },
 	/* From: "cj.yap" <chuanren.ye@gmail.com> */
 	{ "Acer, inc.",			"Aspire 5570 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
@@ -53,6 +59,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer            ",		"TravelMate 2450 ",	"",	"", 0 },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
+	/* Rohan Dhruva <rohandhruva@gmail.com> */
+	{ "Acer, inc.",			"TravelMate 3260 ",	"",	"", VBE_POST|VBE_MODE },
 	/* From: LucaB <lbonco@tin.it> */
 	{ "Acer, inc.",			"TravelMate 4100 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
@@ -63,10 +71,14 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
 	/* Patryk Zawadzki <patrys@icenter.pl> */
 	{ "ASUSTeK Computer Inc. ",	"A6Km      ",		"",	"", 0 },
+	/* Szalai Akos <szalakos@gmail.com> */
+	{ "ASUSTeK Computer Inc. ",	"A6M",			"",	"", VBE_POST },
 	/* tias@ulyssis.org */
 	{ "ASUSTeK Computer Inc. ",	"A6U       ",		"",	"", VBE_POST|VBE_MODE },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
 	{ "ASUSTEK ",			"L3000D",		"",	"", VBE_POST|VBE_SAVE },
+	/* Guenther Schwarz <guenther.schwarz@gmx.de> */
+	{ "ASUSTeK Computer Inc.        ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* Peter Suetterlin <P.Suetterlin@astro.uu.nl>, VBE_MODE does not work */
 	{ "ASUSTeK Computer Inc.        ",	"M3N       ",	"",	"", VBE_POST|VBE_SAVE },
 	/* Manfred Tremmel, https://bugzilla.novell.com/show_bug.cgi?id=171107 */
@@ -163,10 +175,14 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"MXC051 *",		"",	"", 0 },
 	/* Dell Inspiron 640m, Daniel Drake <dsd@gentoo.org> */
 	{ "Dell Inc.",			"MXC061 *",		"",	"", VBE_POST },
+	/* Dell XPS M1710 Harry Kuiper <hkuiper@xs4all.nl>, console only resumes with vesafb! */
+	{ "Dell Inc.",			"MXG061 *",		"",	"", 0 },
 	/* Desktop with Intel graphics, Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "Dell Inc.                ",	"OptiPlex GX520 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
 	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
+	/* Michael Witten mfwitten@MIT.EDU */
+	{ "Dell Computer Corporation",	"Dimension 2400 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Allen <ducalen@sympatico.ca>, Desktop with onboard grephics */
 	{ "Dell Computer Corporation",	"Dimension 3000 *",	"",	"", VBE_POST|VBE_MODE },
 
@@ -194,10 +210,14 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"AMILO PRO V2030",	"",	"", VBE_POST|VBE_MODE },
 	/* Florian Herrmann <florian-herrmann@gmx.de> */
 	{ "FUJITSU SIEMENS",		"AMILO Pro V2040",	"",	"", 0 },
-	/* Arild Haugstad <arild.haugstad@gmx.net> */
-	{ "FUJITSU SIEMENS",		"AMILO Pro V3205",	"",	"", S3_BIOS },
+	/* <arild.haugstad@gmx.net> / https://bugzilla.novell.com/show_bug.cgi?id=279944 */
+	{ "FUJITSU SIEMENS",		"AMILO Pro V3205",	"",	"", S3_BIOS|S3_MODE },
 	/* Steffen <mlsone@forevers.de> */
 	{ "FUJITSU SIEMENS",		"AMILO PRO V8010 *",	"",	"", VBE_POST|VBE_MODE },
+	/* <noname1@onlinehome.de> */
+	{ "FUJITSU SIEMENS",		"AMILO Xi 1546",	"",	"", S3_BIOS|S3_MODE },
+	/* wolfgang.aigner@gmx.de */
+	{ "FUJITSU SIEMENS",		"LIFEBOOK E4010",	"",	"", VBE_SAVE },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
@@ -211,6 +231,9 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"SCENIC N300/N600",	"",	"", VBE_POST|VBE_MODE },
 	/* This is a desktop with onboard i810 video <seife@suse.de> */
 	{ "FUJITSU SIEMENS",		"SCENIC W300/W600",	"",	"", VBE_POST|VBE_MODE },
+	/* Peer Heinlein <p.heinlein@jpberlin.de> */
+	{ "FUJITSU SIEMENS",		"SCENIC W",		"",	"", VBE_POST|VBE_MODE },
+
 	/* Christoph Wiesmeyr <christoph.wiesmeyr@liwest.at> */
 	{ "GERICOM",			"259IA1",		"",	"", 0 },
 	/* booiiing@gmail.com */
@@ -222,12 +245,16 @@ struct machine_entry whitelist[] = {
 	/* Josef Zenisek <jzenisek@gmx.de> */
 	{ "Gigabyte Technology Co., Ltd.",	"945GZM-S2",	"",	"", 0 },
 
+	/* Marcos Pinto <markybob@gmail.com>, HP dv6000 */
+	{ "Hewlett-Packard",		"EW434AVABA *",		"",	"", S3_BIOS|S3_MODE },
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
 	/* Rene Seindal <rene@seindal.dk> */
 	{ "Hewlett-Packard",		"HP Compaq nc4400*",	"",	"68YHV*", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
+	/* Ed Hoo <whoishoo@gmail.com> */
+	{ "Hewlett-Packard*",		"hp Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	/* there seem to be versions with a " " after Hewlett-Packard and without. */
 	{ "Hewlett-Packard*",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* Jan Adlen <janne@rosehip.mine.nu> */
@@ -238,6 +265,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nx6120 *",	"",	"68DTD*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard",		"HP Compaq nx6125 *",	"",	"", VBE_SAVE|NOFB },
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
+	/* Michal Vyskocil <michal.vyskocil@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq nx6310 *",	"",	"68YDU*", VBE_POST },
 	/* Benedikt Nimmervoll <nimmervoll.benedikt@googlemail.com> */
 	{ "Hewlett-Packard",		"HP Compaq nx6325 *",	"",	"68TT2*", VBE_POST|VBE_SAVE },
 	/* Michael Biebl <biebl@teco.edu> */
@@ -249,6 +278,8 @@ struct machine_entry whitelist[] = {
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
+	/* Matto Marjanovic <maddog@mir.com> */
+	{ "Hewlett-Packard",		"Presario C500 (RZ341UA#*",	"",	"", 0 },
 	/* Fatih Alabas https://bugzilla.novell.com/show_bug.cgi?id=230528 */
 	{ "Hewlett-Packard",		"Presario M2000 (EQ547PA#*",	"",	"", S3_BIOS|VBE_MODE },
 	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
@@ -256,10 +287,14 @@ struct machine_entry whitelist[] = {
 	/* Arthur Peters <amp@singingwizard.org> */
 	{ "Hewlett-Packard",		"Presario R3200 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Hewlett-Packard",		"Presario R4100 *",	"",	"", S3_BIOS|S3_MODE },
+	/* iamnoah@gmail.com */
+	{ "Hewlett-Packard",		"Presario V2000 (EP381UA#*","",	"", S3_BIOS },
 	/* From: "Lim Chuen Ee, Mike" <chuenee@starhub.net.sg> */
 	{ "Hewlett-Packard",		"Presario V3000 (RL377PA#*","",	"", S3_BIOS|S3_MODE },
 	/* "Zirkel, Timothy K" <zirkelt@lafayette.edu> */
 	{ "Hewlett-Packard ",		"Compaq Presario X1000 (DK454AV)*",	"",	"", S3_BIOS },
+	/* S.Çağlar Onur <caglar@pardus.org.tr>, works only from X! */
+	{ "Hewlett-Packard",	"HP Pavilion dv2000 (GF759EA#*", "",	"", 0 },
 	/* Fabio Comolli <fabio.comolli@gmail.com>, dv4378ea, ATI X700 */
 	{ "Hewlett-Packard",	"Pavilion dv4000 (ES973EA#*",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* Damien Raude-Morvan <drazzib@drazzib.com>, This is a dv4052ea, i915GM */
@@ -270,6 +305,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Pavilion dv6000 (RM469EA#*","",	"", 0 },
 	/* John Soros <sorosj@gmail.com> "HP dv6120ea" */
 	{ "Hewlett-Packard",	"HP Pavilion dv6000 (RP980EA#*","",	"", 0 },
+	/* Chris Polderman <chris.polderman@gmail.com> */
+	{ "Hewlett-Packard",	"HP Pavilion ze2000 (EK791EA#*","",	"", 0 },
 	/* Frank Schröder <frank.schroeder@gmail.com>, zt3380us */
 	{ "Hewlett-Packard ",	"Pavilion zt3300 (PF083UA#*",	"",	"", 0 },
 	/* Karthik <molecularbiophysics@gmail.com> */
@@ -291,6 +328,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2672*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X40 confirmed by Christian Deckelmann */
 	{ "IBM",			"2371*",	"ThinkPad X40",	"", S3_BIOS|S3_MODE },
+	/* X40, Andrew Pimlott <andrew@pimlott.net> */
+	{ "IBM",			"2386*",		"",	"", S3_BIOS|S3_MODE },
 	/* X41 Tablet, tested by Danny Kukawka */
 	{ "IBM",			"",	"ThinkPad X41 Tablet",	"", S3_BIOS|S3_MODE },
 	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
@@ -301,8 +340,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad T43",	"", S3_BIOS|S3_MODE },
 	/* T43p reported by Magnus Boman */
 	{ "IBM",			"",	"ThinkPad T43p",	"", S3_BIOS|S3_MODE },
-	/* G40 confirmed by David H"ademan */
-	{ "IBM",			"2388*",		"",	"", VBE_SAVE },
+	/* G40 confirmed by David Härdeman */
+	{ "IBM",			"2388*",		"",	"", 0 },
 	/* R32 */
 	{ "IBM",			"2658*",		"",	"", 0 },
 	/* R40 */
@@ -312,8 +351,12 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2529*",		"",	"", S3_BIOS|S3_MODE },
 	/* A21m, Raymund Will */
 	{ "IBM",			"2628*",		"",	"", 0 },
+	/* A21p, Holger Sickenberg */
+	{ "IBM",			"2629*",		"",	"", 0 },
 	/* A31p, Till D"orges <td@pre-secure.de> */
 	{ "IBM",			"2653*",		"",	"", RADEON_OFF },
+	/* X41, Florian Ragwitz <rafl@debian.org>, */
+	{ "IBM",			"2525*",		"",	"", S3_BIOS|S3_MODE },
 	/* X60 / X60s */
 	{ "LENOVO",			"1702*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1704*",		"",	"", S3_BIOS|S3_MODE },
@@ -331,6 +374,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60p",	"", S3_BIOS|S3_MODE },
 	/* T60 From: Jeff Nichols <jnichols@renkoo.net> and Kristofer Hallgren <kristofer.hallgren@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
+	/* T61 with NVidia card, https://bugzilla.novell.com/show_bug.cgi?id=290618 */
+	{ "LENOVO",			"7663*",	"",		"", S3_MODE },
 	/* Paul Wilkinson <pwilko@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad Z61p",	"", S3_BIOS|S3_MODE },
 	/* Z61m From: Roderick Schertler <roderick@argon.org> */
@@ -343,6 +388,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"07686VG",	"3000 N100 *",	"", 0 },
 	/* Bogdan <boogi77@o2.pl> */
 	{ "LENOVO",			"076831G",	"3000 N100 *",	"", 0 },
+	/* Tim Creech <dezgotspam@gmail.com> */
+	{ "LENOVO",			"076835U",	"3000 N100 *",	"", 0 },
 	/* Ted Percival <ted@midg3t.net> */
 	{ "LENOVO",			"07687MM",	"3000 N100 *",	"", S3_MODE },
 
@@ -368,9 +415,12 @@ struct machine_entry whitelist[] = {
 	{ "NEC COMPUTERS INTERNATIONAL","NEC Versa Premium",	"FAB-2","", 0 },
 	/* Per Waago <waago@stud.ntnu.no> */
 	{ "Packard Bell NEC",	"00000000000000000000000", "P820008416","", 0 },
-
+	/* Pavol Otcenas <Pavol.Otcenas@2c.cz>, "Prestigio Nobile 159W" */
+	{ "To Be Filled By O.E.M.", "259IA1", "To Be Filled By O.E.M.", "080010 ", S3_MODE },
 	/* Jeremie Delaitre <jeremie.delaitre@gmail.com> */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"Q35/Q36",	"",	"", S3_BIOS|S3_MODE },
+	/* Eduardo Robles Elvira <edulix@gmail.com> */
+	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R40/R41",	"",	"", VBE_SAVE },
 	/* Daniel Koester <koester@math.uni-augsburg.de> does not yet work from text mode */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R55S *",	"",	"", 0 },
 	/* Stephen Denham <stephen.denham@gmail.com> */
@@ -409,6 +459,8 @@ struct machine_entry whitelist[] = {
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	/* Dhananjaya Rao <phaze87@gmail.com> */
 	{ "Sony Corporation",		"VGN-B55G(I)"		"",	"", 0 },
+	/* Jorge Visca <xxopxe@gmail.com> */
+	{ "Sony Corporation",		"VGN-C140G",		"",	"", S3_BIOS|S3_MODE },
 	{ "Sony Corporation",		"VGN-FS115B",		"",	"", S3_BIOS|S3_MODE },
 	/* Olivier Saier <osaier@gmail.com>, apparently S3_BIOS locks the machine hard */
 	{ "Sony Corporation",		"VGN-FS115Z",		"",	"", S3_MODE },
@@ -429,6 +481,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"PCG-GRT995MP*",	"",	"", 0 },
 	/* Mattia Dongili <malattia@linux.it> */
 	{ "Sony Corporation    ",	"PCG-GR7_K(J)        ",	"",	"", 0 },
+	/* Bruce Perens <bruce@perens.com> */
+	{ "Sony Corporation",		"PCG-TR2A(UC)",		"",	"", VBE_MODE },
 
 	/* Gregory Colpart <reg@evolix.fr> 'Transtec Levio 210' */
 	{ "transtec AG",		"MS-1057",		"",	"", S3_BIOS|S3_MODE },
@@ -551,11 +605,9 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2370*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2372*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2382*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2386*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// X41
 	{ "IBM",			"1864*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1865*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2525*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2526*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2527*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2528*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
