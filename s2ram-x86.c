@@ -70,12 +70,20 @@ void identify_machine(void)
 
 static int set_acpi_video_mode(int mode)
 {
-	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
+	unsigned long acpi_video_flags;
+	FILE *f = fopen("/proc/sys/kernel/acpi_video_flags", "rw");
 	if (!f) {
 		printf("/proc/sys/kernel/acpi_video_flags does not exist; you need a kernel >=2.6.16.\n");
 		return S2RAM_FAIL;
 	}
-	fprintf(f, "%d", mode);
+	/* read the old setting from /proc */
+	if (fscanf(f, "%ld", &acpi_video_flags) != 1) {
+		printf("/proc/sys/kernel/acpi_video_flags format is invalid\n");
+		return S2RAM_FAIL;
+	}
+	/* mask out bits 0 and 1 */
+	acpi_video_flags = acpi_video_flags & (~0UL - S3_BIOS - S3_MODE);
+	fprintf(f, "%ld", acpi_video_flags | mode);
 	fflush(f);
 	fclose(f);
 	return S2RAM_OK;
@@ -210,9 +218,7 @@ int s2ram_hacks(void)
 {
 	int ret = 0;
 
-	/* 0 means: don't touch what was set on kernel commandline */
-	if (flags & (S3_BIOS | S3_MODE))
-		ret = set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
+	ret = set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
 
 	if (ret)
 		return ret;
