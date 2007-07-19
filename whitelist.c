@@ -98,6 +98,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.        ",	"W5A       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
 	{ "ERGOUK                       ",	"M2N       ",	"",	"", S3_BIOS|S3_MODE },
+	/* ASUS Mainboard, Christoph Jaeschke <chrjae@arcor.de> */
+	{ "ASUSTek Computer Inc.",	"K8N-E-Deluxe",		"",	"", S3_BIOS },
 	/* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-(
 	   reported by James Spencer */
 	{ "",		"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
@@ -361,12 +363,14 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"1702*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1704*",		"",	"", S3_BIOS|S3_MODE },
 	{ "LENOVO",			"1706*",		"",	"", S3_BIOS|S3_MODE },
-	/* https://bugzilla.novell.com/show_bug.cgi?id=210928, note the small "p" in Thinkpad */
-	{ "LENOVO",			"",		"Thinkpad R60",	"", S3_BIOS|S3_MODE },
+	/* https://bugzilla.novell.com/show_bug.cgi?id=210928, Thinkpad R60, 32bit? */
+	{ "LENOVO",			"9456*",		"",	"", S3_BIOS|S3_MODE },
 	/* Marcus Better <marcus@better.se>, this time with a capital "P" */
 	{ "LENOVO",			"",		"ThinkPad R60",	"", S3_BIOS|S3_MODE },
 	/* From: gregor herrmann <gregor.herrmann@comodo.priv.at> */
 	{ "LENOVO",			"",		"Thinkpad R60e", "", S3_BIOS|S3_MODE },
+	/* Dave Royal <dave@daveroyal.com>, R60e 32bit works with S3_MODE, 64bit needs VBE_MODE */
+	{ "LENOVO",			"0657*",		"",	"", S3_BIOS|VBE_MODE },
 	/* At least 1709 series thinkpads can be whitelisted by name,
 	   and we can probably delete entries above, too.... */
 	{ "LENOVO",			"",		"ThinkPad X60",	"", S3_BIOS|S3_MODE },
@@ -376,6 +380,10 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
 	/* T61 with NVidia card, https://bugzilla.novell.com/show_bug.cgi?id=290618 */
 	{ "LENOVO",			"7663*",	"",		"", S3_MODE },
+	/* X61s, Hendrik-Jan Heins <hjh@passys.nl> */
+	{ "LENOVO",			"7669*",	"",		"", S3_BIOS|VBE_MODE },
+	/* T61, intel card <seife@suse.de> 32bit works with S3_MODE, but 64bit needs VBE_MODE */
+	{ "LENOVO",			"8895*",	"",		"", S3_BIOS|VBE_MODE },
 	/* Paul Wilkinson <pwilko@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad Z61p",	"", S3_BIOS|S3_MODE },
 	/* Z61m From: Roderick Schertler <roderick@argon.org> */
@@ -403,6 +411,8 @@ struct machine_entry whitelist[] = {
 	{ "MAXDATA",			"IMPERIO4045A *",	"",	"", 0 },
 	/* Jan Gerrit <JanGerrit@Burg-Borgholz.de> */
 	{ "MAXDATA",			"PRO600IW",		"",	"", S3_BIOS|S3_MODE },
+	/* Gergely Csepany <cheoppy@gmail.com> */
+	{ "MICRO-STAR INT'L CO.,LTD.",	"MS-1057",		"",	"", S3_BIOS|S3_MODE },
 	/* Baruch Even <baruch@ev-en.org> */
 	{ "Micro-Star International",	"MS-1412",		"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* uswsusp@faxm0dem.org */
@@ -455,7 +465,8 @@ struct machine_entry whitelist[] = {
 	/* Stefan Seyfried has one of those :-) S3_BIOS leads to "melting screen" */
 	{ "TOSHIBA",			"TECRA 8200",		"",	"", S3_MODE },
 	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
-	{ "Samsung Electronics",	"SX20S",		"",	"", S3_BIOS|S3_MODE },
+	/* https://bugzilla.novell.com/show_bug.cgi?id=290734 */
+	{ "Samsung Electronics",	"SX20S",		"",	"", VBE_POST|VBE_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
 	/* Dhananjaya Rao <phaze87@gmail.com> */
 	{ "Sony Corporation",		"VGN-B55G(I)"		"",	"", 0 },
