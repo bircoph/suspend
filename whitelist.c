@@ -253,7 +253,7 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
 	/* Rene Seindal <rene@seindal.dk> */
 	{ "Hewlett-Packard",		"HP Compaq nc4400*",	"",	"68YHV*", VBE_POST|VBE_SAVE },
-	{ "Hewlett-Packard ",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
+	{ "Hewlett-Packard*",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	/* Ed Hoo <whoishoo@gmail.com> */
 	{ "Hewlett-Packard*",		"hp Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
