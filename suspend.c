@@ -756,7 +756,8 @@ static void suspend_shutdown(int snapshot_fd)
 	/* Signature is on disk, it is very dangerous to continue now.
 	 * We'd do resume with stale caches on next boot. */
 	fprintf(stderr,"Powerdown failed. That's impossible.\n");
-	while(1);
+	while(1)
+		sleep (60);
 }
 
 int suspend_system(int snapshot_fd, int resume_fd)
