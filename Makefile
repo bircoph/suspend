@@ -4,8 +4,9 @@
 #CONFIG_UDEV=yes
 #CONFIG_RESUME_DYN=yes
 
-SUSPEND_DIR=/usr/local/sbin
-RESUME_DIR=/usr/local/lib/suspend
+PREFIX=/usr/local
+SUSPEND_DIR=$(PREFIX)/sbin
+RESUME_DIR=$(PREFIX)/lib/suspend
 CONFIG_DIR=/etc
 RESUME_DEVICE=<path_to_resume_device_file>
 BOOT_DIR=/boot
