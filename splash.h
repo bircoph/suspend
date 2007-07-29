@@ -25,7 +25,7 @@ struct splash {
 	void (*read_password) (char *, int);
 	int (*dialog) (const char *);
 	int (*prepare_abort) (struct termios *, struct termios *);
-	int (*key_pressed) (const char key);
+	char (*key_pressed) (void);
 	void (*restore_abort) (struct termios *);
 };
 

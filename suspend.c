@@ -80,8 +80,12 @@ static char s2ram;
 static char early_writeout;
 static char splash_param;
 #define SHUTDOWN_LEN	16
-static char shutdown_method[SHUTDOWN_LEN] = "platform";
-static int use_platform_suspend;
+static char shutdown_method_value[SHUTDOWN_LEN] = "";
+static enum {
+	SHUTDOWN_METHOD_SHUTDOWN,
+	SHUTDOWN_METHOD_PLATFORM,
+	SHUTDOWN_METHOD_REBOOT
+} shutdown_method = SHUTDOWN_METHOD_PLATFORM;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
@@ -160,7 +164,7 @@ static struct config_par parameters[PARAM_NO] = {
 	{
 		.name = "shutdown method",
 		.fmt = "%s",
-		.ptr = shutdown_method,
+		.ptr = shutdown_method_value,
 		.len = SHUTDOWN_LEN,
 	},
 };
@@ -489,11 +493,18 @@ static int save_image(struct swap_map_handle *handle,
 			if (!(nr_pages % m)) {
 				printf("\b\b\b\b%3d%%", nr_pages / m);
 				splash.progress(20 + (nr_pages / m) * 0.75);
-				if (abort_possible && 
-					splash.key_pressed(ABORT_KEY_CODE)) {
 
-					printf(" aborted!\n");
-					return -EINTR;
+				switch (splash.key_pressed()) {
+					case ABORT_KEY_CODE:
+						if (abort_possible) {
+							printf(" aborted!\n");
+							return -EINTR;
+						}
+					break;
+					case REBOOT_KEY_CODE:
+						printf (" reboot enabled\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+						shutdown_method = SHUTDOWN_METHOD_REBOOT;
+					break;
 				}
 			}
 			if (!(nr_pages % writeout_rate))
@@ -597,8 +608,6 @@ int write_image(int snapshot_fd, int resume_fd)
 			header->image_flags |= IMAGE_COMPRESSED;
 			max_block_size += sizeof(short);
 		}
-		if (use_platform_suspend)
-			header->image_flags |= PLATFORM_SUSPEND;
 
 #ifdef CONFIG_ENCRYPT
 		if (encrypt) {
@@ -649,6 +658,14 @@ No_RSA:
 			gettimeofday(&begin, NULL);
 			error = save_image(&handle, header->pages - 1);
 		}
+
+		/*
+		 * NOTICE:
+		 * This should be after save_image() as
+		 * the user may modify the behavior
+		 */
+		if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
+			header->image_flags |= PLATFORM_SUSPEND;
 	}
 	if (!error) {
 		error = flush_swap_writer(&handle);
@@ -728,9 +745,9 @@ static int reset_signature(int fd)
 
 static void suspend_shutdown(int snapshot_fd)
 {
-	if (!strcmp(shutdown_method, "reboot")) {
+	if (shutdown_method == SHUTDOWN_METHOD_REBOOT) {
 		reboot();
-	} else if (use_platform_suspend) {
+	} else if (shutdown_method == SHUTDOWN_METHOD_PLATFORM) {
 		int ret = platform_enter(snapshot_fd);
 		if (ret < 0)
 			suspend_error("pm_ops->enter failed, calling power_off.");
@@ -769,12 +786,12 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	if (error)
 		goto Unfreeze;
 
-	if (use_platform_suspend) {
+	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM) {
 		int ret = platform_prepare(snapshot_fd);
 		if (ret < 0) {
 			suspend_error("pm_ops->prepare failed, using "
 				"'shutdown mode = shutdown'.");
-			use_platform_suspend = 0;
+			shutdown_method = SHUTDOWN_METHOD_SHUTDOWN;
 		}
 	}
 
@@ -832,7 +849,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	/* We get here during the resume or when we failed to suspend.
 	 * Remember, suspend_shutdown() never returns!
 	 */
-	if (use_platform_suspend)
+	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
 		platform_finish(snapshot_fd);
 
 Unfreeze:
@@ -1318,7 +1335,15 @@ int main(int argc, char *argv[])
 	if (early_writeout != 'n' && early_writeout != 'N')
 		early_writeout = 1;
 
-	use_platform_suspend = !strcmp(shutdown_method, "platform");
+	if (!strcmp (shutdown_method_value, "shutdown")) {
+		shutdown_method = SHUTDOWN_METHOD_SHUTDOWN;
+	}
+	else if (!strcmp (shutdown_method_value, "platform")) {
+		shutdown_method = SHUTDOWN_METHOD_PLATFORM;
+	}
+	else if (!strcmp (shutdown_method_value, "reboot")) {
+		shutdown_method = SHUTDOWN_METHOD_REBOOT;
+	}
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;

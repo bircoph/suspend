@@ -51,13 +51,13 @@ static int prepare_abort(struct termios *oldtrm, struct termios *newtrm)
 	return ret;
 }
 
-static int key_pressed(const char key)
+static char key_pressed(void)
 {
 	char c;
-	if (read(0, &c, 1) > 0 && c == key) 
-		return 1;
+	if (read(0, &c, 1) == 0) 
+		return 0;
 
-	return 0;
+	return c;
 }
 
 static void restore_abort(struct termios *oldtrm) 

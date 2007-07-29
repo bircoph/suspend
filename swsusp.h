@@ -216,3 +216,5 @@ struct buf_block {
 
 #define ABORT_KEY_CODE	127
 #define ABORT_KEY_NAME	"backspace"
+#define REBOOT_KEY_CODE	'r'
+#define REBOOT_KEY_NAME	"r"
