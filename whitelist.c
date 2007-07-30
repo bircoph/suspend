@@ -94,6 +94,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.        ",	"S5N       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS V6V, Johannes Engel <j-engel@gmx.de> */
 	{ "ASUSTeK Computer INC.",	"V6V",			"",	"", S3_MODE },
+	/* Kanru Chen <kanru@csie.us> */
+	{ "ASUSTeK Computer INC.",		"W3A",		"",	"", S3_BIOS|S3_MODE },
 	/* ASUS W5A, Riccardo Sama' <riccardo.sama@yetopen.it> */
 	{ "ASUSTeK Computer Inc.        ",	"W5A       ",	"",	"", S3_BIOS|S3_MODE },
 	/* ASUS M2400N, Daniel Gollub */
@@ -103,6 +105,12 @@ struct machine_entry whitelist[] = {
 	/* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-(
 	   reported by James Spencer */
 	{ "",		"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
+	/* ASUS M2N-E motherboars, not much usable in DMI :-(
+	   reported by Ingo <ingo.steiner@gmx.net> */
+	{ "",		"",	"",	"ASUS M2N-E ACPI BIOS Revision *",  0 },
+	/* another ASUS Mainboard, reported by mailinglist@prodigy7.de */
+	{ "",	"",	"",	"ASUS M2N32-SLI DELUXE ACPI BIOS Revision 1201", VBE_POST|VBE_MODE },
+	{ "",	"",	"",	"ASUS M2N32-SLI DELUXE ACPI BIOS Revision 1101", VBE_POST|VBE_MODE },
 	/* Mark Stillwell */
 	{ "AVERATEC",			"3700 Series",		"",	"", S3_BIOS|S3_MODE },
 	/* Ross Patterson <me@rpatterson.net> */
@@ -214,6 +222,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"AMILO Pro V2040",	"",	"", 0 },
 	/* <arild.haugstad@gmx.net> / https://bugzilla.novell.com/show_bug.cgi?id=279944 */
 	{ "FUJITSU SIEMENS",		"AMILO Pro V3205",	"",	"", S3_BIOS|S3_MODE },
+	/* Alexandr Kara <Alexandr.Kara@seznam.cz> */
+	{ "FUJITSU SIEMENS",		"AMILO Pro Edition V3405", "",	"", S3_BIOS|S3_MODE },
 	/* Steffen <mlsone@forevers.de> */
 	{ "FUJITSU SIEMENS",		"AMILO PRO V8010 *",	"",	"", VBE_POST|VBE_MODE },
 	/* <noname1@onlinehome.de> */
@@ -247,6 +257,8 @@ struct machine_entry whitelist[] = {
 	/* Josef Zenisek <jzenisek@gmx.de> */
 	{ "Gigabyte Technology Co., Ltd.",	"945GZM-S2",	"",	"", 0 },
 
+	/* Robert Hart <Robert.Hart@BuroHappold.com> */
+	{ "Hewlett-Packard",	"HP Pavilion dv2500 Notebook PC", "",	"", 0 },
 	/* Marcos Pinto <markybob@gmail.com>, HP dv6000 */
 	{ "Hewlett-Packard",		"EW434AVABA *",		"",	"", S3_BIOS|S3_MODE },
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
@@ -277,6 +289,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard ",		"Compaq nx 7010 (PG588EA#*","",	"", S3_BIOS },
 	/* Valent Turkovic <valent.turkovic@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq nx7300 (RU374ES#*",	"",	"", VBE_POST|VBE_MODE },
+	/* Slawomir Skrzyniarz <diodak@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq nx7400 (RH412EA#)",	"",	"", VBE_POST|VBE_MODE },
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
@@ -378,10 +392,14 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"",	"ThinkPad T60p",	"", S3_BIOS|S3_MODE },
 	/* T60 From: Jeff Nichols <jnichols@renkoo.net> and Kristofer Hallgren <kristofer.hallgren@gmail.com> */
 	{ "LENOVO",			"",	"ThinkPad T60",		"", S3_BIOS|S3_MODE },
+	/* T61, Joe Nahmias <jello@debian.org>, debian bug #432018 */
+	{ "LENOVO",			"7658*",	"",		"", S3_BIOS|S3_MODE },
 	/* T61 with NVidia card, https://bugzilla.novell.com/show_bug.cgi?id=290618 */
 	{ "LENOVO",			"7663*",	"",		"", S3_MODE },
-	/* X61s, Hendrik-Jan Heins <hjh@passys.nl> */
-	{ "LENOVO",			"7669*",	"",		"", S3_BIOS|VBE_MODE },
+	/* X61s, Hendrik-Jan Heins <hjh@passys.nl>. Probably does not restore the
+	   framebuffer mode correctly, but S3_MODE as well as VBE_MODE seem to fail
+	   sometimes on x86_64 on this machine :-( */
+	{ "LENOVO",			"7669*",	"",		"", S3_BIOS },
 	/* T61, intel card <seife@suse.de> 32bit works with S3_MODE, but 64bit needs VBE_MODE */
 	{ "LENOVO",			"8895*",	"",		"", S3_BIOS|VBE_MODE },
 	/* Paul Wilkinson <pwilko@gmail.com> */
@@ -462,6 +480,8 @@ struct machine_entry whitelist[] = {
 	/* Bram Senders <bram@luon.net> */
 	{ "TOSHIBA",			"SP4600",	"Version 1.0",	"", 0 },
 	{ "TOSHIBA",			"TECRA S3",		"",	"", 0 },
+	/* From: a v <adam_6515@hotmail.com> */
+	{ "TOSHIBA",			"TECRA8100",		"",	"", S3_MODE },
 	/* Stefan Seyfried has one of those :-) S3_BIOS leads to "melting screen" */
 	{ "TOSHIBA",			"TECRA 8200",		"",	"", S3_MODE },
 	{ "Samsung",			"SQ10",			"",	"", VBE_POST|VBE_SAVE },
