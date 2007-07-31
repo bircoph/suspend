@@ -264,7 +264,9 @@ struct machine_entry whitelist[] = {
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
 	/* Rene Seindal <rene@seindal.dk> */
-	{ "Hewlett-Packard",		"HP Compaq nc4400*",	"",	"68YHV*", VBE_POST|VBE_SAVE },
+	{ "Hewlett-Packard",		"HP Compaq nc4400*",	"F.08",	"68YHV*", VBE_POST|VBE_SAVE },
+	/* Antti Laine <antti.a.laine@tut.fi>, "did not work with older BIOS", now has F.09 */
+	{ "Hewlett-Packard",		"HP Compaq nc4400*",	"",	"68YHV*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"Compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	{ "Hewlett-Packard*",		"hp compaq nx5000 *",	"",	"68BCU*", VBE_POST|VBE_MODE },
 	/* Ed Hoo <whoishoo@gmail.com> */
@@ -294,6 +296,8 @@ struct machine_entry whitelist[] = {
 	/* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
 	{ "Hewlett-Packard",		"",			"",	"68YGU*", VBE_POST },
 	{ "Hewlett-Packard",		"HP Compaq nx8220 *",	"",	"", VBE_SAVE|NOFB },
+	/* Stefan Seyfried <seife@suse.de> novell bug 259831 */
+	{ "Hewlett-Packard",	"HP Compaq nw8440 (EY696AA*",	"",	"68YVD*", VBE_POST|VBE_MODE },
 	/* Matto Marjanovic <maddog@mir.com> */
 	{ "Hewlett-Packard",		"Presario C500 (RZ341UA#*",	"",	"", 0 },
 	/* Fatih Alabas https://bugzilla.novell.com/show_bug.cgi?id=230528 */
@@ -475,6 +479,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite M35X",	"",	"", S3_BIOS|S3_MODE },
 	/* Antonis Tsolomitis <atsol@aegean.gr> */
 	{ "TOSHIBA",			"Satellite P10",	"",	"", S3_BIOS|NOFB },
+	/* From: mire <mire@osadmin.com> */
+	{ "TOSHIBA",			"Satellite P200",	"",	"", S3_BIOS|S3_MODE },
 	/* From: Jim <jim.t@vertigo.net.au> */
 	{ "TOSHIBA",			"SatellitePro4600",	"",	"", 0 },
 	/* Bram Senders <bram@luon.net> */
