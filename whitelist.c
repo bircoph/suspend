@@ -342,6 +342,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"",	"ThinkPad R51e",	"", S3_BIOS|S3_MODE },
 	/* T30 */
 	{ "IBM",			"2366*",		"",	"", RADEON_OFF },
+	/* Thinkpad 600e, George Tellalov <gtellalov@emporikilife.gr>, needs X running */
+	{ "IBM",			"2645*",		"",	"", VBE_POST|VBE_MODE },
 	/* X22, confirmed by Richard Neill */
 	{ "IBM",			"2662*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X31, confirmed by Bjoern Jacke */
