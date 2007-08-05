@@ -22,7 +22,8 @@
 #define SWAP_SIG	"SWAPSPACE2"
 #define SWAP_SIG_SIZE	10
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 	unsigned int block, last_block, first_block, blocks_per_page;
 	unsigned int offset;
 	int size, blk_size;
