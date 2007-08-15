@@ -66,12 +66,12 @@ static char compress;
 #endif
 static unsigned long compr_diff;
 #ifdef CONFIG_ENCRYPT
-static char encrypt;
+static char do_encrypt;
 static char use_RSA;
 static char key_name[MAX_STR_LEN] = KEY_FILE;
 static char password[PASS_SIZE];
 #else
-#define encrypt 0
+#define do_encrypt 0
 #define key_name NULL
 #endif
 #ifdef CONFIG_BOTH
@@ -142,7 +142,7 @@ static struct config_par parameters[PARAM_NO] = {
 	{
 		.name = "encrypt",
 		.fmt = "%c",
-		.ptr = &encrypt,
+		.ptr = &do_encrypt,
 	},
 	{
 		.name = "RSA key file",
@@ -350,7 +350,7 @@ static int flush_buffer(struct swap_map_handle *handle)
 	int error =  0;
 
 #ifdef CONFIG_ENCRYPT
-	if (encrypt) {
+	if (do_encrypt) {
 		error = gcry_cipher_encrypt(cipher_handle,
 			handle->encrypt_buffer, handle->cur_area.size,
 			src, handle->cur_area.size);
@@ -610,7 +610,7 @@ int write_image(int snapshot_fd, int resume_fd)
 		}
 
 #ifdef CONFIG_ENCRYPT
-		if (encrypt) {
+		if (do_encrypt) {
 			if (use_RSA) {
 				error = gcry_cipher_setkey(cipher_handle,
 						key_data->key, KEY_SIZE);
@@ -1325,8 +1325,8 @@ int main(int argc, char *argv[])
 		compress = 0;
 #endif
 #ifdef CONFIG_ENCRYPT
-	if (encrypt != 'y' && encrypt != 'Y')
-		encrypt = 0;
+	if (do_encrypt != 'y' && do_encrypt != 'Y')
+		do_encrypt = 0;
 #endif
 	if (splash_param != 'y' && splash_param != 'Y')
 		splash_param = 0;
@@ -1351,7 +1351,7 @@ int main(int argc, char *argv[])
 
 	mem_size = 3 * page_size + buffer_size;
 #ifdef CONFIG_ENCRYPT
-	if (encrypt)
+	if (do_encrypt)
 		mem_size += buffer_size;
 #endif
 	mem_pool = malloc(mem_size);
@@ -1361,7 +1361,7 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 #ifdef CONFIG_ENCRYPT
-	if (encrypt) {
+	if (do_encrypt) {
 		printf("%s: libgcrypt version: %s\n", my_name,
 			gcry_check_version(NULL));
 		gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
@@ -1370,10 +1370,10 @@ int main(int argc, char *argv[])
 		if (ret) {
 			fprintf(stderr, "%s: libgcrypt error %s\n", my_name, 
 				gcry_strerror(ret));
-			encrypt = 0;
+			do_encrypt = 0;
 		}
 	}
-	if (encrypt) {
+	if (do_encrypt) {
 		mem_size -= buffer_size;
 		key_data = (struct key_data *)((char *)mem_pool + mem_size);
 		generate_key();
@@ -1474,7 +1474,7 @@ int main(int argc, char *argv[])
 		s2ram = !s2ram_hacks();
 #endif
 #ifdef CONFIG_ENCRYPT
-        if (encrypt && ! use_RSA) {
+        if (do_encrypt && ! use_RSA) {
                 splash.read_password((char *)mem_pool,1);
                 strncpy(password,(char *)mem_pool,PASS_SIZE);
         }
@@ -1525,7 +1525,7 @@ Umount:
 		umount(chroot_path);
 	}
 #ifdef CONFIG_ENCRYPT
-	if (encrypt)
+	if (do_encrypt)
 		gcry_cipher_close(cipher_handle);
 #endif
 	free(mem_pool);
