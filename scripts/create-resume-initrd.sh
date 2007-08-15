@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 RESUME_DEVICE=$1
 if [ -n "$2" ]; then

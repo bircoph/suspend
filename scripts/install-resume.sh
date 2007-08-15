@@ -1,10 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ -z "$RESUME" ]; then
 	RESUME="resume"
 fi
+if [ -z "$BOOT_DIR" ]; then
+	BOOT_DIR="/boot"
+fi
 if [ -z "$INITRD_FILE" ]; then
-	INITRD_FILE="/boot/resume-initrd"
+	INITRD_FILE="$BOOT_DIR/resume-initrd"
 fi
 if [ -z "$MOUNT_POINT" ]; then
 	MOUNT_POINT="/mnt"
