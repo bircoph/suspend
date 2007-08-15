@@ -16,7 +16,7 @@
 #endif
 #include "vt.h"
 #include "s2ram.h"
-#include "config.h"
+#include "config_parser.h"
 
 
 /* Actually enter the suspend. May be ran on frozen system. */

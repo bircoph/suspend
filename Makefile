@@ -23,8 +23,8 @@ LD_FLAGS=-L/usr/local/lib
 BINARIES=s2disk s2both s2ram swap-offset resume
 BINARIES_MIN=s2disk swap-offset
 
-S2RAM_OBJ=vt.o config.o
-SWSUSP_OBJ=vt.o md5.o encrypt.o config.o loglevel.o splash.o bootsplash.o 
+S2RAM_OBJ=vt.o config_parser.o
+SWSUSP_OBJ=vt.o md5.o encrypt.o config_parser.o loglevel.o splash.o bootsplash.o
 
 S2RAM_LD_FLAGS = $(LD_FLAGS)
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
@@ -94,7 +94,7 @@ md5.o encrypt.o: %.o : %.c %.h md5.h
 	$(CC) $(CC_FLAGS) -DHAVE_INTTYPES_H -DHAVE_STDINT_H -c $< -o $@
 
 # Simple objects with header
-config.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/vbetool.o s2ram-ppc.o: %.o : %.c %.h
+config_parser.o vt.o bootsplash.o splash.o splashy_funcs.o vbetool/vbetool.o s2ram-ppc.o: %.o : %.c %.h
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 # Simple object without header

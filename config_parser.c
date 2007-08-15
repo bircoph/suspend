@@ -1,5 +1,5 @@
 /*
- * config.c
+ * config_parser.c
  *
  * Configuration file parser for userland suspend tools
  *
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "config.h"
+#include "config_parser.h"
 #include "encrypt.h"
 
 /**
@@ -112,7 +112,7 @@ void usage(char *my_name, struct option *options, const char *short_options)
 	struct option *opt;
 
 	printf("Usage: %s [options]", my_name);
-	for (opt = options; opt->name; opt++) 
+	for (opt = options; opt->name; opt++)
 	{
 		const char *descr = opt->name + strlen(opt->name) + 1;
 		if (strchr(short_options,opt->val))

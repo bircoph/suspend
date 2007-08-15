@@ -16,7 +16,7 @@
 #include "vbetool/vbetool.h"
 #include "vt.h"
 #include "s2ram.h"
-#include "config.h"
+#include "config_parser.h"
 
 /* From dmidecode.c */
 void dmi_scan(void);

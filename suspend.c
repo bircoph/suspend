@@ -39,7 +39,7 @@
 #endif
 
 #include "swsusp.h"
-#include "config.h"
+#include "config_parser.h"
 #include "md5.h"
 #include "splash.h"
 #include "vt.h"

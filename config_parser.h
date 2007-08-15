@@ -1,5 +1,5 @@
 /*
- * config.h
+ * config_parser.h
  *
  * Configuration file-related definitions for user space suspend and resume
  * tools.
