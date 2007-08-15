@@ -50,7 +50,7 @@ void identify_machine(void)
 	       "    sys_version  = \"%s\"\n"
 	       "    bios_version = \"%s\"\n",
 	       sys_vendor, sys_product, sys_version, bios_version);
-	printf("See http://en.opensuse.org/S2ram for details.\n"
+	printf("See http://suspend.sf.net/s2ram-support.html for details.\n"
 	       "\n"
 	       "If you report a problem, please include the complete output "
 	       "above.\n");
@@ -130,7 +130,7 @@ int s2ram_check(int id)
 			       " but the entry has not been confirmed.\n"
 			       "Please try to find the best options and "
 			       "report them as explained on\n"
-			       "http://en.opensuse.org/S2ram.\n\n");
+			       "http://suspend.sf.net/s2ram-support.html.\n\n");
 	}
 
 	return ret;
