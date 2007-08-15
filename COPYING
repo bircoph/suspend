@@ -1,0 +1,68 @@
+
+suspend License
+	
+	Copyright (C) 2005-2007 Rafael J. Wysocki <rjw@sisk.pl>
+	Copyright (C) 2006-2007 Pavel Machek <pavel@suse.cz>
+	Copyright (C) 2006-2007 Stefan Seyfried <seife@suse.de>
+	Copyright 2006 Tim Dijkstra <newsuser@famdijkstra.org>
+	Copyright 2006 Luca Tettamanti <kronos.it@gmail.com>
+	All rights reserved.
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License version 2
+	as published by the Free Software Foundation.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program (see the file COPYING.GPL included with this
+	distribution); if not, write to the Free Software Foundation, Inc.,
+	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+vbetool
+
+	Copyright Matthew Garrett <mjg59@srcf.ucam.org>, heavily based on
+	vbetest.c from the lrmi package and read-edid.c by John Fremlin
+
+radeontool
+
+	Copyright 2002-2004 Frederick Dean
+	Use hereby granted under the zlib license.
+	Thanks to Deepak Chawla, Erno Kuusela, Rolf Offermanns, and Soos Peter
+	for patches.
+
+md5
+
+	Copyright (C) 1995 Ulrich Drepper <drepper@gnu.ai.mit.edu>
+
+dmidecode
+
+	Copyright (C) 2000,2001 Alan Cox <alan@redhat.com>
+	Copyright (C) 2001 Matt Domsch <Matt_Domsch@dell.com>
+
+lzo
+
+	Copyright (C) 1996-2005 Markus Franz Xaver Johannes Oberhumer
+	All Rights Reserved.
+
+gcrypt
+
+        Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004
+	              2004, 2006  Free Software Foundation, Inc.
+
+splashy
+
+	Copyright  2005  Otavio Salvador <otavio@debian.org>
+	Copyright  2005  Luis Mondesi    <lemsx1@gmail.com>
+
+m4 Macros
+
+	autoconf/automake
+		Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+
+	pkg.m4
+		Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
+
