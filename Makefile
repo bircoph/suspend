@@ -29,7 +29,7 @@ SWSUSP_OBJ=vt.o md5.o encrypt.o config_parser.o loglevel.o splash.o bootsplash.o
 S2RAM_LD_FLAGS = $(LD_FLAGS)
 SWSUSP_LD_FLAGS = $(LD_FLAGS)
 ifeq ($(ARCH), x86)
-S2RAM_OBJ += s2ram-x86.o dmidecode.o radeontool.o vbetool/vbetool.o
+S2RAM_OBJ += s2ram-x86.o whitelist.o dmidecode.o radeontool.o vbetool/vbetool.o
 S2RAM_LD_FLAGS += -lx86 -lpci -lz
 else ifeq ($(ARCH), ppc)
 S2RAM_OBJ += s2ram-ppc.o
@@ -84,7 +84,7 @@ clean:
 	rm -f $(BINARIES) suspend-keygen suspend.keys *.o vbetool/*.o
 
 #### Rules for objects
-s2ram-x86.o: %.o : %.c %.h whitelist.c
+s2ram-x86.o: %.o : %.c %.h
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 s2ram-both.o: s2ram.c s2ram.h
@@ -105,7 +105,7 @@ dmidecode.o radeontool.o : %.o: %.c
 s2disk:	$(SWSUSP_OBJ) suspend.c
 	$(CC) -g $(CC_FLAGS)  $^ -o $@ $(SWSUSP_LD_FLAGS)
 
-s2ram:	$(S2RAM_OBJ) s2ram.c
+s2ram:	$(S2RAM_OBJ) s2ram.c s2ram-main.c
 	$(CC) -g $(CC_FLAGS) -include s2ram-$(ARCH).h $^ -o $@ $(S2RAM_LD_FLAGS)
 
 s2both:	$(SWSUSP_OBJ) $(S2RAM_OBJ) s2ram-both.o suspend.c 

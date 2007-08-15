@@ -3,14 +3,8 @@
  * and all the workarounds
  */
 
-struct machine_entry
-{
-	const char *sys_vendor;
-	const char *sys_product;
-	const char *sys_version;
-	const char *bios_version;
-	unsigned int flags;
-};
+#include <stdlib.h>
+#include "whitelist.h"
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
