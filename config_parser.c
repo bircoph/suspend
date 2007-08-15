@@ -26,7 +26,7 @@
  *	note that a non-present config file is not considered an error here
  */
 
-int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
+int parse(char *my_name, char *file_name, struct config_par *parv)
 {
 	char *str, *dst, *fmt, buf[MAX_STR_LEN];
 	struct stat stat_buf;
@@ -61,7 +61,7 @@ int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
 		if (!*str)
 			continue;
 		/* Compare with parameter names */
-		for (j =  0; j < parc; j++) {
+		for (j = 0;parv[j].name != NULL;j++) {
 			k = strlen(parv[j].name);
 			if (!strncmp(parv[j].name, str, k)) {
 				if (!parv[j].ptr)
@@ -94,7 +94,7 @@ int parse(char *my_name, char *file_name, int parc, struct config_par *parv)
 				}
 			}
 		}
-		if (j >= parc)
+		if (parv[j].name == NULL)
 			error = -EINVAL;
 	} while (!error);
 	fclose(file);

@@ -198,22 +198,6 @@ struct buf_block {
 
 #define SUSPEND_SWAPPINESS	100
 
-#define GEN_PARAM	10
-
-#ifdef CONFIG_COMPRESS
-#define COMPRESS_PARAM	1
-#else
-#define COMPRESS_PARAM	0
-#endif
-
-#ifdef CONFIG_ENCRYPT
-#define ENCRYPT_PARAM	2
-#else
-#define ENCRYPT_PARAM	0
-#endif
-
-#define PARAM_NO	(GEN_PARAM + COMPRESS_PARAM + ENCRYPT_PARAM)
-
 #define ABORT_KEY_CODE	127
 #define ABORT_KEY_NAME	"backspace"
 #define REBOOT_KEY_CODE	'r'

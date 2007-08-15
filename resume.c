@@ -58,7 +58,7 @@ static int use_platform_suspend;
 
 static struct splash splash;
 
-static struct config_par parameters[PARAM_NO] = {
+static struct config_par parameters[] = {
 	{
 		.name = "snapshot device",
 		.fmt = "%s",
@@ -130,6 +130,12 @@ static struct config_par parameters[PARAM_NO] = {
 		.fmt = "%s",
 		.ptr = NULL,
 	},
+	{
+		.name = NULL,
+		.fmt = NULL,
+		.ptr = NULL,
+		.len = 0,
+	}
 };
 
 static unsigned int page_size;
@@ -783,7 +789,7 @@ static inline int get_config(int argc, char *argv[])
 			return -EINVAL;
 		}
 	}
-	error = parse("resume", conf_name, PARAM_NO, parameters);
+	error = parse("resume", conf_name, parameters);
 	if (error) {
 		fprintf(stderr, "resume: Could not parse config file\n");
 		return error;

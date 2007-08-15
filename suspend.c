@@ -93,7 +93,7 @@ static struct vt_mode orig_vtm;
 static int vfd;
 char *my_name;
 
-static struct config_par parameters[PARAM_NO] = {
+static struct config_par parameters[] = {
 	{
 		.name = "snapshot device",
 		.fmt = "%s",
@@ -167,6 +167,12 @@ static struct config_par parameters[PARAM_NO] = {
 		.ptr = shutdown_method_value,
 		.len = SHUTDOWN_LEN,
 	},
+	{
+		.name = NULL,
+		.fmt = NULL,
+		.ptr = NULL,
+		.len = 0,
+	}
 };
 
 static unsigned int page_size;
@@ -1265,7 +1271,7 @@ static inline int get_config(int argc, char *argv[])
 	s2ram = !s2ram;
 #endif
 
-	error = parse(my_name, conf_name, PARAM_NO, parameters);
+	error = parse(my_name, conf_name, parameters);
 	if (error) {
 		fprintf(stderr, "%s: Could not parse config file\n", my_name);
 		return error;
