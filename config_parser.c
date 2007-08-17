@@ -61,7 +61,7 @@ int parse(char *my_name, char *file_name, struct config_par *parv)
 		if (!*str)
 			continue;
 		/* Compare with parameter names */
-		for (j = 0;parv[j].name != NULL;j++) {
+		for (j=0; parv[j].name; j++) {
 			k = strlen(parv[j].name);
 			if (!strncmp(parv[j].name, str, k)) {
 				if (!parv[j].ptr)
@@ -94,7 +94,7 @@ int parse(char *my_name, char *file_name, struct config_par *parv)
 				}
 			}
 		}
-		if (parv[j].name == NULL)
+		if (!parv[j].name)
 			error = -EINVAL;
 	} while (!error);
 	fclose(file);
