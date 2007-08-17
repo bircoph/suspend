@@ -510,7 +510,8 @@ static int save_image(struct swap_map_handle *handle,
 					case ABORT_KEY_CODE:
 						if (abort_possible) {
 							printf(" aborted!\n");
-							return -EINTR;
+							error = -EINTR;
+							goto Exit;
 						}
 					break;
 					case REBOOT_KEY_CODE:
@@ -531,6 +532,7 @@ static int save_image(struct swap_map_handle *handle,
 	if (!error)
 		printf(" done (%u pages)\n", nr_pages);
 
+Exit:
 	if (abort_possible)
 		splash.restore_abort(&savedtrm);
 
