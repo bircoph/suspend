@@ -33,9 +33,7 @@
 #include <signal.h>
 #include <termios.h>
 #ifdef CONFIG_COMPRESS
-#include <lzf.h>
-#else
-#define lzf_compress(a, b, c, d)	0
+#include <lzo/lzo1x.h>
 #endif
 
 #include "swsusp.h"
@@ -61,10 +59,11 @@ static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
 #ifdef CONFIG_COMPRESS
 static char compress;
+static long long compr_diff;
 #else
 #define compress 0
+#define compr_diff 0
 #endif
-static unsigned long compr_diff;
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
 static char use_RSA;
@@ -269,6 +268,9 @@ struct swap_map_handle {
 	unsigned int k;
 	int dev, fd;
 	struct md5_ctx ctx;
+#ifdef CONFIG_COMPRESS
+	void *lzo_work_buffer;
+#endif
 #ifdef CONFIG_ENCRYPT
 	unsigned char *encrypt_buffer;
 #endif
@@ -285,9 +287,13 @@ init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
 	handle->page_buffer = (char *)buf + page_size;
 	handle->write_buffer = handle->page_buffer + page_size;
+	buf = handle->write_buffer + buffer_size;
+#ifdef CONFIG_COMPRESS
+	handle->lzo_work_buffer = buf;
+	buf += LZO1X_1_MEM_COMPRESS;
+#endif
 #ifdef CONFIG_ENCRYPT
-	handle->encrypt_buffer = (unsigned char *)(handle->write_buffer +
-				buffer_size);
+	handle->encrypt_buffer = buf;
 #endif
 	memset(handle->areas, 0, page_size);
 	handle->cur_swap = get_swap_page(dev);
@@ -312,22 +318,22 @@ static int prepare(struct swap_map_handle *handle, int disp)
 	void *buf = handle->page_buffer;
 
 	block = (struct buf_block *)(handle->write_buffer + disp);
+#ifdef CONFIG_COMPRESS
 	if (compress) {
-		unsigned short cnt;
+		lzo_uint cnt;
 
-		cnt = lzf_compress(buf, page_size,
-				block->data, page_size - sizeof(short));
-		if (!cnt) {
-			memcpy(block->data, buf, page_size);
-			cnt = page_size;
-		} else {
-			compr_diff += page_size - cnt;
-		}
-		compr_diff -= sizeof(short);
+		lzo1x_1_compress(buf, page_size, (lzo_bytep)block->data, &cnt,
+					handle->lzo_work_buffer);
 		block->size = cnt;
-		cnt += sizeof(short);
-		return cnt;
+		/* Sanity check, should not trigger */
+		if (cnt + sizeof(short) > max_block_size)
+			printf("WARNING!"
+				" Data size too large after compression!\n");
+		/* We have added a sizeof(short) field to the data */
+		compr_diff += page_size - cnt - sizeof(short);
+		return cnt + sizeof(short);
 	}
+#endif
 	memcpy(block, buf, page_size);
 	return page_size;
 }
@@ -612,7 +618,13 @@ int write_image(int snapshot_fd, int resume_fd)
 
 		if (compress) {
 			header->image_flags |= IMAGE_COMPRESSED;
-			max_block_size += sizeof(short);
+			/*
+			 * The formula below follows from the worst-case
+			 * expansion calculation for LZO1.  sizeof(short) is
+			 * related to the size field in 'struct buf_block'
+			 */
+			max_block_size += (page_size >> 4) + 67
+						+ sizeof(short);
 		}
 
 #ifdef CONFIG_ENCRYPT
@@ -1356,6 +1368,10 @@ int main(int argc, char *argv[])
 	buffer_size = BUFFER_PAGES * page_size;
 
 	mem_size = 3 * page_size + buffer_size;
+#ifdef CONFIG_COMPRESS
+	if (compress)
+		mem_size += LZO1X_1_MEM_COMPRESS;
+#endif
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt)
 		mem_size += buffer_size;

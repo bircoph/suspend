@@ -41,7 +41,7 @@ endif
 
 ifdef CONFIG_COMPRESS
 CC_FLAGS	+= -DCONFIG_COMPRESS
-SWSUSP_LD_FLAGS	+= -llzf
+SWSUSP_LD_FLAGS	+= -llzo2
 endif
 
 ifdef CONFIG_ENCRYPT

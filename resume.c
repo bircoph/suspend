@@ -26,9 +26,7 @@
 #include <string.h>
 #include <errno.h>
 #ifdef CONFIG_COMPRESS
-#include <lzf.h>
-#else
-#define lzf_decompress(a, b, c, d)	0
+#include <lzo/lzo1x.h>
 #endif
 
 #include "swsusp.h"
@@ -282,21 +280,20 @@ static int restore(struct swap_map_handle *handle, int disp)
 	void *buf = handle->page_buffer;
 
 	block = (struct buf_block *)(handle->read_buffer + disp);
+#ifdef CONFIG_COMPRESS
 	if (decompress) {
-		unsigned short cnt = block->size;
+		int error;
+		lzo_uint cnt = page_size;
 
-		if (cnt == page_size) {
-			memcpy(buf, block->data, page_size);
-		} else if (cnt < page_size) {
-			cnt = lzf_decompress(block->data, cnt, buf, page_size);
-			if (cnt != page_size)
-				return -ENODATA;
-		} else {
+		error = lzo1x_decompress_safe((lzo_bytep)block->data,
+						block->size,
+						buf, &cnt, NULL);
+		if (error)
 			return -EINVAL;
-		}
-		block->size += sizeof(short);
-		return block->size;
+		return cnt == page_size ?
+				block->size + sizeof(short) : -ENODATA;
 	}
+#endif
 	memcpy(buf, block, page_size);
 	return page_size;
 }
