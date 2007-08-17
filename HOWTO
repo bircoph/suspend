@@ -16,7 +16,7 @@ I. Quick start
 crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 
 (e) libx86, a hardware-independent library for executing real-mode x86 code
-(f) [optionally] Marc Lehmann's libLZF library (for image compression)
+(f) [optionally] Markus F.X.J. Oberhumer's lzo library (for lzo image compression)
 (g) [optionally] libgcrypt (for image encryption)
 (h) [optionally] libsplashy (for user space splash)
 
@@ -58,11 +58,11 @@ Next, become root and run
 
 # make install DESTDIR=/usr/local
 
-(c) [optionally] Install the Marc Lehmann's libLZF library
+(c) [optionally] Install the Markus F.X.J. Oberhumer's lzo library
 
-If you want to use the image compression functionality and libLZF it's not
+If you want to use the image lzo compression functionality and lzo it's not
 installed on your system, download the tarball from
-http://www.goof.com/pcg/marc/liblzf.html, unpack it, go to the directory
+http://www.oberhumer.com/opensource/lzo, unpack it, go to the directory
 containing the source and run
 
 $ ./configure
@@ -72,8 +72,8 @@ Next, become root and run
 
 # make install
 
-[This will put the lzf.h file into /usr/local/include, the library
-into /usr/local/lib, and the lzf binary into /usr/local/bin.]
+[This will put the lzo files into /usr/local/include/lzo, the library
+into /usr/local/lib.]
 
 (d) [optionally] Install libgrypt
 
