@@ -583,8 +583,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 
 		if (header->image_flags & IMAGE_CHECKSUM) {
 			memcpy(orig_checksum, header->checksum, 16);
-			printf("resume: MD5 checksum %s\n",
-				print_checksum(buffer, orig_checksum));
+			print_checksum(buffer, orig_checksum);
+			printf("resume: MD5 checksum %s\n", buffer);
 			verify_checksum = 1;
 		}
 		splash.progress(10);
@@ -700,8 +700,9 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		md5_finish_ctx(&handle.ctx, checksum);
 		if (memcmp(orig_checksum, checksum, 16)) {
 			fprintf(stderr,"resume: MD5 checksum does not match\n");
-			fprintf(stderr,"resume: Computed MD5 checksum %s\n",
-				print_checksum(buffer, checksum));
+			print_checksum(buffer, checksum);
+			fprintf(stderr, "resume: Computed MD5 checksum %s\n",
+				buffer);
 			error = -EINVAL;
 		}
 	}
