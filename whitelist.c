@@ -239,6 +239,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"AMILO PRO V8010 *",	"",	"", VBE_POST|VBE_MODE },
 	/* <noname1@onlinehome.de> */
 	{ "FUJITSU SIEMENS",		"AMILO Xi 1546",	"",	"", S3_BIOS|S3_MODE },
+	/* Clement LAGRANGE <clement.lagrange@gmail.com> */
+	{ "FUJITSU SIEMENS",		"LIFEBOOK B Series",	"",	"", 0 },
 	/* wolfgang.aigner@gmx.de */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK E4010",	"",	"", VBE_SAVE },
 	/* <jan.lockenvitz.ext@siemens.com>, tested with X only */
@@ -349,6 +351,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Pavilion dv6000 (RM469EA#*","",	"", 0 },
 	/* John Soros <sorosj@gmail.com> "HP dv6120ea" */
 	{ "Hewlett-Packard",	"HP Pavilion dv6000 (RP980EA#*","",	"", 0 },
+	/* <veesah@gmail.com> */
+	{ "Hewlett-Packard",	"HP Pavilion tx1000 Notebook PC *", "",	"", 0 },
 	/* Chris Polderman <chris.polderman@gmail.com> */
 	{ "Hewlett-Packard",	"HP Pavilion ze2000 (EK791EA#*","",	"", 0 },
 	/* Frank Schröder <frank.schroeder@gmail.com>, zt3380us */
