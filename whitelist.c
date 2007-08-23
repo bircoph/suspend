@@ -45,6 +45,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 800",	"",	"", VBE_POST },
 	/* Arkadiusz Miskiewicz <arekm@maven.pl> */
 	{ "Acer",			"TravelMate 2300",	"",	"", VBE_POST|VBE_MODE },
+	/* Arjan Oosting <arjanoosting@home.nl> */
+	{ "Acer",			"TravelMate 2350 *",	"",	"", S3_BIOS|S3_MODE },
 	/* jan sekal <jsekal@seznam.cz> */
 	{ "Acer",			"TravelMate 2410",	"",	"", S3_BIOS|S3_MODE },
 	/* Peter Stolz <p.stolz@web.de> */
@@ -52,6 +54,8 @@ struct machine_entry whitelist[] = {
 	/* Erki Ferenc <ferki@3rdparty.hu> */
 	{ "Acer            ",		"TravelMate 2450 ",	"",	"", 0 },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
+	/* Norbert Preining <preining@logic.at>, kernel 2.6.23-rc2++ needed */
+	{ "Acer, inc.",			"TravelMate 3010 ",	"",	"", VBE_POST|VBE_MODE },
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
 	/* Rohan Dhruva <rohandhruva@gmail.com> */
 	{ "Acer, inc.",			"TravelMate 3260 ",	"",	"", VBE_POST|VBE_MODE },
@@ -185,6 +189,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.                ",	"OptiPlex GX520 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
 	{ "Dell Computer Corporation",	"Precision M60*",	"",	"", VBE_SAVE },
+	/* Manoj Srivastava <srivasta@debian.org> */
+	{ "Dell Inc.",			"Precision M90 *",	"",	"", 0 },
 	/* Michael Witten mfwitten@MIT.EDU */
 	{ "Dell Computer Corporation",	"Dimension 2400 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Allen <ducalen@sympatico.ca>, Desktop with onboard grephics */
@@ -250,6 +256,8 @@ struct machine_entry whitelist[] = {
 	{ "MTC",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* Josef Zenisek <jzenisek@gmx.de> */
 	{ "Gigabyte Technology Co., Ltd.",	"945GZM-S2",	"",	"", 0 },
+	/* Andrey Melentyev <andrey.melentyev@gmail.com> */
+	{ "Infomash",			"RoverBook",		"",	"", VBE_POST|VBE_MODE },
 
 	/* Robert Hart <Robert.Hart@BuroHappold.com> */
 	{ "Hewlett-Packard",	"HP Pavilion dv2500 Notebook PC", "",	"", 0 },
@@ -277,12 +285,16 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq nc6230 *",	"",	"", VBE_SAVE|NOFB },
 	/* Michal Vyskocil <michal.vyskocil@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq nx6310 *",	"",	"68YDU*", VBE_POST },
+	/* Michal Sedkowski <msedkowski@gmail.com>, another nx6310 with different options? :-( */
+	{ "Hewlett-Packard",		"",			"",	"68YDU*", 0 },
 	/* Benedikt Nimmervoll <nimmervoll.benedikt@googlemail.com> */
 	{ "Hewlett-Packard",		"HP Compaq nx6325 *",	"",	"68TT2*", VBE_POST|VBE_SAVE },
 	/* Michael Biebl <biebl@teco.edu> */
 	{ "Hewlett-Packard ",		"HP compaq nx7000 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* François Münch <francois.munch@free.fr> */
 	{ "Hewlett-Packard ",		"Compaq nx 7010 (PG588EA#*","",	"", S3_BIOS },
+	/* Philippe Marzouk <phil@ozigo.org> */
+	{ "Hewlett-Packard ",		"Compaq nx 7010 (DU394T#*","",	"68BAL*", S3_BIOS,S3_MODE },
 	/* Valent Turkovic <valent.turkovic@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq nx7300 (RU374ES#*",	"",	"", VBE_POST|VBE_MODE },
 	/* Slawomir Skrzyniarz <diodak@gmail.com> */
@@ -352,6 +364,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2373*",		"",	"", S3_BIOS|S3_MODE },
 	/* T41p, Stefan Gerber */
 	{ "IBM",			"2374*",		"",	"", S3_BIOS|S3_MODE },
+	/* T42, Bjorn Mork <bjorn@mork.no> */
+	{ "IBM",			"2376*",		"",	"", S3_BIOS|S3_MODE },
 	/* Some T43's reported by Sebastian Nagel */
 	{ "IBM",			"",		"ThinkPad T43",	"", S3_BIOS|S3_MODE },
 	/* T43p reported by Magnus Boman */
@@ -505,6 +519,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-TX3XP_L",		"",	"", S3_BIOS|S3_MODE },
 	/* Mattia Dongili <malattia@linux.it> */
 	{ "Sony Corporation",		"VGN-UX50",		"",	"", VBE_MODE },
+	/* Russ Dill <russ.dill@gmail.com> */
+	{ "Sony Corporation    ",	"PCG-F430(UC)        ",	"",	"", 0 },
 	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "Sony Corporation",		"PCG-FX405*",		"",	"", S3_BIOS },
 	/* Stefan Nobis <stefan@snobis.de> */
@@ -617,7 +633,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"475S*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// T40/T41/T42/p
 	{ "IBM",			"2375*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "IBM",			"2376*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2378*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2379*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// T43
