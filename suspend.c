@@ -824,47 +824,45 @@ int suspend_system(int snapshot_fd, int resume_fd)
 			error = errno;
 			break;
 		}
-		if (!atomic_snapshot(snapshot_fd, &in_suspend)) {
-			if (!in_suspend) {
-				/* first unblank the console, see console_codes(4) */
-				printf("\e[13]");
-				printf("%s: returned to userspace\n", my_name);
-				free_snapshot(snapshot_fd);
-				break;
-			}
-			error = write_image(snapshot_fd, resume_fd);
-			if (!error) {
-				splash.progress(100);
-#ifdef CONFIG_BOTH
-				if (!s2ram) {
-					suspend_shutdown(snapshot_fd);
-				} else {
-					/* If we die (and allow system to continue) between
-                                         * now and reset_signature(), very bad things will
-                                         * happen. */
-					error = suspend_to_ram(snapshot_fd);
-					if (error)
-						suspend_shutdown(snapshot_fd);
-					reset_signature(resume_fd);
-					free_swap_pages(snapshot_fd);
-					free_snapshot(snapshot_fd);
-					s2ram_resume();
-					goto Unfreeze;
-				}
-#else
-				suspend_shutdown(snapshot_fd);
-#endif
-			} else {
-				free_swap_pages(snapshot_fd);
-				free_snapshot(snapshot_fd);
-				image_size = 0;
-				error = -error;
-				if (error != ENOSPC)
-					break;
-			}
-		} else {
+		if (atomic_snapshot(snapshot_fd, &in_suspend)) {
 			error = errno;
 			break;
+		}
+		if (!in_suspend) {
+			/* first unblank the console, see console_codes(4) */
+			printf("\e[13]");
+			printf("%s: returned to userspace\n", my_name);
+			free_snapshot(snapshot_fd);
+			break;
+		}
+
+		error = write_image(snapshot_fd, resume_fd);
+		if (error) {
+			free_swap_pages(snapshot_fd);
+			free_snapshot(snapshot_fd);
+			image_size = 0;
+			error = -error;
+			if (error != ENOSPC)
+				break;
+		} else {
+			splash.progress(100);
+#ifdef CONFIG_BOTH
+			if (s2ram) {
+				/* If we die (and allow system to continue)
+				 * between now and reset_signature(), very bad
+				 * things will happen. */
+				error = suspend_to_ram(snapshot_fd);
+				if (error)
+					goto Shutdown;
+				reset_signature(resume_fd);
+				free_swap_pages(snapshot_fd);
+				free_snapshot(snapshot_fd);
+				s2ram_resume();
+				goto Unfreeze;
+			}
+Shutdown:
+#endif
+			suspend_shutdown(snapshot_fd);
 		}
 	} while (--attempts);
 
