@@ -1377,16 +1377,6 @@ int main(int argc, char *argv[])
 		mem_size += LZO1X_1_MEM_COMPRESS;
 #endif
 #ifdef CONFIG_ENCRYPT
-	if (do_encrypt)
-		mem_size += buffer_size;
-#endif
-	mem_pool = malloc(mem_size);
-	if (!mem_pool) {
-		ret = errno;
-		suspend_error("Could not allocate memory.");
-		return ret;
-	}
-#ifdef CONFIG_ENCRYPT
 	if (do_encrypt) {
 		printf("%s: libgcrypt version: %s\n", my_name,
 			gcry_check_version(NULL));
@@ -1397,8 +1387,18 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "%s: libgcrypt error %s\n", my_name, 
 				gcry_strerror(ret));
 			do_encrypt = 0;
+		} else {
+			mem_size += buffer_size;
 		}
 	}
+#endif
+	mem_pool = malloc(mem_size);
+	if (!mem_pool) {
+		ret = errno;
+		suspend_error("Could not allocate memory.");
+		return ret;
+	}
+#ifdef CONFIG_ENCRYPT
 	if (do_encrypt) {
 		mem_size -= buffer_size;
 		key_data = (struct key_data *)((char *)mem_pool + mem_size);
