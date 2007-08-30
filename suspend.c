@@ -282,21 +282,30 @@ init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 {
 	if (!buf)
 		return -EINVAL;
+
 	handle->areas = buf;
-	handle->areas_per_page = (page_size - sizeof(loff_t)) /
-			sizeof(struct swap_area);
-	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
-	handle->page_buffer = (char *)buf + page_size;
-	handle->write_buffer = handle->page_buffer + page_size;
-	buf = handle->write_buffer + buffer_size;
+	buf += page_size;
+
+	handle->page_buffer = buf;
+	buf += page_size;
+
+	handle->write_buffer = buf;
+	buf += buffer_size;
+
 #ifdef CONFIG_COMPRESS
 	handle->lzo_work_buffer = buf;
 	buf += LZO1X_1_MEM_COMPRESS;
 #endif
+
 #ifdef CONFIG_ENCRYPT
 	handle->encrypt_buffer = buf;
 #endif
+
 	memset(handle->areas, 0, page_size);
+	handle->areas_per_page = (page_size - sizeof(loff_t)) /
+			sizeof(struct swap_area);
+	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
+
 	handle->cur_swap = get_swap_page(dev);
 	if (!handle->cur_swap)
 		return -ENOSPC;
@@ -306,10 +315,13 @@ init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 	handle->cur_area.size = 0;
 	handle->cur_alloc = page_size;
 	handle->k = 0;
+
 	handle->dev = dev;
 	handle->fd = fd;
+
 	if (compute_checksum)
 		md5_init_ctx(&handle->ctx);
+
 	return 0;
 }
 
