@@ -1062,6 +1062,7 @@ static void generate_key(void)
 	int ret, fd, rnd_fd;
 	struct RSA_data *rsa;
 	unsigned char *buf;
+	unsigned short size;
 	int j;
 
 	if (!key_data)
@@ -1100,52 +1101,56 @@ static void generate_key(void)
 		ret = gcry_ac_key_init(&rsa_pub, rsa_hd, GCRY_AC_KEY_PUBLIC,
 					rsa_data_set);
 
+	if (ret)
+		goto Destroy_data_set;
+
+	ret = gcry_ac_data_new(&key_set);
+	if (ret)
+		goto Destroy_key;
+
+	rnd_fd = open("/dev/urandom", O_RDONLY);
+	if (rnd_fd <= 0)
+		goto Destroy_key_set;
+
+	size = KEY_SIZE + CIPHER_BLOCK;
+	if (read(rnd_fd, key_data->key, size) != size)
+		goto Close_urandom;
+
+	gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data->key, size, NULL);
+	ret = gcry_ac_data_encrypt(rsa_hd, 0, rsa_pub, mpi, &key_set);
+	gcry_mpi_release(mpi);
 	if (!ret) {
-		unsigned short size;
+		struct encrypted_key *key = &key_data->encrypted_key;
+		char *str;
+		size_t s;
 
-		ret = gcry_ac_data_new(&key_set);
-		if (ret)
-			goto Destroy_key;
-
-		rnd_fd = open("/dev/urandom", O_RDONLY);
-		if (rnd_fd <= 0)
-			goto Destroy_set;
-
-		size = KEY_SIZE + CIPHER_BLOCK;
-		if (read(rnd_fd, key_data->key, size) != size)
-			goto Close_urandom;
-
-		gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data->key, size, NULL);
-		ret = gcry_ac_data_encrypt(rsa_hd, 0, rsa_pub, mpi, &key_set);
+		gcry_ac_data_get_index(key_set, GCRY_AC_FLAG_COPY, 0,
+						(const char **)&str, &mpi);
+		gcry_free(str);
+		ret = gcry_mpi_print(GCRYMPI_FMT_USG, key->data, KEY_DATA_SIZE,
+					&s, mpi);
 		gcry_mpi_release(mpi);
 		if (!ret) {
-			struct encrypted_key *key = &key_data->encrypted_key;
-			char *str;
-			size_t s;
-
-			gcry_ac_data_get_index(key_set, GCRY_AC_FLAG_COPY, 0,
-						(const char **)&str, &mpi);
-			gcry_free(str);
-			ret = gcry_mpi_print(GCRYMPI_FMT_USG, key->data,
-					KEY_DATA_SIZE, &s, mpi);
-			gcry_mpi_release(mpi);
-			if (!ret) {
-				key->size = s;
-				use_RSA = 'y';
-			}
+			key->size = s;
+			use_RSA = 'y';
 		}
-Close_urandom:
-		close(rnd_fd);
-Destroy_set:
-		gcry_ac_data_destroy(key_set);
-Destroy_key:
-		gcry_ac_key_destroy(rsa_pub);
-	} else {
-		gcry_ac_data_destroy(rsa_data_set);
 	}
+
+Close_urandom:
+	close(rnd_fd);
+
+Destroy_key_set:
+	gcry_ac_data_destroy(key_set);
+
+Destroy_key:
+	gcry_ac_key_destroy(rsa_pub);
+
+Destroy_data_set:
+	gcry_ac_data_destroy(rsa_data_set);
 
 Free_rsa:
 	gcry_ac_close(rsa_hd);
+
 Close:
 	close(fd);
 }
