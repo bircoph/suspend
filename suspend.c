@@ -612,96 +612,100 @@ int write_image(int snapshot_fd, int resume_fd)
 	}
 	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
 			(char *)mem_pool + page_size);
-	if (!error) {
-		header->map_start = handle.cur_swap;
-		header->image_flags = 0;
-		max_block_size = page_size;
-		if (compute_checksum)
-			header->image_flags |= IMAGE_CHECKSUM;
+	if (error)
+		goto Exit;
 
-		if (compress) {
-			header->image_flags |= IMAGE_COMPRESSED;
-			/*
-			 * The formula below follows from the worst-case
-			 * expansion calculation for LZO1.  sizeof(short) is
-			 * related to the size field in 'struct buf_block'
-			 */
-			max_block_size += (page_size >> 4) + 67
-						+ sizeof(short);
-		}
+	header->map_start = handle.cur_swap;
+	header->image_flags = 0;
+	max_block_size = page_size;
+	if (compute_checksum)
+		header->image_flags |= IMAGE_CHECKSUM;
+
+	if (compress) {
+		header->image_flags |= IMAGE_COMPRESSED;
+		/*
+		 * The formula below follows from the worst-case expansion
+		 * calculation for LZO1.  sizeof(short) is due to the size field
+		 * in 'struct buf_block'.
+		 */
+		max_block_size += (page_size >> 4) + 67 + sizeof(short);
+	}
 
 #ifdef CONFIG_ENCRYPT
-		if (do_encrypt) {
-			if (use_RSA) {
-				error = gcry_cipher_setkey(cipher_handle,
-						key_data->key, KEY_SIZE);
-				if (error)
-					goto No_RSA;
+	if (!do_encrypt)
+		goto Save_image;
 
-				error = gcry_cipher_setiv(cipher_handle,
-						key_data->ivec, CIPHER_BLOCK);
+	if (use_RSA) {
+		error = gcry_cipher_setkey(cipher_handle, key_data->key,
+						KEY_SIZE);
+		if (error)
+			goto No_RSA;
 
-				if (error)
-					goto No_RSA;
+		error = gcry_cipher_setiv(cipher_handle, key_data->ivec,
+						CIPHER_BLOCK);
+		if (error)
+			goto No_RSA;
 
-				header->image_flags |= IMAGE_ENCRYPTED |
-							IMAGE_USE_RSA;
-				memcpy(&header->rsa, &key_data->rsa,
-						sizeof(struct RSA_data));
-				memcpy(&header->key, &key_data->encrypted_key,
+		header->image_flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
+		memcpy(&header->rsa, &key_data->rsa, sizeof(struct RSA_data));
+		memcpy(&header->key, &key_data->encrypted_key,
 						sizeof(struct encrypted_key));
-			} else {
-				int j;
+	} else {
+		int j;
 
 No_RSA:
-				encrypt_init(key_data->key, key_data->ivec,
-						password);
-				splash.progress(20);
-				get_random_salt(header->salt, CIPHER_BLOCK);
-				for (j = 0; j < CIPHER_BLOCK; j++)
-					key_data->ivec[j] ^= header->salt[j];
+		encrypt_init(key_data->key, key_data->ivec, password);
+		splash.progress(20);
+		get_random_salt(header->salt, CIPHER_BLOCK);
+		for (j = 0; j < CIPHER_BLOCK; j++)
+			key_data->ivec[j] ^= header->salt[j];
 
-				error = gcry_cipher_setkey(cipher_handle,
-						key_data->key, KEY_SIZE);
-				if (!error)
-					error = gcry_cipher_setiv(cipher_handle,
-						key_data->ivec, CIPHER_BLOCK);
+		error = gcry_cipher_setkey(cipher_handle, key_data->key,
+						KEY_SIZE);
+		if (!error)
+			error = gcry_cipher_setiv(cipher_handle, key_data->ivec,
+						CIPHER_BLOCK);
+		if (!error)
+			header->image_flags |= IMAGE_ENCRYPTED;
+	}
 
-				if (!error)
-					header->image_flags |= IMAGE_ENCRYPTED;
-			}
-			if (error)
-				fprintf(stderr,"%s: libgcrypt error: %s\n",
-						my_name, gcry_strerror(error));
-		}
+	if (error) {
+		fprintf(stderr,"%s: libgcrypt error: %s\n", my_name,
+			gcry_strerror(error));
+		goto Exit;
+	}
+
+Save_image:
 #endif
-		if (!error) {
-			gettimeofday(&begin, NULL);
-			error = save_image(&handle, header->pages - 1);
-		}
+	gettimeofday(&begin, NULL);
 
-		/*
-		 * NOTICE:
-		 * This should be after save_image() as
-		 * the user may modify the behavior
-		 */
-		if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
-			header->image_flags |= PLATFORM_SUSPEND;
-	}
-	if (!error) {
-		error = flush_swap_writer(&handle);
-		if (compute_checksum)
-			md5_finish_ctx(&handle.ctx, header->checksum);
-	}
-	fsync(resume_fd);
+	error = save_image(&handle, header->pages - 1);
+	if (error)
+		goto Exit;
+
+	/*
+	 * NOTICE: This needs to go after save_image(), because the user may
+	 * modify the behavior.
+	 */
+	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
+		header->image_flags |= PLATFORM_SUSPEND;
+
+	error = flush_swap_writer(&handle);
 	if (!error) {
 		struct timeval end;
+
+		fsync(resume_fd);
+
+		if (compute_checksum)
+			md5_finish_ctx(&handle.ctx, header->checksum);
+
 		gettimeofday(&end, NULL);
 		timersub(&end, &begin, &end);
 		header->writeout_time = end.tv_usec / 1000000.0 + end.tv_sec;
-	}
-	if (!error)
+
 		error = write_area(resume_fd, header, start, page_size);
+	}
+
 	if (!error) {
 		if (compress) {
 			double delta = header->size - compr_diff;
@@ -712,9 +716,13 @@ No_RSA:
 		printf( "S" );
 		error = mark_swap(resume_fd, start);
 	}
+
 	fsync(resume_fd);
+
 	if (!error)
 		printf( "|" );
+
+Exit:
 	printf("\n");
 	return error;
 }
