@@ -59,10 +59,10 @@ static unsigned long pref_image_size = IMAGE_SIZE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
 #ifdef CONFIG_COMPRESS
-static char compress;
+static char do_compress;
 static long long compr_diff;
 #else
-#define compress 0
+#define do_compress 0
 #define compr_diff 0
 #endif
 #ifdef CONFIG_ENCRYPT
@@ -135,7 +135,7 @@ static struct config_par parameters[] = {
 	{
 		.name = "compress",
 		.fmt = "%c",
-		.ptr = &compress,
+		.ptr = &do_compress,
 	},
 #endif
 #ifdef CONFIG_ENCRYPT
@@ -332,7 +332,7 @@ static int prepare(struct swap_map_handle *handle, int disp)
 
 	block = (struct buf_block *)(handle->write_buffer + disp);
 #ifdef CONFIG_COMPRESS
-	if (compress) {
+	if (do_compress) {
 		lzo_uint cnt;
 
 		lzo1x_1_compress(buf, page_size, (lzo_bytep)block->data, &cnt,
@@ -620,7 +620,7 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (error < (int)page_size)
 		return error < 0 ? error : -EFAULT;
 	printf("%s: Image size: %lu kilobytes\n", my_name, header->size / 1024);
-	if (!enough_swap(snapshot_fd, header->size) && !compress) {
+	if (!enough_swap(snapshot_fd, header->size) && !do_compress) {
 		fprintf(stderr, "%s: Not enough free swap\n", my_name);
 		return -ENOSPC;
 	}
@@ -635,7 +635,7 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (compute_checksum)
 		header->image_flags |= IMAGE_CHECKSUM;
 
-	if (compress) {
+	if (do_compress) {
 		header->image_flags |= IMAGE_COMPRESSED;
 		/*
 		 * The formula below follows from the worst-case expansion
@@ -721,7 +721,7 @@ Save_image:
 	}
 
 	if (!error) {
-		if (compress) {
+		if (do_compress) {
 			double delta = header->size - compr_diff;
 
 			printf("%s: Compression ratio %4.2lf\n", my_name,
@@ -1368,8 +1368,8 @@ int main(int argc, char *argv[])
 	if (compute_checksum != 'y' && compute_checksum != 'Y')
 		compute_checksum = 0;
 #ifdef CONFIG_COMPRESS
-	if (compress != 'y' && compress != 'Y')
-		compress = 0;
+	if (do_compress != 'y' && do_compress != 'Y')
+		do_compress = 0;
 #endif
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt != 'y' && do_encrypt != 'Y')
@@ -1398,7 +1398,7 @@ int main(int argc, char *argv[])
 
 	mem_size = 3 * page_size + buffer_size;
 #ifdef CONFIG_COMPRESS
-	if (compress)
+	if (do_compress)
 		mem_size += LZO1X_1_MEM_COMPRESS;
 #endif
 #ifdef CONFIG_ENCRYPT
