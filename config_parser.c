@@ -21,6 +21,65 @@
 #include "config_parser.h"
 #include "encrypt.h"
 
+int parse_line(char *str, struct config_par *parv)
+{
+	char *dst, *fmt;
+	int error = 0;
+	int i, k;
+
+	/* Skip white space */
+	while (*str == ' ' || *str == '\t' || *str == '\r' || *str == '\n')
+		str++;
+	/* Skip the lines containing white space only */
+	if (!*str)
+		goto cleanup;
+	/* Ignore comments */
+	if (*str == '#')
+		goto cleanup;
+
+	/* Compare with parameter names */
+	for (i=0; parv[i].name; i++) {
+		k = strlen(parv[i].name);
+		if (!strncmp(parv[i].name, str, k)) {
+			if (!parv[i].ptr)
+				break;
+			str += k;
+			while (*str == ' ' || *str == '\t')
+				str++;
+			if (*str != ':' && *str != '=') {
+				error = -EINVAL;
+				break;
+			}
+			str++;
+			while (*str == ' ' || *str == '\t')
+				str++;
+			if (*str) {
+				fmt = parv[i].fmt;
+				if (!strncmp(fmt, "%s", 2)) {
+					dst = parv[i].ptr;
+					k = parv[i].len;
+					strncpy(dst, str, k - 1);
+					k = strlen(dst) - 1;
+					if (dst[k] == '\n')
+						dst[k] = '\0';
+				} else {
+					k = sscanf(str, fmt, parv[i].ptr);
+					if (k <= 0)
+						error = -EINVAL;
+				}
+				break;
+			}
+		}
+	}
+
+	if (!parv[i].name) {
+		error = -EINVAL;
+	}
+
+cleanup:
+	return error;
+}
+
 /**
  *	parse - read and parse the configuration file
  *	note that a non-present config file is not considered an error here
@@ -28,10 +87,11 @@
 
 int parse(char *my_name, char *file_name, struct config_par *parv)
 {
-	char *str, *dst, *fmt, buf[MAX_STR_LEN];
+	char buf[MAX_STR_LEN];
+	char *str;
 	struct stat stat_buf;
 	FILE *file;
-	int error, i, j, k;
+	int error, i;
 
 	if (stat(file_name, &stat_buf)) {
 		fprintf(stderr, "%s: Could not stat configuration file\n",
@@ -51,51 +111,7 @@ int parse(char *my_name, char *file_name, struct config_par *parv)
 		if (!str)
 			break;
 		i++;
-		/* Ignore comments */
-		if (*str == '#')
-			continue;
-		/* Skip white space */
-		while (*str == ' ' || *str == '\t' || *str == '\r' || *str == '\n')
-			str++;
-		/* Skip the lines containing white space only */
-		if (!*str)
-			continue;
-		/* Compare with parameter names */
-		for (j=0; parv[j].name; j++) {
-			k = strlen(parv[j].name);
-			if (!strncmp(parv[j].name, str, k)) {
-				if (!parv[j].ptr)
-					break;
-				str += k;
-				while (*str == ' ' || *str == '\t')
-					str++;
-				if (*str != ':' && *str != '=') {
-					error = -EINVAL;
-					break;
-				}
-				str++;
-				while (*str == ' ' || *str == '\t')
-					str++;
-				if (*str) {
-					fmt = parv[j].fmt;
-					if (!strncmp(fmt, "%s", 2)) {
-						dst = parv[j].ptr;
-						k = parv[j].len;
-						strncpy(dst, str, k - 1);
-						k = strlen(dst) - 1;
-						if (dst[k] == '\n')
-							dst[k] = '\0';
-					} else {
-						k = sscanf(str, fmt, parv[j].ptr);
-						if (k <= 0)
-							error = -EINVAL;
-					}
-					break;
-				}
-			}
-		}
-		if (!parv[j].name)
-			error = -EINVAL;
+		error = parse_line(str, parv);
 	} while (!error);
 	fclose(file);
 	if (error)

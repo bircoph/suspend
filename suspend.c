@@ -1208,25 +1208,29 @@ static int lock_vt(void)
 static inline int get_config(int argc, char *argv[])
 {
 	static struct option options[] = {
-		   { 
+		   {
 		       "help\0\t\t\tthis text",
 		       no_argument,		NULL, 'h'
 		   },
-		   { 
+		   {
 		       "config\0\t\talternative configuration file.",
 		       required_argument,	NULL, 'f'
 		   },
-		   { 
+		   {
 		       "resume_device\0device that contains swap area",	
 		       required_argument,	NULL, 'r'
 		   },
-		   { 
+		   {
 		       "resume_offset\0offset of swap file in resume device.",	
 		       required_argument,	NULL, 'o'
 		   },
-		   { 
+		   {
 		       "image_size\0\tdesired size of the image.",
 		       required_argument,	NULL, 's'
+		   },
+		   {
+		       "parameter\0\toverride config file parameter.",
+		       required_argument,	NULL, 'x'
 		   },
 #ifdef CONFIG_BOTH
 		   HACKS_LONG_OPTS
@@ -1235,7 +1239,7 @@ static inline int get_config(int argc, char *argv[])
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
-	const char *optstring = "hf:s:o:r:";
+	const char *optstring = "hf:s:o:r:P:";
 
 	/* parse only config file argument */
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
@@ -1271,13 +1275,20 @@ static inline int get_config(int argc, char *argv[])
 		case 'r':
 			strncpy(resume_dev_name, optarg, MAX_STR_LEN -1);
 			break;
-		case '?':
+		case 'P':
+			error = parse_line(optarg, parameters);
+			if (error) {
+				fprintf(stderr, "%s: Could not parse config string '%s'\n", my_name, optarg);
+				return error;
+			}
+			break;
+		default:
+#ifdef CONFIG_BOTH
+			s2ram_add_flag(i, optarg);
+			break;
+#else
 			usage(my_name, options, optstring);
 			return -EINVAL;
-#ifdef CONFIG_BOTH
-		default:
-			s2ram_add_flag(i,optarg);
-			break;
 #endif
 		}
 	}
