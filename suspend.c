@@ -495,38 +495,40 @@ static int save_image(struct swap_map_handle *handle,
 	else
 		writeout_rate = nr_pages;
 
-	nr_pages = 0;
-	do {
+	for (nr_pages = 0; ; nr_pages++) {
 		ret = read(handle->dev, handle->page_buffer, page_size);
-		if (ret > 0) {
-			error = swap_write_page(handle);
-			if (error)
-				break;
+		if (ret <= 0)
+			break;
 
-			if (!(nr_pages % m)) {
-				printf("\b\b\b\b%3d%%", nr_pages / m);
-				splash.progress(20 + (nr_pages / m) * 0.75);
+		error = swap_write_page(handle);
+		if (error)
+			break;
 
-				switch (splash.key_pressed()) {
-					case ABORT_KEY_CODE:
-						if (abort_possible) {
-							printf(" aborted!\n");
-							error = -EINTR;
-							goto Exit;
-						}
+		if (!(nr_pages % m)) {
+			printf("\b\b\b\b%3d%%", nr_pages / m);
+			splash.progress(20 + (nr_pages / m) * 0.75);
+
+			switch (splash.key_pressed()) {
+				case ABORT_KEY_CODE:
+					if (abort_possible) {
+						printf(" aborted!\n");
+						error = -EINTR;
+						goto Exit;
+					}
 					break;
-					case REBOOT_KEY_CODE:
-						printf (" reboot enabled\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-						shutdown_method = SHUTDOWN_METHOD_REBOOT;
+				case REBOOT_KEY_CODE:
+					printf (" reboot enabled\b\b\b\b\b\b\b"
+						"\b\b\b\b\b\b\b\b");
+					shutdown_method =
+							SHUTDOWN_METHOD_REBOOT;
 					break;
-				}
 			}
-			if (!(nr_pages % writeout_rate))
-				start_writeout(handle->fd);
-
-			nr_pages++;
 		}
-	} while (ret > 0);
+
+		if (!(nr_pages % writeout_rate))
+			start_writeout(handle->fd);
+	}
+
 	if (ret < 0)
 		error = -errno;
 
