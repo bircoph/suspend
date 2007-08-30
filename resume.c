@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <syscall.h>
+#include <libgen.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -55,6 +56,7 @@ static char splash_param;
 static int use_platform_suspend;
 
 static struct splash splash;
+static char *my_name;
 
 static struct config_par parameters[] = {
 	{
@@ -760,43 +762,44 @@ static inline int get_config(int argc, char *argv[])
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
-	int set_off = 0;
-	unsigned long long int off = 0;
-	int set_rdev = 0;
-	char *rdev = NULL;
 	const char *optstring = "hf:o:r:";
 
+	/* parse only config file argument */
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
-			usage("resume", options, optstring);
+			usage(my_name, options, optstring);
 			exit(EXIT_SUCCESS);
 		case 'f':
 			conf_name = optarg;
 			break;
+		}
+	}
+
+	error = parse(my_name, conf_name, parameters);
+	if (error) {
+		fprintf(stderr, "%s: Could not parse config file\n", my_name);
+		return error;
+	}
+
+	optind = 0;
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
+		switch (i) {
+		case 'h':
+		case 'f':
+			/* already handled */
+			break;
 		case 'o':
-			off = atoll(optarg);
-			set_off = 1;
+			resume_offset = atoll(optarg);
 			break;
 		case 'r':
-			rdev  = optarg;
-			set_rdev = 1;
+			strncpy(resume_dev_name, optarg, MAX_STR_LEN -1);
 			break;
 		default:
-			usage("resume", options, optstring);
+			usage(my_name, options, optstring);
 			return -EINVAL;
 		}
 	}
-	error = parse("resume", conf_name, parameters);
-	if (error) {
-		fprintf(stderr, "resume: Could not parse config file\n");
-		return error;
-	}
-	if (set_rdev)
-		strncpy(resume_dev_name, rdev, MAX_STR_LEN -1);
-
-	if (set_off)
-		resume_offset = off;
 
 	if (optind < argc)
 		strncpy(resume_dev_name, argv[optind], MAX_STR_LEN - 1);
@@ -811,6 +814,8 @@ int main(int argc, char *argv[])
 	int dev, resume_dev;
 	int n, error, orig_loglevel;
 	static struct swsusp_header swsusp_header;
+
+	my_name = basename(argv[0]);
 
 	error = get_config(argc, argv);
 	if (error)

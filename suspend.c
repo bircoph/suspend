@@ -24,6 +24,7 @@
 #include <linux/kd.h>
 #include <linux/tiocl.h>
 #include <syscall.h>
+#include <libgen.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -90,7 +91,7 @@ static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
 static struct vt_mode orig_vtm;
 static int vfd;
-char *my_name;
+static char *my_name;
 
 static struct config_par parameters[] = {
 	{
@@ -1234,33 +1235,41 @@ static inline int get_config(int argc, char *argv[])
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
-	int set_off = 0;
-	unsigned long long int off = 0;
-	int set_size = 0;
-	unsigned long int im_size = 0;
-	char *rdev = NULL;
-	int set_rdev = 0;
 	const char *optstring = "hf:s:o:r:";
 
+	/* parse only config file argument */
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage(my_name, options, optstring);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'f':
 			conf_name = optarg;
 			break;
+		}
+	}
+
+	error = parse(my_name, conf_name, parameters);
+	if (error) {
+		fprintf(stderr, "%s: Could not parse config file\n", my_name);
+		return error;
+	}
+
+	optind = 0;
+	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
+		switch (i) {
+		case 'h':
+		case 'f':
+			/* already handled */
+			break;
 		case 's':
-			im_size = atoll(optarg);
-			set_size = 1;
+			pref_image_size = atoll(optarg);
 			break;
 		case 'o':
-			off = atoll(optarg);
-			set_off = 1;
+			resume_offset = atoll(optarg);
 			break;
 		case 'r':
-			rdev  = optarg;
-			set_rdev = 1;
+			strncpy(resume_dev_name, optarg, MAX_STR_LEN -1);
 			break;
 		case '?':
 			usage(my_name, options, optstring);
@@ -1273,6 +1282,9 @@ static inline int get_config(int argc, char *argv[])
 		}
 	}
 
+	if (optind < argc)
+		strncpy(resume_dev_name, argv[optind], MAX_STR_LEN - 1);
+
 #ifdef CONFIG_BOTH
 	s2ram = s2ram_is_supported();
 	/* s2ram_is_supported returns EINVAL if there was something wrong
@@ -1280,27 +1292,10 @@ static inline int get_config(int argc, char *argv[])
 	 * On any other error (unsupported) we will just continue with s2disk.
 	 */
 	if (s2ram == EINVAL)
-		return EINVAL;
+		return -EINVAL;
 	
 	s2ram = !s2ram;
 #endif
-
-	error = parse(my_name, conf_name, parameters);
-	if (error) {
-		fprintf(stderr, "%s: Could not parse config file\n", my_name);
-		return error;
-	}
-	if (set_rdev)
-		strncpy(resume_dev_name, rdev, MAX_STR_LEN -1);
-
-	if (set_off)
-		resume_offset = off;
-
-	if (set_size)
-		pref_image_size = im_size;
-
-	if (optind < argc)
-		strncpy(resume_dev_name, argv[optind], MAX_STR_LEN - 1);
 
 	return 0;
 }
@@ -1315,6 +1310,8 @@ int main(int argc, char *argv[])
 	struct rlimit rlim;
 	static char chroot_path[MAX_STR_LEN];
 
+	my_name = basename(argv[0]);
+
 	/* Make sure the 0, 1, 2 descriptors are open before opening the
 	 * snapshot and resume devices
 	 */
@@ -1327,12 +1324,6 @@ int main(int argc, char *argv[])
 		}
 	} while (ret < 3);
 	close(ret);
-
-	my_name = strrchr(argv[0], '/');
-	if (! my_name)
-		my_name = argv[0];
-	else
-		my_name++;
 
 	ret = get_config(argc, argv);
 	if (ret)
