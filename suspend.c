@@ -1255,7 +1255,7 @@ static inline int get_config(int argc, char *argv[])
 		   },
 		   {
 		       "parameter\0\toverride config file parameter.",
-		       required_argument,	NULL, 'x'
+		       required_argument,	NULL, 'P'
 		   },
 #ifdef CONFIG_BOTH
 		   HACKS_LONG_OPTS
