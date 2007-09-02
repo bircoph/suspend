@@ -48,9 +48,9 @@ static char do_decompress;
 #define do_decompress 0
 #endif
 #ifdef CONFIG_ENCRYPT
-static char decrypt;
+static char do_decrypt;
 #else
-#define decrypt 0
+#define do_decrypt 0
 #endif
 static char splash_param;
 static int use_platform_suspend;
@@ -232,14 +232,14 @@ static int fill_buffer(struct swap_map_handle *handle)
 	if (handle->area_size > buffer_size)
 		return -ENOMEM;
 #ifdef CONFIG_ENCRYPT
-	if (decrypt)
+	if (do_decrypt)
 		dst = handle->decrypt_buffer;
 #endif
 	error = read_area(handle->fd, dst,
 			handle->areas[handle->k].offset,
 			handle->area_size);
 #ifdef CONFIG_ENCRYPT
-	if (!error && decrypt)
+	if (!error && do_decrypt)
 		error = gcry_cipher_decrypt(handle->cipher_handle,
 				(void *)handle->read_buffer, handle->area_size,
 				dst, handle->area_size);
@@ -629,7 +629,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 					IMAGE_CIPHER, GCRY_CIPHER_MODE_CFB,
 					GCRY_CIPHER_SECURE);
 			if (!error) {
-				decrypt = 1;
+				do_decrypt = 1;
 				error = gcry_cipher_setkey(handle.cipher_handle,
 							key, KEY_SIZE);
 			}
@@ -638,9 +638,9 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 							ivec, CIPHER_BLOCK);
 
 			if (error) {
-				if (decrypt)
+				if (do_decrypt)
 					gcry_cipher_close(handle.cipher_handle);
-				decrypt = 0;
+				do_decrypt = 0;
 				fprintf(stderr, "%s: libgcrypt error: %s\n",
 						my_name,
 						gcry_strerror(error));
@@ -738,7 +738,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	fsync(fd);
 	close(fd);
 #ifdef CONFIG_ENCRYPT
-	if (decrypt)
+	if (do_decrypt)
 		gcry_cipher_close(handle.cipher_handle);
 #endif
 
