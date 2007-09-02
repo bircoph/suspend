@@ -1368,8 +1368,13 @@ int main(int argc, char *argv[])
 	if (compute_checksum != 'y' && compute_checksum != 'Y')
 		compute_checksum = 0;
 #ifdef CONFIG_COMPRESS
-	if (do_compress != 'y' && do_compress != 'Y')
+	if (do_compress != 'y' && do_compress != 'Y') {
 		do_compress = 0;
+	} else if (lzo_init() != LZO_E_OK) {
+		suspend_error("Failed to initialize LZO. "
+				"Compression disabled.\n");
+		do_compress = 0;
+	}
 #endif
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt != 'y' && do_encrypt != 'Y')

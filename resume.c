@@ -593,7 +593,13 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		if (header->image_flags & IMAGE_COMPRESSED) {
 			printf("resume: Compressed image\n");
 #ifdef CONFIG_COMPRESS
-			decompress = 1;
+			if (lzo_init() == LZO_E_OK) {
+				decompress = 1;
+			} else {
+				fprintf(stderr,
+					"resume: Failed to initialize LZO\n");
+				error = -EFAULT;
+			}
 #else
 			fprintf(stderr,"resume: Compression not supported\n");
 			error = -EINVAL;
