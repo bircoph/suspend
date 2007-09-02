@@ -68,7 +68,7 @@ static long long compr_diff;
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
 static char use_RSA;
-static char key_name[MAX_STR_LEN] = KEY_FILE;
+static char key_name[MAX_STR_LEN] = KEY_FILE_PATH;
 static char password[PASS_SIZE];
 #else
 #define do_encrypt 0
@@ -479,7 +479,7 @@ static int save_image(struct swap_map_handle *handle,
                       unsigned int nr_pages)
 {
 	unsigned int m, writeout_rate;
-	int ret, abort_possible;
+	int ret, abort_possible, key;
 	struct termios newtrm, savedtrm;
 	int error = 0;
 
@@ -520,7 +520,8 @@ static int save_image(struct swap_map_handle *handle,
 			printf("\b\b\b\b%3d%%", nr_pages / m);
 			splash.progress(20 + (nr_pages / m) * 0.75);
 
-			switch (splash.key_pressed()) {
+			while ((key = splash.key_pressed()) > 0) {
+				switch (key) {
 				case ABORT_KEY_CODE:
 					if (abort_possible) {
 						printf(" aborted!\n");
@@ -534,6 +535,7 @@ static int save_image(struct swap_map_handle *handle,
 					shutdown_method =
 							SHUTDOWN_METHOD_REBOOT;
 					break;
+				}
 			}
 		}
 
