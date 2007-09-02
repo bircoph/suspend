@@ -570,115 +570,120 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	int ret, error = 0;
 	struct swsusp_info *header = mem_pool;
 	char *buffer = (char *)mem_pool + page_size;
-	unsigned int nr_pages;
+	unsigned int nr_pages = 0;
 	unsigned int size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
 	char c;
 
 	error = read_area(fd, header, swsusp_header->image, page_size);
+	if (error)
+		goto Reboot_question;
+
+	if (header->image_flags & PLATFORM_SUSPEND)
+		use_platform_suspend = 1;
+
+	if (header->image_flags & IMAGE_CHECKSUM) {
+		memcpy(orig_checksum, header->checksum, 16);
+		print_checksum(buffer, orig_checksum);
+		printf("%s: MD5 checksum %s\n", my_name, buffer);
+		verify_checksum = 1;
+	}
+	splash.progress(10);
+	if (header->image_flags & IMAGE_COMPRESSED) {
+		printf("%s: Compressed image\n", my_name);
+#ifdef CONFIG_COMPRESS
+		if (lzo_init() == LZO_E_OK) {
+			do_decompress = 1;
+		} else {
+			fprintf(stderr, "%s: Failed to initialize LZO\n",
+					my_name);
+			error = -EFAULT;
+		}
+#else
+		fprintf(stderr, "%s: Compression not supported\n", my_name);
+		error = -EINVAL;
+#endif
+	}
+	if (error)
+		goto Reboot_question;
+
+	if (header->image_flags & IMAGE_ENCRYPTED) {
+#ifdef CONFIG_ENCRYPT
+		static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
+
+		printf("%s: Encrypted image\n", my_name);
+		if (header->image_flags & IMAGE_USE_RSA) {
+			error = decrypt_key(header, key, ivec, buffer);
+		} else {
+			int j;
+
+			splash.read_password(buffer, 0);
+			encrypt_init(key, ivec, buffer);
+			for (j = 0; j < CIPHER_BLOCK; j++)
+				ivec[j] ^= header->salt[j];
+		}
+		splash.progress(15);
+		if (!error)
+			error = gcry_cipher_open(&handle.cipher_handle,
+				IMAGE_CIPHER, GCRY_CIPHER_MODE_CFB,
+				GCRY_CIPHER_SECURE);
+		if (!error) {
+			do_decrypt = 1;
+			error = gcry_cipher_setkey(handle.cipher_handle,
+						key, KEY_SIZE);
+		}
+		if (!error)
+			error = gcry_cipher_setiv(handle.cipher_handle,
+						ivec, CIPHER_BLOCK);
+
+		if (error) {
+			if (do_decrypt)
+				gcry_cipher_close(handle.cipher_handle);
+			do_decrypt = 0;
+			fprintf(stderr, "%s: libgcrypt error: %s\n",
+					my_name,
+					gcry_strerror(error));
+		}
+#else
+		fprintf(stderr, "%s: Encryption not supported\n",
+				my_name);
+		error = -EINVAL;
+#endif
+	}
+
+	if (error)
+		goto Reboot_question;
+
+	error = init_swap_reader(&handle, fd, header->map_start, buffer);
+	nr_pages = header->pages - 1;
+	ret = write(dev, header, page_size);
+	if (ret < (int)page_size)
+		error = ret < 0 ? ret : -EIO;
 
 	if (!error) {
-		if (header->image_flags & PLATFORM_SUSPEND)
-			use_platform_suspend = 1;
+		struct timeval begin, end;
+		double delta, mb = header->size / (1024.0 * 1024.0);
 
-		if (header->image_flags & IMAGE_CHECKSUM) {
-			memcpy(orig_checksum, header->checksum, 16);
-			print_checksum(buffer, orig_checksum);
-			printf("%s: MD5 checksum %s\n", my_name, buffer);
-			verify_checksum = 1;
-		}
-		splash.progress(10);
-		if (header->image_flags & IMAGE_COMPRESSED) {
-			printf("%s: Compressed image\n", my_name);
-#ifdef CONFIG_COMPRESS
-			if (lzo_init() == LZO_E_OK) {
-				do_decompress = 1;
-			} else {
-				fprintf(stderr,
-					"%s: Failed to initialize LZO\n",
-						my_name);
-				error = -EFAULT;
-			}
-#else
-			fprintf(stderr,"%s: Compression not supported\n",
-					my_name);
-			error = -EINVAL;
-#endif
-		}
-		if (!error && (header->image_flags & IMAGE_ENCRYPTED)) {
-#ifdef CONFIG_ENCRYPT
-			static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
+		gettimeofday(&begin, NULL);
+		error = load_image(&handle, dev, nr_pages);
+		gettimeofday(&end, NULL);
 
-			printf("%s: Encrypted image\n", my_name);
-			if (header->image_flags & IMAGE_USE_RSA) {
-				error = decrypt_key(header, key, ivec, buffer);
-			} else {
-				int j;
+		timersub(&end, &begin, &end);
+		delta = end.tv_usec / 1000000.0 + end.tv_sec;
 
-				splash.read_password(buffer, 0);
-				encrypt_init(key, ivec, buffer);
-				for (j = 0; j < CIPHER_BLOCK; j++)
-					ivec[j] ^= header->salt[j];
-			}
-			splash.progress(15);
-			if (!error)
-				error = gcry_cipher_open(&handle.cipher_handle,
-					IMAGE_CIPHER, GCRY_CIPHER_MODE_CFB,
-					GCRY_CIPHER_SECURE);
-			if (!error) {
-				do_decrypt = 1;
-				error = gcry_cipher_setkey(handle.cipher_handle,
-							key, KEY_SIZE);
-			}
-			if (!error)
-				error = gcry_cipher_setiv(handle.cipher_handle,
-							ivec, CIPHER_BLOCK);
+		printf("wrote %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
+			mb, header->writeout_time, mb / header->writeout_time);
 
-			if (error) {
-				if (do_decrypt)
-					gcry_cipher_close(handle.cipher_handle);
-				do_decrypt = 0;
-				fprintf(stderr, "%s: libgcrypt error: %s\n",
-						my_name,
-						gcry_strerror(error));
-			}
-#else
-			fprintf(stderr, "%s: Encryption not supported\n",
-					my_name);
-			error = -EINVAL;
-#endif
-		}
-		if (!error) {
-			error = init_swap_reader(&handle, fd,
-					header->map_start, buffer);
-			nr_pages = header->pages - 1;
-			ret = write(dev, header, page_size);
-			if (ret < (int)page_size)
-				error = ret < 0 ? ret : -EIO;
-		}
-		if (!error) {
-			struct timeval begin, end;
-			double delta, mb = header->size / (1024.0 * 1024.0);
+		printf("read %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
+			mb, delta, mb / delta);
 
-			gettimeofday(&begin, NULL);
-			error = load_image(&handle, dev, nr_pages);
-			gettimeofday(&end, NULL);
-
-			timersub(&end, &begin, &end);
-			delta = end.tv_usec / 1000000.0 + end.tv_sec;
-
-			printf("wrote %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
-				mb, header->writeout_time, mb / header->writeout_time);
-
-			printf("read %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
-				mb, delta, mb / delta);
-
-			mb *= 2.0;
-			delta += header->writeout_time;
-			printf("total image i/o %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
-				mb, delta, mb / delta);
-		}
+		mb *= 2.0;
+		delta += header->writeout_time;
+		printf("total image i/o %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
+			mb, delta, mb / delta);
 	}
+
+Reboot_question:
 	if (error) {
 		c = splash.dialog(
 			"\nThe system snapshot image could not be read.\n\n"
@@ -739,13 +744,14 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		gcry_cipher_close(handle.cipher_handle);
 #endif
 
-	if (!error) {
-		printf("%s: Image successfully loaded\n", my_name);
-	} else {
+	if (error) {
 		sprintf(buffer, "%s: Error %d loading the image\n"
 			"\nPress ENTER to continue\n", my_name, error);
 		splash.dialog(buffer);
+	} else {
+		printf("%s: Image successfully loaded\n", my_name);
 	}
+
 	return error;
 }
 
