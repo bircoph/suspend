@@ -449,21 +449,16 @@ static int decrypt_key(struct swsusp_info *header, unsigned char *key,
 	if (!ret)
 		ret = gcry_cipher_open(&sym_hd, PK_CIPHER,
 				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
-
 	if (ret)
 		goto Free_rsa;
 
 	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
 	if (!ret)
 		ret = gcry_cipher_setiv(sym_hd, ivec_buf, PK_CIPHER_BLOCK);
-
 	if (!ret)
 		ret = gcry_ac_data_new(&rsa_data_set);
-
-	if (ret) {
-		gcry_cipher_close(sym_hd);
-		goto Free_rsa;
-	}
+	if (ret)
+		goto Close_cypher;
 
 	buf = rsa->data;
 	for (j = 0; j < RSA_FIELDS; j++) {
@@ -489,41 +484,46 @@ static int decrypt_key(struct swsusp_info *header, unsigned char *key,
 	if (!ret)
 		ret = gcry_ac_key_init(&rsa_priv, rsa_hd,
 					GCRY_AC_KEY_SECRET, rsa_data_set);
+	if (ret)
+		goto Destroy_data_set;
 
+	ret = gcry_ac_data_new(&key_set);
+	if (ret)
+		goto Destroy_key;
+
+	gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, header->key.data,
+			header->key.size, NULL);
+	ret = gcry_ac_data_set(key_set, GCRY_AC_FLAG_COPY, "a", mpi);
+	if (ret)
+		goto Destroy_key_set;
+
+	gcry_mpi_release(mpi);
+	ret = gcry_ac_data_decrypt(rsa_hd, 0, rsa_priv, &mpi, key_set);
 	if (!ret) {
-		ret = gcry_ac_data_new(&key_set);
-		if (!ret) {
-			gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, header->key.data,
-					header->key.size, NULL);
-			ret = gcry_ac_data_set(key_set, GCRY_AC_FLAG_COPY,
-						"a", mpi);
-			if (!ret) {
-				gcry_mpi_release(mpi);
-				ret = gcry_ac_data_decrypt(rsa_hd, 0, rsa_priv,
-						&mpi, key_set);
-			}
-			if (!ret) {
-				unsigned char *res;
-				size_t s;
+		unsigned char *res;
+		size_t s;
 
-				gcry_mpi_aprint(GCRYMPI_FMT_USG, &res, &s, mpi);
-				if (s == KEY_SIZE + CIPHER_BLOCK) {
-					memcpy(key, res, KEY_SIZE);
-					memcpy(ivec, res + KEY_SIZE,
-							CIPHER_BLOCK);
-				} else {
-					ret = -ENODATA;
-				}
-				gcry_free(res);
-			}
-			gcry_mpi_release(mpi);
-			gcry_ac_data_destroy(key_set);
+		gcry_mpi_aprint(GCRYMPI_FMT_USG, &res, &s, mpi);
+		if (s == KEY_SIZE + CIPHER_BLOCK) {
+			memcpy(key, res, KEY_SIZE);
+			memcpy(ivec, res + KEY_SIZE, CIPHER_BLOCK);
+		} else {
+			ret = -ENODATA;
 		}
-		gcry_ac_key_destroy(rsa_priv);
-	} else {
-		gcry_ac_data_destroy(rsa_data_set);
+		gcry_free(res);
 	}
 
+Destroy_key_set:
+	gcry_mpi_release(mpi);
+	gcry_ac_data_destroy(key_set);
+
+Destroy_key:
+	gcry_ac_key_destroy(rsa_priv);
+
+Destroy_data_set:
+	gcry_ac_data_destroy(rsa_data_set);
+
+Close_cypher:
 	gcry_cipher_close(sym_hd);
 
 Free_rsa:
