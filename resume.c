@@ -445,7 +445,7 @@ static int decrypt_key(struct swsusp_info *header, unsigned char *key,
 		ret = memcmp(out, rsa->key_test, KEY_TEST_SIZE);
 
 		if (ret)
-			printf("resume: Wrong passphrase, try again.\n");
+			printf("%s: Wrong passphrase, try again.\n", my_name);
 	} while (ret);
 
 	gcry_cipher_close(sym_hd);
@@ -546,7 +546,8 @@ static int open_resume_dev(char *resume_dev_name,
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
 		ret = -errno;
-		fprintf(stderr,"resume: Could not open the resume device\n");
+		fprintf(stderr, "%s: Could not open the resume device\n",
+				my_name);
 		return ret;
 	}
 	if (lseek(fd, shift, SEEK_SET) != shift)
@@ -586,22 +587,24 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		if (header->image_flags & IMAGE_CHECKSUM) {
 			memcpy(orig_checksum, header->checksum, 16);
 			print_checksum(buffer, orig_checksum);
-			printf("resume: MD5 checksum %s\n", buffer);
+			printf("%s: MD5 checksum %s\n", my_name, buffer);
 			verify_checksum = 1;
 		}
 		splash.progress(10);
 		if (header->image_flags & IMAGE_COMPRESSED) {
-			printf("resume: Compressed image\n");
+			printf("%s: Compressed image\n", my_name);
 #ifdef CONFIG_COMPRESS
 			if (lzo_init() == LZO_E_OK) {
 				decompress = 1;
 			} else {
 				fprintf(stderr,
-					"resume: Failed to initialize LZO\n");
+					"%s: Failed to initialize LZO\n",
+						my_name);
 				error = -EFAULT;
 			}
 #else
-			fprintf(stderr,"resume: Compression not supported\n");
+			fprintf(stderr,"%s: Compression not supported\n",
+					my_name);
 			error = -EINVAL;
 #endif
 		}
@@ -609,7 +612,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 #ifdef CONFIG_ENCRYPT
 			static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
 
-			printf("resume: Encrypted image\n");
+			printf("%s: Encrypted image\n", my_name);
 			if (header->image_flags & IMAGE_USE_RSA) {
 				error = decrypt_key(header, key, ivec, buffer);
 			} else {
@@ -638,11 +641,13 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 				if (decrypt)
 					gcry_cipher_close(handle.cipher_handle);
 				decrypt = 0;
-				fprintf(stderr, "resume: libgcrypt error: %s\n",
+				fprintf(stderr, "%s: libgcrypt error: %s\n",
+						my_name,
 						gcry_strerror(error));
 			}
 #else
-			fprintf(stderr, "resume: Encryption not supported\n");
+			fprintf(stderr, "%s: Encryption not supported\n",
+					my_name);
 			error = -EINVAL;
 #endif
 		}
@@ -679,7 +684,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	}
 	if (error) {
 		c = splash.dialog(
-			"\nresume: The system snapshot image could not be read.\n\n"
+			"\nThe system snapshot image could not be read.\n\n"
 #ifdef CONFIG_ENCRYPT
 			"\tThis might be a result of booting a wrong kernel\n"
 			"\tor typing in a wrong passphrase.\n\n"
@@ -696,7 +701,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		if (ret) {
 			close(fd);
 			reboot();
-                       fprintf(stderr,"resume: Reboot failed, please reboot it manually.\n");
+			fprintf(stderr, "%s: Reboot failed, please reboot manually.\n",
+					my_name);
                        while(1)
 			   sleep(1);
 		}
@@ -707,10 +713,11 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	if (!error && verify_checksum) {
 		md5_finish_ctx(&handle.ctx, checksum);
 		if (memcmp(orig_checksum, checksum, 16)) {
-			fprintf(stderr,"resume: MD5 checksum does not match\n");
+			fprintf(stderr,"%s: MD5 checksum does not match\n",
+					my_name);
 			print_checksum(buffer, checksum);
-			fprintf(stderr, "resume: Computed MD5 checksum %s\n",
-				buffer);
+			fprintf(stderr, "%s: Computed MD5 checksum %s\n",
+					my_name, buffer);
 			error = -EINVAL;
 		}
 	}
@@ -723,7 +730,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		if (ret != size) {
 			error = ret < 0 ? -errno : -EIO;
 			fprintf(stderr,
-				"resume: Could not restore the partition header\n");
+				"%s: Could not restore the partition header\n",
+				my_name);
 		}
 	}
 
@@ -735,10 +743,10 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 #endif
 
 	if (!error) {
-		printf("resume: Image successfully loaded\n");
+		printf("%s: Image successfully loaded\n", my_name);
 	} else {
-		sprintf(buffer, "resume: Error %d loading the image\n"
-			"\nPress ENTER to continue\n", error);
+		sprintf(buffer, "%s: Error %d loading the image\n"
+			"\nPress ENTER to continue\n", my_name, error);
 		splash.dialog(buffer);
 	}
 	return error;
@@ -808,7 +816,9 @@ static inline int get_config(int argc, char *argv[])
  		case 'P':
  			error = parse_line(optarg, parameters);
  			if (error) {
- 				fprintf(stderr, "%s: Could not parse config string '%s'\n", my_name, optarg);
+ 				fprintf(stderr,
+					"%s: Could not parse config string '%s'\n",
+						my_name, optarg);
  				return error;
  			}
  			break;
@@ -846,7 +856,8 @@ int main(int argc, char *argv[])
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
 #ifdef CONFIG_ENCRYPT
-	printf("resume: libgcrypt version: %s\n", gcry_check_version(NULL));
+	printf("%s: libgcrypt version: %s\n", my_name,
+		gcry_check_version(NULL));
 	gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
 	mem_size = 3 * page_size + 2 * buffer_size;
 #else
@@ -855,7 +866,7 @@ int main(int argc, char *argv[])
 	mem_pool = malloc(mem_size);
 	if (!mem_pool) {
 		error = errno;
-		fprintf(stderr, "resume: Could not allocate memory\n");
+		fprintf(stderr, "%s: Could not allocate memory\n", my_name);
 		return error;
 	}
 
@@ -865,9 +876,9 @@ int main(int argc, char *argv[])
 
 	while (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, 
-			"resume: Could not stat the resume device file '%s'\n"
+			"%s: Could not stat the resume device file '%s'\n"
 			"\tPlease type in the full path name to try again\n"
-			"\tor press ENTER to boot the system: ",
+			"\tor press ENTER to boot the system: ", my_name,
 			resume_dev_name);
 		fgets(resume_dev_name, MAX_STR_LEN - 1, stdin);
 		n = strlen(resume_dev_name) - 1;
@@ -885,7 +896,7 @@ int main(int argc, char *argv[])
 
 	if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
 		error = errno;
-		fprintf(stderr, "resume: Could not lock myself\n");
+		fprintf(stderr, "%s: Could not lock myself\n", my_name);
 		goto Free;
 	}
 
@@ -910,21 +921,21 @@ int main(int argc, char *argv[])
 
 	error = read_image(dev, resume_dev, &swsusp_header);
 	if (error) {
-		fprintf(stderr, "resume: Could not read the image\n");
+		fprintf(stderr, "%s: Could not read the image\n", my_name);
 		error = -error;
 		goto Close_splash;
 	}
 
 	if (freeze(dev)) {
 		error = errno;
-		fprintf(stderr, "resume: Could not freeze processes\n");
+		fprintf(stderr, "%s: Could not freeze processes\n", my_name);
 		goto Close_splash;
 	}
 	if (use_platform_suspend) {
 		int ret = platform_prepare(dev);
 		if (ret < 0) {
-			fprintf(stderr, "resume: pm_ops->prepare returned "
-				"error %d\n", ret);
+			fprintf(stderr, "%s: pm_ops->prepare returned "
+					"error %d\n", my_name, ret);
 			use_platform_suspend = 0;
 		}
 	}
