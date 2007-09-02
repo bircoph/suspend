@@ -43,9 +43,9 @@ static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static int max_loglevel = MAX_LOGLEVEL;
 static char verify_checksum;
 #ifdef CONFIG_COMPRESS
-static char decompress;
+static char do_decompress;
 #else
-#define decompress 0
+#define do_decompress 0
 #endif
 #ifdef CONFIG_ENCRYPT
 static char decrypt;
@@ -283,7 +283,7 @@ static int restore(struct swap_map_handle *handle, int disp)
 
 	block = (struct buf_block *)(handle->read_buffer + disp);
 #ifdef CONFIG_COMPRESS
-	if (decompress) {
+	if (do_decompress) {
 		int error;
 		lzo_uint cnt = page_size;
 
@@ -595,7 +595,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 			printf("%s: Compressed image\n", my_name);
 #ifdef CONFIG_COMPRESS
 			if (lzo_init() == LZO_E_OK) {
-				decompress = 1;
+				do_decompress = 1;
 			} else {
 				fprintf(stderr,
 					"%s: Failed to initialize LZO\n",
