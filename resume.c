@@ -213,8 +213,8 @@ static int fill_buffer(struct swap_map_handle *handle)
 	}
 
 	for (i = advise_first;
-	i <= advise_last && i < handle->areas_per_page;
-	i++) {
+	     i <= advise_last && i < handle->areas_per_page;
+	     i++) {
 		if (handle->areas[i].offset == 0)
 			break;
 
@@ -298,7 +298,7 @@ static int restore(struct swap_map_handle *handle, int disp)
 	return page_size;
 }
 
-static inline int swap_read_page(struct swap_map_handle *handle)
+static int swap_read_page(struct swap_map_handle *handle)
 {
 	loff_t offset;
 	size_t size;
@@ -317,10 +317,9 @@ static inline int swap_read_page(struct swap_map_handle *handle)
 	if (++handle->k >= handle->areas_per_page) {
 		handle->k = 0;
 		offset = *handle->next_swap;
-		if (offset)
-			error = read_area(handle->fd, handle->areas, offset, page_size);
-		else
-			error = -EINVAL;
+		error = offset ?
+			read_area(handle->fd, handle->areas, offset, page_size)
+			: -EINVAL;
 	}
 	if (!error)
 		error = fill_buffer(handle);
@@ -345,7 +344,7 @@ MD5:
  *	(assume there are @nr_pages pages to load)
  */
 
-static inline int load_image(struct swap_map_handle *handle, int dev,
+static int load_image(struct swap_map_handle *handle, int dev,
                       unsigned int nr_pages)
 {
 	unsigned int m, n;
@@ -378,7 +377,7 @@ static inline int load_image(struct swap_map_handle *handle, int dev,
 	return error;
 }
 
-static char * print_checksum(char * buf, unsigned char *checksum)
+static char *print_checksum(char * buf, unsigned char *checksum)
 {
 	int j;
 
