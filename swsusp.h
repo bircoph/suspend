@@ -198,7 +198,7 @@ struct buf_block {
 
 #define SUSPEND_SWAPPINESS	100
 
-#define ABORT_KEY_CODE	14
+#define ABORT_KEY_CODE	127
 #define ABORT_KEY_NAME	"backspace"
-#define REBOOT_KEY_CODE	19
+#define REBOOT_KEY_CODE	'r'
 #define REBOOT_KEY_NAME	"r"

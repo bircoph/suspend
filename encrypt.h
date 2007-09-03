@@ -58,5 +58,5 @@ void read_password(char *pass_buf, int vrfy);
 void encrypt_init(unsigned char *, unsigned char *, char *);
 void get_random_salt(unsigned char *salt, size_t size);
 
-#define KEY_FILE_PATH	"/etc/suspend.key"
+#define KEY_FILE	"/etc/suspend.key"
 #endif
