@@ -31,7 +31,8 @@ SWSUSP_LD_FLAGS = $(LD_FLAGS)
 ifeq ($(ARCH), x86)
 S2RAM_OBJ += s2ram-x86.o whitelist.o dmidecode.o radeontool.o vbetool/vbetool.o
 S2RAM_LD_FLAGS += -lx86 -lpci -lz
-else ifeq ($(ARCH), ppc)
+endif
+ifeq ($(ARCH), ppc)
 S2RAM_OBJ += s2ram-ppc.o
 endif
 
