@@ -5,6 +5,13 @@
  * Distribute under GPLv2.
  */
 
+#ifdef CONFIG_ARCH_X86
+#include "s2ram-x86.h"
+#endif
+#ifdef CONFIG_ARCH_PPC
+#include "s2ram-ppc.h"
+#endif
+
 /* from radeontool.c */
 void radeon_cmd_light(int);
 void map_radeon_cntl_mem(void);

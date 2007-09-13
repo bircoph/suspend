@@ -4,6 +4,7 @@
  * (c) 2007 Tim Dijkstra
  */
 
+#include "config.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>

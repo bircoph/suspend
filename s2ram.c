@@ -5,6 +5,7 @@
  * Distribute under GPLv2.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>

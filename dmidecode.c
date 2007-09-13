@@ -11,6 +11,7 @@
  *	Licensed under the GNU General Public license v2.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>

@@ -9,6 +9,8 @@
  *
  */
 
+#include "config.h"
+
 #ifdef CONFIG_SPLASHY
 #include <string.h>
 #include <stdio.h>

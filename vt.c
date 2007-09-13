@@ -6,6 +6,7 @@
  * (C) 2006 Stefan Seyfried <seife@suse.de>
  */
 
+#include "config.h"
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/kd.h>

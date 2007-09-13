@@ -6,6 +6,7 @@
  * Distribute under GPLv2.
  */
 
+#include "config.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>

@@ -3,6 +3,7 @@
  * and all the workarounds
  */
 
+#include "config.h"
 #include <stdlib.h>
 #include "whitelist.h"
 

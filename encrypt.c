@@ -9,6 +9,8 @@
  *
  */
 
+#include "config.h"
+
 #ifdef CONFIG_ENCRYPT
 #include <sys/types.h>
 #include <sys/stat.h>

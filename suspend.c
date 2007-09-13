@@ -9,8 +9,7 @@
  *
  */
 
-#define _LARGEFILE64_SOURCE
-
+#include "config.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
