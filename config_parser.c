@@ -11,7 +11,6 @@
 
 #include "config.h"
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -83,27 +82,20 @@ cleanup:
 
 /**
  *	parse - read and parse the configuration file
- *	note that a non-present config file is not considered an error here
  */
 
 int parse(char *my_name, char *file_name, struct config_par *parv)
 {
 	char buf[MAX_STR_LEN];
 	char *str;
-	struct stat stat_buf;
 	FILE *file;
 	int error, i;
 
-	if (stat(file_name, &stat_buf)) {
-		fprintf(stderr, "%s: Could not stat configuration file\n",
-			my_name);
-		return 0;
-	}
 	file = fopen(file_name, "r");
 	if (!file) {
 		fprintf(stderr, "%s: Could not open configuration file\n",
 			my_name);
-		return 0;
+		return -errno;
 	}
 	error = 0;
 	i = 0;

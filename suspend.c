@@ -1264,6 +1264,8 @@ static inline int get_config(int argc, char *argv[])
 	int i, error;
 	char *conf_name = CONFIG_FILE;
 	const char *optstring = "hf:s:o:r:P:";
+	struct stat stat_buf;
+	int fail_missing_config = 0;
 
 	/* parse only config file argument */
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
@@ -1273,14 +1275,24 @@ static inline int get_config(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 		case 'f':
 			conf_name = optarg;
+			fail_missing_config = 1;
 			break;
 		}
 	}
 
-	error = parse(my_name, conf_name, parameters);
-	if (error) {
-		fprintf(stderr, "%s: Could not parse config file\n", my_name);
-		return error;
+	if (stat(conf_name, &stat_buf)) {
+		if (fail_missing_config) {
+			fprintf(stderr, "%s: Could not stat configuration file\n",
+				my_name);
+			return -ENOENT;
+		}
+	}
+	else {
+		error = parse(my_name, conf_name, parameters);
+		if (error) {
+			fprintf(stderr, "%s: Could not parse config file\n", my_name);
+			return error;
+		}
 	}
 
 	optind = 0;
