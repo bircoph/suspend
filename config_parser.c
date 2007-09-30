@@ -138,3 +138,24 @@ void usage(char *my_name, struct option *options, const char *short_options)
 
 	printf("\n");
 }
+
+void version(char *my_name, char *extra_version)
+{
+	printf(
+		(
+			"%s (%s) %s %s\n"
+			"\n"
+			"FEATURES: %s\n"
+			"\n"
+			"This is free software.  You may redistribute copies of it under the terms of\n"
+			"the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
+			"There is NO WARRANTY, to the extent permitted by law.\n"
+		),
+		my_name,
+		PACKAGE_NAME,
+		PACKAGE_VERSION,
+		extra_version ? extra_version : "",
+		CONFIG_FEATURES
+	);
+}
+

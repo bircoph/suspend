@@ -16,6 +16,7 @@
 #define S2RAM
 #endif
 #include "vt.h"
+#include "whitelist.h"
 #include "s2ram.h"
 #include "config_parser.h"
 
@@ -28,6 +29,10 @@ int main(int argc, char *argv[])
 		    "help\0\tthis text.",	
 		    no_argument,    NULL,   'h'
 		},
+		{
+		    "version\0\t\t\tversion information",
+		    no_argument,		NULL, 'V'
+		},
 	    	{ 
 		    "test\0\ttest if the machine is in the database.", 
 		    no_argument,    NULL,   'n'
@@ -39,13 +44,16 @@ int main(int argc, char *argv[])
 		HACKS_LONG_OPTS
 	    	{   NULL,   0,	    NULL,   0	}
 	};
-	const char *optstring = "hni" "fspmrva:";
+	const char *optstring = "hVni" "fspmrva:";
 
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
 		case 'h':
 			usage("s2ram", options, optstring);
 			exit(0);
+		case 'V':
+			version("s2ram", whitelist_version);
+			exit(EXIT_SUCCESS);
 		case 'i':
 			identify_machine();
 			exit(0);

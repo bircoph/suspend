@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
+char *whitelist_version = "$Id: whitelist.c,v 1.114 2007/09/30 20:40:50 rjwysocki Exp $";
+
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	/* Michael Wagner <michael-wagner@gmx.de> */

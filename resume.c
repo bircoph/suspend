@@ -762,6 +762,10 @@ static inline int get_config(int argc, char *argv[])
 		       no_argument,		NULL, 'h'
 		   },
 		   {
+		       "version\0\t\t\tversion information",
+		       no_argument,		NULL, 'V'
+		   },
+		   {
 		       "config\0\t\talternative configuration file.",
 		       required_argument,	NULL, 'f'
 		   },
@@ -781,7 +785,7 @@ static inline int get_config(int argc, char *argv[])
 	};
 	int i, error;
 	char *conf_name = CONFIG_FILE;
-	const char *optstring = "hf:o:r:P:";
+	const char *optstring = "hVf:o:r:P:";
 	struct stat stat_buf;
 	int fail_missing_config = 0;
 
@@ -790,6 +794,9 @@ static inline int get_config(int argc, char *argv[])
 		switch (i) {
 		case 'h':
 			usage(my_name, options, optstring);
+			exit(EXIT_SUCCESS);
+		case 'V':
+			version(my_name, NULL);
 			exit(EXIT_SUCCESS);
 		case 'f':
 			conf_name = optarg;
@@ -816,7 +823,6 @@ static inline int get_config(int argc, char *argv[])
 	optind = 0;
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
-		case 'h':
 		case 'f':
 			/* already handled */
 			break;

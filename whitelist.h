@@ -23,4 +23,5 @@ struct machine_entry
 	unsigned int flags;
 };
 
+extern char *whitelist_version;
 extern struct machine_entry whitelist[];

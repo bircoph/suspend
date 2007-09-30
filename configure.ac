@@ -109,6 +109,8 @@ case "${host}" in
 	ppc-*)		ARCH="ppc";;
 esac
 
+CONFIG_FEATURES=""
+
 if test "${ARCH}" = "x86"; then
 	AC_DEFINE([CONFIG_ARCH_X86], [1], [Define if x86 arch])
 
@@ -152,6 +154,7 @@ elif test "${ARCH}" = "ppc"; then
 fi
 
 if test "${enable_compress}" = "yes"; then
+	CONFIG_FEATURES="${CONFIG_FEATURES} compress"
 	AC_DEFINE([CONFIG_COMPRESS], [1], [Define if x86 arch])
 	if test -z "${LZO_LIBS}"; then
 		AC_ARG_VAR([LZO_CFLAGS], [C compiler flags for lzo])
@@ -171,6 +174,7 @@ if test "${enable_compress}" = "yes"; then
 fi
 
 if test "${enable_encrypt}" = "yes"; then
+	CONFIG_FEATURES="${CONFIG_FEATURES} encrypt"
 	AC_DEFINE([CONFIG_ENCRYPT], [1], [Define if encryption enabled])
 
 	AC_MSG_CHECKING([for libgcrypt])
@@ -184,6 +188,7 @@ if test "${enable_encrypt}" = "yes"; then
 fi
 
 if test "${enable_splashy}" = "yes"; then
+	CONFIG_FEATURES="${CONFIG_FEATURES} splashy"
 	AC_DEFINE([CONFIG_SPLASHY], [1], [Define if splashy enabled])
 
 	if test -z "${SPLASHY_LIBS}"; then
@@ -197,6 +202,8 @@ if test "${enable_splashy}" = "yes"; then
 		)
 	fi
 fi
+
+AC_DEFINE_UNQUOTED([CONFIG_FEATURES], ["${CONFIG_FEATURES/ /}"], [String representation of available features])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
