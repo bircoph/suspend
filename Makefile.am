@@ -10,6 +10,12 @@ AUTOMAKE_OPTIONS=foreign dist-bzip2
 SUBDIRS=\
 	doc \
 	scripts
+
+sysconf_DATA=#required in order to create dir
+if ENABLE_CREATE_DEVICE
+dev_DATA=
+endif
+
 noinst_LIBRARIES=\
 	libsuspend-common.a
 sbin_PROGRAMS=\
@@ -17,7 +23,7 @@ sbin_PROGRAMS=\
 	swap-offset
 dist_noinst_DATA= \
 	conf/suspend.conf
-sysconf_DATA=#required in order to create dir
+
 if !ENABLE_MINIMAL
 sbin_PROGRAMS+=\
 	s2ram \
@@ -35,18 +41,15 @@ dist_doc_DATA=\
 	COPYING*
 endif
 
-if ENABLE_CREATE_DEVICE
-dev_DATA=
 install-data-hook:
-	$(MKNOD) $(DESTDIR)$(devdir)/snapshot c 10 231
-endif
-
-install-data-local:
 	if [ -f $(DESTDIR)$(sysconfdir)/suspend.conf ]; then \
 		$(INSTALL_DATA) $(srcdir)/conf/suspend.conf $(DESTDIR)$(sysconfdir)/suspend.conf.new; \
 	else \
 		$(INSTALL_DATA) $(srcdir)/conf/suspend.conf $(DESTDIR)$(sysconfdir)/suspend.conf; \
 	fi
+if ENABLE_CREATE_DEVICE
+	$(MKNOD) $(DESTDIR)$(devdir)/snapshot c 10 231
+endif
 
 AM_CFLAGS=\
 	-D_LARGEFILE64_SOURCE \
