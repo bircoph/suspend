@@ -203,7 +203,7 @@ if test "${enable_splashy}" = "yes"; then
 	fi
 fi
 
-AC_DEFINE_UNQUOTED([CONFIG_FEATURES], ["${CONFIG_FEATURES/ /}"], [String representation of available features])
+AC_DEFINE_UNQUOTED([CONFIG_FEATURES], ["${CONFIG_FEATURES## }"], [String representation of available features])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
@@ -211,23 +211,18 @@ AC_CHECK_HEADERS([ \
 	stdint.h \
 ])
 
-# workaround for old automake
+# workaround for old autoconf
 if test -z "${docdir}"; then
-	docdir="\${datarootdir}/doc/${PACKAGE_NAME}"
+	docdir="\$(datarootdir)/doc/\$(PACKAGE_NAME)"
 	AC_SUBST([docdir])
 fi
+# end workaround
 
 AC_SUBST([devdir])
 AC_SUBST([initramfsdir])
 AC_SUBST([bootdir])
-AC_SUBST([LIBX86_CFLAGS])
-AC_SUBST([LIBX86_LIBS])
-AC_SUBST([LZO_CFLAGS])
-AC_SUBST([LZO_LIBS])
 AC_SUBST([LIBGCRYPT_CFLAGS])
 AC_SUBST([LIBGCRYPT_LIBS])
-AC_SUBST([SPLASHY_CFLAGS])
-AC_SUBST([SPLASHY_LIBS])
 AC_SUBST([RESUME_DEVICE])
 AM_CONDITIONAL([ENABLE_DEBUG], [test "${enable_debug}" = "yes"])
 AM_CONDITIONAL([ENABLE_MINIMAL], [test "${enable_minimal}" = "yes"])
