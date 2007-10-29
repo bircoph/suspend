@@ -156,7 +156,7 @@ static int read_area(int fd, void *buf, loff_t offset, unsigned int size)
 	if (!offset)
 		return 0;
 
-	if (lseek64(fd, offset, SEEK_SET) == offset)
+	if (lseek(fd, offset, SEEK_SET) == offset)
 		cnt = read(fd, buf, size);
 	if (cnt < (ssize_t)size)
 		res = cnt < 0 ? cnt : -EIO;

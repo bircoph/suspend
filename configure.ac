@@ -98,6 +98,9 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL		# We are using libtool so it auto-find static dependencies
 PKG_PROG_PKG_CONFIG
 AC_CHECK_PROGS([M4], [m4])
+
+AC_SYS_LARGEFILE
+
 if test "${enable_create_device}" = "yes"; then
 	AC_CHECK_PROGS([MKNOD], [mknod])
 	test -z "${MKNOD}" && AC_MSG_ERROR([mknod required for creating devices])
