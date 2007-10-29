@@ -151,6 +151,8 @@ if test "${ARCH}" = "x86"; then
 	fi
 elif test "${ARCH}" = "ppc"; then
 	AC_DEFINE([CONFIG_ARCH_PPC], [1], [Define if ppc arch])
+else
+	AC_MSG_ERROR([Unsupported architecture])
 fi
 
 if test "${enable_compress}" = "yes"; then
