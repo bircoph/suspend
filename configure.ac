@@ -104,9 +104,9 @@ if test "${enable_create_device}" = "yes"; then
 fi
 
 case "${host}" in
-	i?86-*)		ARCH="x86";;
-	x86_*-*)	ARCH="x86";;
-	ppc-*)		ARCH="ppc";;
+	i?86-*)			ARCH="x86";;
+	x86_*-*)		ARCH="x86";;
+	ppc-*|powerpc-*)	ARCH="ppc";;
 esac
 
 CONFIG_FEATURES=""
