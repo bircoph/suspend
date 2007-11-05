@@ -18,6 +18,7 @@
 #include "splash.h"
 #include "bootsplash.h"
 #include "splashy_funcs.h"
+#include "fbsplash_funcs.h"
 #include "encrypt.h"
 
 /**
@@ -27,6 +28,7 @@
 static int splash_dummy_int_void(void) { return 0; }
 static int splash_dummy_int_int(int p) { return 0; }
 static void splash_dummy_void_void(void) { return; }
+static void splash_dummy_set_caption(const char *message) { return; }
 #ifndef CONFIG_ENCRYPT
 static void splash_dummy_readpass(char *a, int b) { }
 #endif
@@ -81,6 +83,7 @@ void splash_prepare(struct splash *splash, int mode)
 	splash->prepare_abort	= prepare_abort;
 	splash->restore_abort	= restore_abort;
 	splash->key_pressed	= key_pressed;
+	splash->set_caption	= splash_dummy_set_caption;
 	if (!mode)
 		return;
 
@@ -92,6 +95,15 @@ void splash_prepare(struct splash *splash, int mode)
 		splash->switch_to   = bootsplash_switch_to;
 		splash->dialog	    = bootsplash_dialog;
 		splash->read_password = bootsplash_read_password;
+#ifdef CONFIG_FBSPLASH
+	} else if (!fbsplashfuncs_open(mode)) {
+		splash->finish      = fbsplashfuncs_finish;
+		splash->progress    = fbsplashfuncs_progress;
+		splash->dialog	    = fbsplashfuncs_dialog;
+		splash->read_password   = fbsplashfuncs_read_password;
+		splash->key_pressed	= fbsplashfuncs_key_pressed;
+		splash->set_caption	= fbsplashfuncs_set_caption;
+#endif
 #ifdef CONFIG_SPLASHY
 	} else if (!splashy_open(mode)) {
 		splash->finish      = splashy_finish;

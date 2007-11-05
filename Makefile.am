@@ -16,6 +16,12 @@ if ENABLE_CREATE_DEVICE
 dev_DATA=
 endif
 
+noinst_PROGRAMS=
+if ENABLE_DEBUG
+if ENABLE_FBSPLASH
+noinst_PROGRAMS+=fbsplash-test
+endif
+endif
 noinst_LIBRARIES=\
 	libsuspend-common.a
 sbin_PROGRAMS=\
@@ -67,6 +73,12 @@ AM_CFLAGS+=\
 common_s2disk_libs+=\
 	${SPLASHY_LIBS}
 endif
+if ENABLE_FBSPLASH
+AM_CFLAGS+=\
+	${FBSPLASH_CFLAGS}
+common_s2disk_libs+=\
+	${FBSPLASH_LIBS}
+endif
 
 libsuspend_common_a_SOURCES=\
 	swsusp.h \
@@ -77,6 +89,7 @@ libsuspend_common_a_SOURCES=\
 	loglevel.h loglevel.c \
 	splash.h splash.c \
 	splashy_funcs.h splashy_funcs.c \
+	fbsplash_funcs.h fbsplash_funcs.c \
 	bootsplash.h bootsplash.c \
 	whitelist.h whitelist.c \
 	s2ram.h s2ram.c
@@ -143,6 +156,12 @@ suspend_keygen_SOURCES=\
 suspend_keygen_LDADD=\
 	libsuspend-common.a \
 	$(LIBGCRYPT_LIBS)
+
+fbsplash_test_SOURCES=\
+	fbsplash_funcs.c \
+	fbsplash-test.c
+fbsplash_test_LDADD=\
+	$(FBSPLASH_LIBS)
 
 #
 # Misc functions

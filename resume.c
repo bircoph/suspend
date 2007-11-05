@@ -51,6 +51,9 @@ static char do_decrypt;
 #define do_decrypt 0
 #endif
 static char splash_param;
+#ifdef CONFIG_FBSPLASH
+char fbsplash_theme[MAX_STR_LEN] = "";
+#endif
 static int use_platform_suspend;
 
 static struct splash splash;
@@ -128,6 +131,14 @@ static struct config_par parameters[] = {
 		.fmt = "%s",
 		.ptr = NULL,
 	},
+#ifdef CONFIG_FBSPLASH
+	{
+		.name = "fbsplash theme",
+		.fmt = "%s",
+		.ptr = fbsplash_theme,
+		.len = MAX_STR_LEN,
+	},
+#endif
 	{
 		.name = NULL,
 		.fmt = NULL,
@@ -348,8 +359,12 @@ static int load_image(struct swap_map_handle *handle, int dev,
 	unsigned int m, n;
 	int ret;
 	int error = 0;
+	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
-	printf("Loading image data pages (%u pages) ...     ", nr_pages);
+	sprintf(message, "Loading image data pages (%u pages)...", nr_pages);
+	splash.set_caption(message);
+	printf("%s     ", message);
+
 	m = nr_pages / 100;
 	if (!m)
 		m = 1;

@@ -78,6 +78,9 @@ static char s2ram;
 #endif
 static char early_writeout;
 static char splash_param;
+#ifdef CONFIG_FBSPLASH
+char fbsplash_theme[MAX_STR_LEN] = "";
+#endif
 #define SHUTDOWN_LEN	16
 static char shutdown_method_value[SHUTDOWN_LEN] = "";
 static enum {
@@ -166,6 +169,14 @@ static struct config_par parameters[] = {
 		.ptr = shutdown_method_value,
 		.len = SHUTDOWN_LEN,
 	},
+#ifdef CONFIG_FBSPLASH
+	{
+		.name = "fbsplash theme",
+		.fmt = "%s",
+		.ptr = fbsplash_theme,
+		.len = MAX_STR_LEN,
+	},
+#endif
 	{
 		.name = NULL,
 		.fmt = NULL,
@@ -481,6 +492,7 @@ static int save_image(struct swap_map_handle *handle,
 	int ret, abort_possible;
 	struct termios newtrm, savedtrm;
 	int error = 0;
+	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
 	/* Switch the state of the terminal so that we can read the keyboard
 	 * without blocking and with no echo.
@@ -489,13 +501,12 @@ static int save_image(struct swap_map_handle *handle,
 	 */
 	abort_possible = !splash.prepare_abort(&savedtrm, &newtrm);
 
+	sprintf(message, "Saving %u image data pages", nr_pages);
 	if (abort_possible)
-		printf("%s: Saving %u image data pages "
-			"(press " ABORT_KEY_NAME " to abort) ...     ",
-			my_name, nr_pages);
-	else
-		printf("%s: Saving image data pages (%u pages) ...     ",
-			my_name, nr_pages);
+		strcat(message, "(press " ABORT_KEY_NAME " to abort)");
+	strcat(message, "...");
+	printf("%s: %s     ", my_name, message);
+	splash.set_caption(message);
 
 	m = nr_pages / 100;
 	if (!m)
@@ -530,6 +541,7 @@ static int save_image(struct swap_map_handle *handle,
 				case REBOOT_KEY_CODE:
 					printf (" reboot enabled\b\b\b\b\b\b\b"
 						"\b\b\b\b\b\b\b\b");
+					splash.set_caption("Reboot enabled");
 					shutdown_method =
 							SHUTDOWN_METHOD_REBOOT;
 					break;
@@ -787,6 +799,8 @@ static int reset_signature(int fd)
 
 static void suspend_shutdown(int snapshot_fd)
 {
+	splash.set_caption("Done.");
+
 	if (shutdown_method == SHUTDOWN_METHOD_REBOOT) {
 		reboot();
 	} else if (shutdown_method == SHUTDOWN_METHOD_PLATFORM) {
@@ -807,6 +821,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	loff_t avail_swap;
 	unsigned long image_size;
 	int attempts, in_suspend, error = 0;
+	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
 	avail_swap = check_free_swap(snapshot_fd);
 	if (avail_swap > pref_image_size)
@@ -838,7 +853,9 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		}
 	}
 
-	printf("%s: Snapshotting system\n", my_name);
+	sprintf(message, "Snapshotting system");
+	printf("%s: %s\n", my_name, message);
+	splash.set_caption(message);
 	attempts = 2;
 	do {
 		if (set_image_size(snapshot_fd, image_size)) {

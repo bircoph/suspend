@@ -58,6 +58,10 @@ splashy
 	Copyright  2005  Otavio Salvador <otavio@debian.org>
 	Copyright  2005  Luis Mondesi    <lemsx1@gmail.com>
 
+splashutils
+
+	Copyright (C) 2004-2007 Michal Januszewski <spock@gentoo.org>
+
 m4 Macros
 
 	autoconf/automake

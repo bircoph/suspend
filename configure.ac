@@ -56,6 +56,12 @@ AC_ARG_ENABLE(
 	,
 	[enable_splashy="no"]
 )
+AC_ARG_ENABLE(
+	[fbsplash],
+	[AC_HELP_STRING([--enable-fbsplash], [Enable fbsplash support])],
+	,
+	[enable_fbsplash="no"]
+)
 AC_ARG_WITH(
 	[devdir],
 	[AC_HELP_STRING([--with-devdir=DIR], [Use if --enable-create-device, put devices in this directory, default /dev])],
@@ -208,6 +214,18 @@ if test "${enable_splashy}" = "yes"; then
 	fi
 fi
 
+if test "${enable_fbsplash}" = "yes"; then
+	CONFIG_FEATURES="${CONFIG_FEATURES} fbsplash"
+	AC_DEFINE([CONFIG_FBSPLASH], [1], [Define if fbsplash enabled])
+
+	PKG_CHECK_MODULES(
+		[FBSPLASH],
+		[libfbsplashrender >= 0.1],
+		,
+		[AC_MSG_ERROR([Required libfbsplashrender was not found])]
+	)
+fi
+
 AC_DEFINE_UNQUOTED([CONFIG_FEATURES], ["${CONFIG_FEATURES## }"], [String representation of available features])
 
 AC_HEADER_STDC
@@ -237,6 +255,7 @@ AM_CONDITIONAL([ENABLE_ENCRYPT], [test "${enable_encrypt}" = "yes"])
 AM_CONDITIONAL([ENABLE_RESUME_STATIC], [test "${enable_resume_static}" = "yes"])
 AM_CONDITIONAL([ENABLE_CREATE_DEVICE], [test "${enable_create_device}" = "yes"])
 AM_CONDITIONAL([ENABLE_SPLASHY], [test "${enable_splashy}" = "yes"])
+AM_CONDITIONAL([ENABLE_FBSPLASH], [test "${enable_fbsplash}" = "yes"])
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile

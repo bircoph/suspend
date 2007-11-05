@@ -15,6 +15,8 @@
 #define SPL_SUSPEND 1
 #define SPL_RESUME 2
 
+#define SPLASH_GENERIC_MESSAGE_SIZE 1024
+
 #include <termios.h>
 
 /* generic interface functions for an arbitary splash method */
@@ -27,6 +29,7 @@ struct splash {
 	int (*prepare_abort) (struct termios *, struct termios *);
 	char (*key_pressed) (void);
 	void (*restore_abort) (struct termios *);
+	void (*set_caption) (const char *);
 };
 
 void splash_prepare(struct splash *splash, int mode);
