@@ -105,16 +105,12 @@ resume_CFLAGS=\
 resume_SOURCES=\
 	resume.c
 resume_LDADD=\
-	libsuspend-common.a
-if ENABLE_RESUME_STATIC
-resume_LDADD+=\
+	libsuspend-common.a \
 	$(common_s2disk_libs)
+if ENABLE_RESUME_STATIC
 resume_LDFLAGS=\
 	$(AM_LDFLAGS) \
 	-all-static
-else
-resume_LDADD+=\
-	$(common_s2disk_libs)
 endif
 
 s2disk_SOURCES=\
