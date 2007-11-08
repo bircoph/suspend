@@ -21,6 +21,18 @@ AC_ARG_ENABLE(
 	[enable_debug="no"]
 )
 AC_ARG_ENABLE(
+	[strict],
+	[AC_HELP_STRING([--enable-strict], [Enable strict compile mode])],
+	,
+	[enable_strict="no"]
+)
+AC_ARG_ENABLE(
+	[pedantic],
+	[AC_HELP_STRING([--enable-pedantic], [Enable pedantic compile mode])],
+	,
+	[enable_pedantic="no"]
+)
+AC_ARG_ENABLE(
 	[minimal],
 	[AC_HELP_STRING([--enable-minimal], [Enable minimal build])],
 	,
@@ -233,6 +245,14 @@ AC_CHECK_HEADERS([ \
 	inttypes.h \
 	stdint.h \
 ])
+
+if test "${enable_pedantic}" = "yes"; then
+	enable_strict="yes";
+	CFLAGS="${CFLAGS} -pedantic"
+fi
+if test "${enable_strict}" = "yes"; then
+	CFLAGS="${CFLAGS} -Wall -Wextra"
+fi
 
 # workaround for old autoconf
 if test -z "${docdir}"; then
