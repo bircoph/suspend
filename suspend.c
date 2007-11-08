@@ -67,7 +67,7 @@ static long long compr_diff;
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
 static char use_RSA;
-static char key_name[MAX_STR_LEN] = KEY_FILE;
+static char key_name[MAX_STR_LEN] = SUSPEND_KEY_FILE;
 static char password[PASS_SIZE];
 #else
 #define do_encrypt 0
