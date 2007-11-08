@@ -27,11 +27,11 @@ This simple program should demonstrate the bug
 #include <errno.h>
 #include <stdlib.h>
 
-int main(int argc,char ** argv){
-sigset_t set;
-int sig;
-sigemptyset(&set);
-sigprocmask(SIG_BLOCK,&set,NULL);
-while(sigwait(&set,&sig)==EINTR);
-return 0;
+int main(int argc,char ** argv) {
+	sigset_t set;
+	int sig;
+	sigemptyset(&set);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+	while(sigwait(&set,&sig)==EINTR);
+	return 0;
 }
