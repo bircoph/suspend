@@ -1,0 +1,6 @@
+#!/bin/bash
+date
+cd /sys/class/rtc/rtc0
+echo $(( $(cat since_epoch) + 20 )) > wakealarm
+s2ram
+date
