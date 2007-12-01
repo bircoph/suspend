@@ -1544,7 +1544,11 @@ int main(int argc, char *argv[])
 	vt_fd = prepare_console(&orig_vc, &suspend_vc);
 	if (vt_fd < 0) {
 		ret = errno;
-		suspend_error("Could not open a virtual terminal.");
+		if (vt_fd == -ENOTTY)
+			suspend_error("No local tty. Remember to specify local " \
+					"console after the remote.");
+		else
+			suspend_error("Could not open a virtual terminal.");
 		goto Close_snapshot_fd;
 	}
 
