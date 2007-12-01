@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #include <getopt.h>
 
 #include "config_parser.h"
@@ -23,12 +24,12 @@
 
 int parse_line(char *str, struct config_par *parv)
 {
-	char *dst, *fmt;
+	char *fmt, *end;
 	int error = 0;
 	int i, k;
 
 	/* Skip white space */
-	while (*str == ' ' || *str == '\t' || *str == '\r' || *str == '\n')
+	while (isspace(*str))
 		str++;
 	/* Skip the lines containing white space only */
 	if (!*str)
@@ -44,27 +45,25 @@ int parse_line(char *str, struct config_par *parv)
 			if (!parv[i].ptr)
 				break;
 			str += k;
-			while (*str == ' ' || *str == '\t')
+			while (isblank(*str))
 				str++;
 			if (*str != ':' && *str != '=') {
 				error = -EINVAL;
 				break;
 			}
 			str++;
-			while (*str == ' ' || *str == '\t')
+			while (isblank(*str))
 				str++;
+			end = str + strlen(str);
+			while (end > str && isspace(*--end))
+				*end = '\0';
 			if (*str) {
 				fmt = parv[i].fmt;
-				if (!strncmp(fmt, "%s", 2)) {
-					dst = parv[i].ptr;
-					k = parv[i].len;
-					strncpy(dst, str, k - 1);
-					k = strlen(dst) - 1;
-					if (dst[k] == '\n')
-						dst[k] = '\0';
-				} else {
-					k = sscanf(str, fmt, parv[i].ptr);
-					if (k <= 0)
+				if (!strncmp(fmt, "%s", 2))
+					strncpy(parv[i].ptr, str,
+						parv[i].len - 1);
+				else {
+					if (sscanf(str, fmt, parv[i].ptr) <= 0)
 						error = -EINVAL;
 				}
 				break;
