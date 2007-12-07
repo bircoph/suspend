@@ -128,6 +128,7 @@ case "${host}" in
 	i?86-*)			ARCH="x86";;
 	x86_*-*)		ARCH="x86";;
 	ppc-*|powerpc-*)	ARCH="ppc";;
+	ppc64-*|powerpc64-*)	ARCH="ppc";;
 esac
 
 CONFIG_FEATURES=""
@@ -173,7 +174,7 @@ if test "${ARCH}" = "x86"; then
 elif test "${ARCH}" = "ppc"; then
 	AC_DEFINE([CONFIG_ARCH_PPC], [1], [Define if ppc arch])
 else
-	AC_MSG_ERROR([Unsupported architecture])
+	AC_MSG_ERROR([Unsupported architecture ${host}])
 fi
 
 if test "${enable_compress}" = "yes"; then
