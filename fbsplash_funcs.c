@@ -43,13 +43,9 @@ int fbsplashfuncs_open(int mode)
 	}
 	cfg->verbosity = FBSPL_VERB_QUIET;
 
-	if (strlen(fbsplash_theme) == 0) {
-		if (fbsplash_parse_kcmdline(0)) {
-			ret = -2;
-			goto cleanup;
-		}
-	}
-	else
+	fbsplash_parse_kcmdline(false);
+
+	if (strlen(fbsplash_theme))
 		fbsplash_acc_theme_set(fbsplash_theme);
 
 	if (fbsplashr_init(false)) {
