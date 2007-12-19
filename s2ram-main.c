@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 		HACKS_LONG_OPTS
 	    	{   NULL,   0,	    NULL,   0	}
 	};
-	const char *optstring = "hVni" "fspmrva:";
+	const char *optstring = "hVni" "fspmrva:\8";
 
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {

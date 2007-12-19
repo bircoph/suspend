@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.116 2007/12/18 16:11:06 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.117 2007/12/19 14:18:24 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -27,7 +27,7 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"Aspire 1520",		"",	"", VBE_POST|VBE_MODE },
 	/* Giorgio Lando <patroclo7@gmail.com> */
 	{ "Acer, inc.",			"Aspire 1640     ",	"",	"", 0 },
-	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	{ "Acer, inc.",			"Aspire 1690     ",	"",	"", VBE_POST|VBE_SAVE },
 	/* Ricardo Garcia <sarbalap+freshmeat@gmail.com> */
 	{ "Acer, inc.",			"Aspire 3000 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Marek Stopka (M4r3k) <marekstopka@gmail.com> */

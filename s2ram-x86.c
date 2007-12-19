@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
 
 #include <pci/pci.h>
 
@@ -30,6 +33,7 @@ static struct pci_access *pacc;
 /* Flags set from whitelist */
 static int flags = 0, vbe_mode = -1, dmi_scanned = 0;
 int force;
+int fb_nosuspend = 0;
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 /* return codes for s2ram_is_supported */
@@ -114,6 +118,42 @@ static int machine_match(void)
 		}
 	}
 	return -1;
+}
+
+static void fbcon_state(int state)
+{
+	DIR *d;
+	FILE *f;
+	struct dirent *entry;
+	char statefile[255];
+
+	if ((d = opendir("/sys/class/graphics")) == NULL)
+		return;
+	while ((entry = readdir(d)) != NULL) {
+		if (entry->d_name[0] == '.')
+			continue;
+		snprintf(statefile, 255, "/sys/class/graphics/%s/state", entry->d_name);
+		if (!access(statefile, W_OK)) {
+			printf("fbcon %s state %d\n", entry->d_name, state);
+			f = fopen(statefile, "w");
+			if (!f) {
+				printf("s2ram: cannot write to %s\n", statefile);
+				continue;
+			}
+			fprintf(f, "%d", state);
+			fclose(f);
+		}
+	}
+}
+
+static void suspend_fbcon(void)
+{
+	fbcon_state(1);
+}
+
+static void resume_fbcon(void)
+{
+	fbcon_state(0);
 }
 
 int s2ram_check(int id)
@@ -243,6 +283,12 @@ int s2ram_hacks(void)
 			/* pci_save requested, no VGA device found => abort */
 			return 1;
 	}
+	if (fb_nosuspend)
+		printf("ATTENTION: --nofbsuspend is a debugging tool only.\n"
+			"\tIf your machine needs this to work, please report "
+			"this as a bug.\n");
+	else
+		suspend_fbcon();
 
 	return 0;
 }
@@ -296,6 +342,8 @@ void s2ram_resume(void)
 		printf("Calling set_vbe_mode\n");
 		do_set_mode(vbe_mode, 0);
 	}
+	if (!fb_nosuspend)
+		resume_fbcon();
 	if (flags & RADEON_OFF) {
 		printf("Calling radeon_cmd_light(1)\n");
 		radeon_cmd_light(1);
@@ -335,6 +383,8 @@ void s2ram_add_flag(int opt, const char *opt_arg)
 		case 'a':
 			flags |= (atoi(optarg) & (S3_BIOS | S3_MODE));
 			break;
-
+		case 8:
+			fb_nosuspend = 1;
+			break;
 	}
 }

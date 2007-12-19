@@ -7,6 +7,10 @@
  */
 
 #define HACKS_LONG_OPTS \
+	{\
+		"nofbsuspend\0\tdo not suspend the framebuffer (debugging only!).",\
+		no_argument,		NULL, 8 \
+	},\
     	{\
 		"force\0\tforce suspending, even on unknown machines.\n\nThe following options are only available with --force:",\
 		 no_argument,		NULL, 1	\
