@@ -19,6 +19,7 @@ crw-r--r--  1 root root 10, 231 Jan 13 21:21 /dev/snapshot
 (f) [optionally] Markus F.X.J. Oberhumer's lzo library (for lzo image compression)
 (g) [optionally] libgcrypt (for image encryption)
 (h) [optionally] libsplashy (for user space splash)
+(i) [optionally] splashutils (for user space splash)
 
 2) Basic steps
 
@@ -94,18 +95,60 @@ and you should install it in a way that's appropriate for your distribution.
 Still, if your distribution doesn't provide the binary package, you can refer
 to the documentation at http://www.gnupg.org/ for installation instructions.
 
-(d) [optionally] install libsplashy-dev (for user space splash screens)
+(d) [optionally] install libsplashy-dev or fbsplash (for user space splash
+    screens)
 
 For now you need the experimental version of splashy, which can be 
 found at svn://svn.debian.org/svn/splashy/branches/0.3 . 
 
+fbsplash may be found at http://fbsplash.berlios.de .
+
 (e) Configure, build and install the suspend utilities
 
-- Edit Makefile and the conf/suspend.conf file to reflect the configuration
-of your system (please refer to Section II of this document for details).  The
-value of the RESUME_DEVICE constant in Makefile must be the same as the value
-of the "resume device" parameter in the configuration file and it must be the
-full path of a swap partition device file (eg. /dev/hda3).
+- Examine available options by running:
+
+$ ./configure --help
+
+The following major options are available:
+
+  --enable-minimal        Enable minimal build
+  --enable-compress       Enable compress support
+  --enable-encrypt        Enable encryption support
+  --enable-create-device  Enable creating the necessary device files (if you use
+                          udev, this option should not be needed)
+  --enable-splashy        Enable splashy support
+  --enable-fbsplash       Enable fbsplash support
+
+If you want to generate an initramfs image using the provided script, the
+following options are available:
+
+  --with-resume-device=DEVICE
+                          Define resume device
+  --with-bootdir=DIR      Define boot directory, default /boot
+
+Please note, however, that this scripts may not work with your configuration.
+Moreover, if you use openSUSE 10.2 or 10.3 and you want to replace the s2disk
+and resume binaries provided by the distribution, it is better to use the
+distribution's original mkinitrd script.
+
+- Configure the package
+$ ./configure <optional arguments>
+
+- Build the suspend tools in the usual way:
+
+$ make
+
+- To install the tools, become root and run:
+
+# make install
+
+This will also create the snapshot device file in /dev/, if the
+--enable-create-device option of configure has been used.
+
+(f) Optinally create initramfs image
+
+- Edit conf/suspend.conf file to reflect the configuration
+of your system (please refer to Section II of this document for details).
 
 [There should be just one resume partition, for now. You'll need at most 1/2
 of your RAM of free space on it, but in some cases it may be smaller, too.
@@ -116,20 +159,6 @@ It also is possible to use a swap file for suspending, but this only works with
 the 2.6.18-mm3 kernel (or later).  In such a case the resume partition is the
 partition that holds the swap file, and there is an additional configuration
 parameter "resume offset" that has to be set, as described below.]
-
-- Build the suspend tools in the usual way:
-
-$ make s2disk
-$ make resume
-
-- To install the s2disk tool, become root and run:
-
-# make install-minimal
-
-This will also create the snapshot device file in /dev/, if needed.
-
-- To create and install an initrd image containing the resume binary, become
-root and run:
 
 # make install-resume-new-initrd
 
@@ -172,7 +201,7 @@ where we have shown the complete configuration.  The (hd0,0) identifies the
 partition that GRUB will use to read the kernel and the initrd image from,
 but please refer to the GRUB documentation for more details.]
 
-(e) To suspend to disk, run
+(g) To suspend to disk, run
 
 # s2disk
 
@@ -222,31 +251,32 @@ an initrd/initramfs, and use the automatically-generated resume initrd
 2) Installation of optional packages
 
 If you want to use the compression and/or encryption capabilities of the
-suspend tools, you'll need the Marc Lehmann's libLZF and/or libgcrypt,
-respectively.  Short instructions related to these packages have been
-given in Secion I above.
+suspend tools, you'll need the Markus F.X.J. Oberhumer's lzo library and/or
+libgcrypt, respectively.  Short instructions related to these packages have
+been given in Secion I above.
 
-If you want a user space splash screen you will need a splashy theme,
-you also have to copy the theme files to your initramfs/initrd.
+If you want a user space splash screen you will need a splashy or fbsplash
+theme, you also have to copy the theme files to your initramfs/initrd.
 
 3) Configuration and compilation of suspend tools
 
 (a) [optional] If you want to use the compression, encryption and/or
 user space splash capabilities of the suspend tools and you have installed 
 the necessary packages referred to in subsection 2), you need to set
-CONFIG_COMPRESS, CONFIG_ENCRYPT and/or CONFIG_SPLASHY in the Makefile to "yes".
+--enable-compress, --enable-encrypt, --enable-splashy and/or --enable-fbsplash
+when your run the configure script.
 
 (b) Compile the s2disk and resume binaries by running:
 
-$ make s2disk
-$ make resume
+$ ./configure <optional arguments>
+$ make
 
 in the directory where you have placed the sources.
 
 4) Create the configuration file for the s2disk tool.  Its default name
 is /etc/suspend.conf, but this can be customized by changing CONFIG_FILE
-in config.h.  It is also possible to specify the configuration file name
-from the command line, by using the -f option, eg.
+in config_parser.h.  It is also possible to specify the configuration file
+name from the command line, by using the -f option, eg.
 
 # s2disk -f <config_file>
 
@@ -320,8 +350,8 @@ the image to it.  [This has been reported to speed up the suspend on some
 boxes and eliminates the "fast progress meter and long fsync wait" effect.]
 
 The "splash" parameter is used to make s2disk and/or resume use a splash system
-(when set to 'y').  Currently the bootsplash.org and splashy splash systems
-are supported. Note that for both systems your initrd or initramfs will
+(when set to 'y').  Currently the bootsplash.org, splashy and fbsplash splash
+systems are supported. Note that for both systems your initrd or initramfs will
 need additional files. See the documentation of your splash system for
 more information.
 
@@ -347,25 +377,24 @@ in the resume initrd file by scripts provided in this package.
 
 To install the s2disk tool, run:
 
-# make install-minimal
+# make install
 
 as root.  This will place the s2disk binary in the destination directory
-defined in Makefile (/usr/local/sbin by default).  It will also
-create the special device file for the suspend device in /dev, if needed,
+specified to configure (/usr/local/sbin by default).  It will also
+create the special device file for the suspend device in /dev, if requested,
 and copy the configuration file from the conf/ subdirectory of the source
-package to /etc (or somewhere else, depending on the settings in Makefile).
-If the configuration file already exists, it will not be overwritten and
-a new file with the suffix ".new" appended to its name will be created.
+package to /etc (or somewhere else, depending on the settings specified to
+configure). If the configuration file already exists, it will not be overwritten
+and a new file with the suffix ".new" appended to its name will be created.
 
-If CONFIG_ENCRYPT is set to "yes" in Makefile, the suspend-keygen tool
-used for generating RSA keys for s2disk (see Section IV of this document
-for details) will also be built and installed in the destination directory
-specified in Makefile (/usr/local/sbin by default).
+If --enable-encrypt is set, the suspend-keygen tool used for generating
+RSA keys for s2disk (see Section IV of this document for details) will
+also be built and installed in the destination bin directory.
 
-If you don't want to use "make install-minimal", you can copy the s2disk
+If you don't want to use "make install", you can copy the s2disk
 binary and the configuration file to wherever you like, but you'll also
 need to make sure the snapshot device file is present (if you have set
-CONFIG_ENCRYPT=yes in Makefile, you may also need to copy the suspend-keygen
+--enable-encrypt in configure, you may also need to copy the suspend-keygen
 binary to its final destination manually).
 
 You can also use a tool called "checkinstall" to prepare a package file
@@ -382,7 +411,7 @@ dpkg or whatever tool your distribution provides.
 
 4) Create snapshot device file
 
-If you don't use "make install-minimal", you may need to create the snapshot
+If you don't use "make install", you may need to create the snapshot
 device file:
 
 # mknod /dev/snapshot c 10 231
