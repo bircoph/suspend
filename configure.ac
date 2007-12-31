@@ -7,7 +7,7 @@
 #
 
 AC_PREREQ([2.59])
-AC_INIT([suspend], [0.8_beta1])
+AC_INIT([suspend], [0.8])
 AM_INIT_AUTOMAKE([${PACKAGE_NAME}], [${PACKAGE_VERSION}])
 AM_CONFIG_HEADER([config.h])
 AC_CONFIG_SRCDIR([suspend.c])
