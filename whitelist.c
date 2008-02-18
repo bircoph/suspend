@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.118 2008/01/21 10:21:32 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.119 2008/02/18 18:18:16 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -62,6 +62,11 @@ struct machine_entry whitelist[] = {
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
 	/* Libor Plucnar <Plucnar.Libor@seznam.cz> */
 	{ "Acer           ",		"Extensa 6220 *",	"",	"", S3_BIOS },
+	/* Hannes Reinecke https://bugzilla.novell.com/show_bug.cgi?id=354728 */
+	{ "Acer, inc.",			"Ferrari 1000    ",	"",	"", VBE_POST|VBE_SAVE },
+	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
+	/* Russ Dill <russ.dill@gmail.com> * does not work with fglrx */
+	{ "Acer, inc.",			"Ferrari 5000    ",	"",	"", VBE_POST },
 	/* Sridar Dhandapani <sridar@gmail.com> */
 	{ "Acer           ",		"TravelMate 230 ",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer           ",		"TravelMate 240 ",	"",	"", VBE_POST|VBE_SAVE },
@@ -84,6 +89,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 2420",	"",	"", S3_BIOS|S3_MODE },
 	/* Erki Ferenc <ferki@3rdparty.hu> */
 	{ "Acer            ",		"TravelMate 2450 ",	"",	"", 0 },
+	/* Vit Cepela <vitek@shar.cz> */
+	{ "Acer            ",		"TravelMate 2490 ",	"",	"", S3_BIOS|S3_MODE },
 	{ "Acer, inc.",			"TravelMate 3000 ",	"",	"", VBE_POST|VBE_SAVE },
 	/* Norbert Preining <preining@logic.at>, kernel 2.6.23-rc2++ needed */
 	{ "Acer, inc.",			"TravelMate 3010 ",	"",	"", VBE_POST|VBE_MODE },
@@ -92,12 +99,14 @@ struct machine_entry whitelist[] = {
 	{ "Acer            ",		"TravelMate 3220 *",	"",	"", S3_BIOS|S3_MODE },
 	/* Rohan Dhruva <rohandhruva@gmail.com> */
 	{ "Acer, inc.",			"TravelMate 3260 ",	"",	"", VBE_POST|VBE_MODE },
+	/* Andreas Juch <andreas.juch@tele2.at> */
+	{ "Acer",			"TravelMate 4000",	"",	"", S3_BIOS|S3_MODE },
 	/* From: LucaB <lbonco@tin.it> */
 	{ "Acer, inc.",			"TravelMate 4100 ",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
-	{ "Acer, inc.",			"Ferrari 4000    ",	"",	"", VBE_POST|VBE_SAVE|NOFB },
-	/* Russ Dill <russ.dill@gmail.com> * does not work with fglrx */
-	{ "Acer, inc.",			"Ferrari 5000    ",	"",	"", VBE_POST },
+
+	/* Andrea Zucchelli <zukka77@gmail.com> EEE-PC 4G */
+	{ "ASUSTeK Computer INC.",	"701",			"",	"", VBE_POST|VBE_MODE },
 	/* From: Julien Puydt <jpuydt@free.fr> */
 	{ "ASUSTeK Computer Inc.",	"A2D       ",		"",	"", S3_BIOS|S3_MODE },
 	/* Cristian Rigamonti */
@@ -106,6 +115,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.*",	"A6G       ",		"",	"", 0 },
 	/* Patryk Zawadzki <patrys@icenter.pl> */
 	{ "ASUSTeK Computer Inc. ",	"A6Km      ",		"",	"", 0 },
+	/* Tom Malfrere <tom.malfrere@pandora.be> */
+	{ "ASUSTeK Computer Inc. ",	"A6Kt      ",		"",	"", 0 },
 	/* Szalai Akos <szalakos@gmail.com> */
 	{ "ASUSTeK Computer Inc. ",	"A6M",			"",	"", VBE_POST },
 	/* Anthony Mahe <anthonymahe@gmail.com> */
@@ -120,6 +131,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc. ",	"F3F *",		"",	"", S3_BIOS|S3_MODE },
 	/* Julien Puydt <jpuydt@free.fr> works from console and with nvidia driver */
 	{ "ASUSTeK Computer Inc. ",	"F3F *",		"",	"", 0 },
+	/* Marco Jorge <mbernardesjorge@users.sourceforge.net> */
+	{ "ASUSTeK Computer Inc. ",	"F3JP *",		"",	"", VBE_POST|VBE_MODE },
 	/* Vladimir Pouzanov <farcaller@gmail.com>, probably only with nvidia and from X */
 	{ "ASUSTeK Computer INC. ",	"F3T",			"",	"", 0 },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
@@ -217,16 +230,23 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.                ",	"Dell DXP051 *",	"",	"", 0 },
 	/* From bug 1544913@sf.net, Andrei - amaces */
 	{ "Dell Computer Corporation",  "Inspiron 1150*",       "",     "", 0 },
-	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com> */
+	/* Dell Inspiron 500m, Per Øyvind Karlsen <pkarlsen@mandriva.com>
 	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", S3_BIOS },
+	 */
+	/* Dell Inspiron 500m, Georg Zumstrull <Georg.Zumstrull@web.de> */
+	{ "Dell Computer Corporation",	"Inspiron 500m*",	"",	"", VBE_POST|VBE_MODE },
 	/* Dell Inspiron 510m, Jose Carlos Garcia Sogo <jsogo@debian.org> */
 	{ "Dell Inc.",			"Inspiron 510m *",	"",	"", VBE_POST },
 	/* Dell Inspiron 600m, Gavrie Philipson <gavrie@gmail.com> */
 	{ "Dell Computer Corporation",  "Inspiron 600m *",      "",     "", VBE_POST|VBE_MODE },
+	/* Eitan Mosenkis <eitan@mosenkis.net> */
+	{ "Dell Computer Corporation",  "Inspiron 1100 *",      "",     "", VBE_POST|VBE_MODE },
 	/* joey <joey7d6@yahoo.com> */
 	{ "Dell Inc.",			"Inspiron 1420 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Dell Inspiron 1501, https://bugzilla.novell.com/show_bug.cgi?id=304281 */
 	{ "Dell Inc.",			"Inspiron 1501 ",	"",	"", S3_BIOS|S3_MODE },
+	/* Sebastian Rittau <srittau@jroger.in-berlin.de> */
+	{ "Dell Inc.",			"Inspiron 1520 *",	"",	"", 0 },
 	/* Christophe Gay <christophegay@free.fr>, maybe only with binary only driver */
 	{ "Dell Inc.",			"Inspiron 1720 *",	"",	"", 0 },
 	/* Another Inspiron 5100, Tony Ernst <tee@sgi.com> */
@@ -242,6 +262,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Computer Corporation",  "Latitude C400 *",	"",	"", VBE_POST|VBE_SAVE },
 	{ "Dell Computer Corporation",  "Latitude C600 *",	"",	"", RADEON_OFF },
 	{ "Dell Computer Corporation",  "Latitude C610 *",	"",	"", VBE_POST|VBE_MODE },
+	/* Tom Lear <tom@trap.mtview.ca.us> */
+	{ "Dell Computer Corporation",  "Latitude C840 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Manuel Jander */
 	{ "Dell Computer Corporation",	"Latitude CPx J650GT*",	"",	"", 0 },
 	/* Luke Myers */
@@ -326,6 +348,8 @@ struct machine_entry whitelist[] = {
 	/* Reiner Herrmann <reiner@reiner-h.de>, this one realls needs VBE_SAVE
 	   since there are many different models of the "AMILO M" series, i do a very exact match */
 	{ "FUJITSU SIEMENS",		"AMILO M        ",	"-1 *",	"R01-S0Z *", VBE_POST|VBE_SAVE },
+	/* Simon Maurer <Twiks@gmx.de> again, match exactly. */
+	{ "FUJITSU SIEMENS",		"AMILO M        ",	"-1 *",	"R01-S0N *", VBE_POST|VBE_SAVE|PCI_SAVE },
 	/* Moritz Heidkamp <moritz@invision-team.de> */
 	{ "FUJITSU SIEMENS",		"AMILO M Series",	"",	"1.0G*", VBE_SAVE },
 	/* Markus Meyer <markus.meyer@koeln.de>, Christian Illy <christian.illy@gmx.de> */
@@ -433,6 +457,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard*",		"HP Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
 	/* Jan Adlen <janne@rosehip.mine.nu> */
 	{ "Hewlett-Packard",		"Compaq nc6000 *",	"",	"68BDD*", S3_BIOS|S3_MODE },
+	/* <gabriel.pettier@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq nx6110 *",	"",	"68DTD", VBE_POST|VBE_MODE },
 	/* Winfried Dobbe, https://bugzilla.novell.com/show_bug.cgi?id=159688 */
 	{ "Hewlett-Packard",		"HP Compaq nc6120 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Battle Nick <Nick.Battle@uk.fujitsu.com>, also a nc6120 */
@@ -628,14 +654,17 @@ struct machine_entry whitelist[] = {
 	/* T61p, leighton 5 <ng1lei@gmail.com>, ... what's the difference to the other T61p? */
 	{ "LENOVO",			"6459*",		"",	"", 0 },
 	{ "LENOVO",			"6460*",		"",	"", S3_BIOS|VBE_MODE },
+	/* Amit Joshi <ajoshi@optonline.net>, T61 */
+	{ "LENOVO",			"6465*",		"",	"", S3_BIOS|VBE_MODE },
 	/* T61, Joe Nahmias <jello@debian.org>, debian bug #432018 */
 	{ "LENOVO",			"7658*",	"",		"", S3_BIOS|S3_MODE },
 	/* T61 with NVidia card, https://bugzilla.novell.com/show_bug.cgi?id=290618 */
 	{ "LENOVO",			"7663*",	"",		"", S3_MODE },
 	/* T61, Aku Pietikainen <aku.pietikainen@ee.oulu.fi>, works with console and X */
 	{ "LENOVO",			"7664*",	"",		"", 0 },
-	/* Rasmus Borup Hansen <rbh@math.ku.dk>, X61s */
-	{ "LENOVO",			"7666*",	"",		"", S3_BIOS },
+	/* Rasmus Borup Hansen <rbh@math.ku.dk>, X61s reported 7666 w. S3_BIOS */
+	/* Anders Engstrom <ankaan@gmail.com> reported 7666 w. S3_BIOS|S3_MODE */
+	{ "LENOVO",			"7666*",	"",		"", S3_BIOS|S3_MODE },
 	/* X61s, Hendrik-Jan Heins <hjh@passys.nl>. Probably does not restore the
 	   framebuffer mode correctly, but S3_MODE as well as VBE_MODE seem to fail
 	   sometimes on x86_64 on this machine :-( */
@@ -654,8 +683,12 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"7768*",	"",		"", S3_BIOS|S3_MODE },
 	/* T61, intel card <seife@suse.de> 32bit works with S3_MODE, but 64bit needs VBE_MODE */
 	{ "LENOVO",			"8895*",	"",		"", S3_BIOS|VBE_MODE },
+	/* Grzegorz Piektiewicz <gpietkie@proteus.pl>, R61, with nvidia driver */
+	{ "LENOVO",			"8918*",	"",		"", 0 },
 	/* <ruedt@physik.fu-berlin.de>, R61, 64bit, NVidia driver does not work */
 	{ "LENOVO",			"8919*",	"",		"", S3_BIOS|S3_MODE },
+	/* peter.pille@tektronix.com, R61 */
+	{ "LENOVO",			"8943*",	"",		"", S3_BIOS|VBE_MODE },
 	/* Rick van Hattem <Rick.van.Hattem@fawo.nl>, Z61p*/
 	{ "LENOVO",			"9452*",	"",		"", S3_BIOS|S3_MODE },
 	/* At least 1709 series thinkpads can be whitelisted by name,
@@ -679,6 +712,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",		"0763*",	"LENOVO3000 V100",	"", 0 },
 	/* these Lenovo 3000 N100 model 768 are available with different graphics chips, so
 	   i do not dare to wildcard anything here :-( */
+	/* https://bugzilla.novell.com/show_bug.cgi?id=299099 */
+	{ "LENOVO",			"076804U",	"3000 N100 *",	"", S3_BIOS|VBE_MODE },
 	/* Aviv Ben-Yosef <aviv.by@gmail.com> */
 	{ "LENOVO",			"07686VG",	"3000 N100 *",	"", 0 },
 	/* Bogdan <boogi77@o2.pl> */
@@ -689,6 +724,9 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"07687MM",	"3000 N100 *",	"", S3_MODE },
 	/* Johannes Rohr <jorohr@gmail.com> */
 	{ "LENOVO",			"0768BYG",	"3000 N100 *",	"", 0 },
+	/* I'm not sure how to handle the 3000 N200 models... */
+	/* Hans Gunnarsson <hans.gunnarsson@gmail.com> */
+	{ "LENOVO",			"0769B9G",	"3000 N200 *",	"", 0 },
 
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	/* seife */
@@ -764,6 +802,8 @@ struct machine_entry whitelist[] = {
 	{ "Samsung Electronics",	"SM40S",		"",	"", S3_BIOS|S3_MODE },
 	/* Pavel Machek, Samsung UMPC */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SQ1US",	"01ME",	"", VBE_SAVE },
+	/* Konstantin Krasnov <krkhome@gmail.com>, only with kernel 2.6.24++ */
+	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SX22S",	"07AJ", "", VBE_SAVE },
 	/* Martin Wilck <mwilck@arcor.de> */
 	{ "Samsung Electronics",	"SX50S",	"Revision MP",	"", 0 },
 	/* foren@nuxli.ch */
@@ -880,6 +920,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-TZ11*",		"",	"", 0 },
 	/* Hans Gunnarsson <hans.gunnarsson@gmail.com> */
 	{ "Sony Corporation",		"VGN-TZ21XN_B",		"",	"", 0 },
+	/* Jan P. O. Schuemann" <jan@hep1.phys.ntu.edu.tw> */
+	{ "Sony Corporation",		"VGN-TZ91HS",		"",	"", 0 },
 	/* Mattia Dongili <malattia@linux.it> */
 	{ "Sony Corporation",		"VGN-UX50",		"",	"", VBE_MODE },
 	/* Russ Dill <russ.dill@gmail.com> */
@@ -903,6 +945,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"PCG-TR2A(UC)",		"",	"", VBE_MODE },
 	/* mathieu bouillaguet <mathieu.bouillaguet@gmail.com> */
 	{ "Sony Corporation",		"PCG-Z1RMP*",		"",	"", VBE_POST|VBE_MODE },
+	/* Tom Lear <tom@trap.mtview.ca.us> */
+	{ "Sony Corporation",		"PCG-Z505HSK(UC)",	"",	"", 0 },
 	/* jmj_sf@freenet.de */
 	{ "Sony Corporation",		"PCV-RX612*",		"",	"", S3_BIOS|S3_MODE },
 
@@ -915,6 +959,11 @@ struct machine_entry whitelist[] = {
 	{ "VIA",			"K8T400",	"VT8204B ",	"", S3_BIOS|S3_MODE },
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
+
+	/* Rene Seindal <rene@seindal.dk> */
+	{ "ZEPTO",			"ZNOTE *",	"3215W *",	"", 0 },
+	/* simon kaucic <simon.kaucic@gmail.com> */
+	{ "                    ",	"M37EW",		"None",	"", S3_BIOS },
 
 	// entries below are imported from acpi-support 0.59 and though "half known".
 	{ "ASUSTeK Computer Inc.",	"L7000G series Notebook PC*", "","", VBE_POST|VBE_SAVE|UNSURE },
@@ -960,7 +1009,6 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S6120*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "FUJITSU SIEMENS",		"LIFEBOOK P7010*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc4200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "Hewlett-Packard",		"HP Compaq nx6110*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc6220*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Compaq nc8230*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "Hewlett-Packard",		"HP Pavilion dv1000*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
