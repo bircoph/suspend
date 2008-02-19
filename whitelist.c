@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.119 2008/02/18 18:18:16 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.120 2008/02/19 15:26:19 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -103,6 +103,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"TravelMate 4000",	"",	"", S3_BIOS|S3_MODE },
 	/* From: LucaB <lbonco@tin.it> */
 	{ "Acer, inc.",			"TravelMate 4100 ",	"",	"", VBE_POST|VBE_SAVE },
+	/* gebu@seznam.cz */
+	{ "Acer",			"TravelMate 4400",	"",	"", 0 },
 	{ "Acer            ",		"TravelMate 4650 *",	"",	"", S3_BIOS|S3_MODE },
 
 	/* Andrea Zucchelli <zukka77@gmail.com> EEE-PC 4G */
@@ -113,6 +115,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",			"A2H/L ",		"",	"", 0 },
 	/* Thomas Thrainer <tom_t@gmx.at> */
 	{ "ASUSTeK Computer Inc.*",	"A6G       ",		"",	"", 0 },
+	/* Arnout Boelens <aboelens@engin.umass.edu> */
+	{ "ASUSTeK Computer Inc. ",	"A6J *",		"",	"", VBE_POST|VBE_MODE },
 	/* Patryk Zawadzki <patrys@icenter.pl> */
 	{ "ASUSTeK Computer Inc. ",	"A6Km      ",		"",	"", 0 },
 	/* Tom Malfrere <tom.malfrere@pandora.be> */
@@ -390,6 +394,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7010",	"",	"", 0 },
 	/* Antonio Cardoso Martins <digiplan.pt@gmail.com> */
 	{ "FUJITSU SIEMENS",		"LIFEBOOK S7020",	"",	"", S3_BIOS|S3_MODE|PCI_SAVE },
+	/* David Nolden <zwabel@googlemail.com> */
+	{ "FUJITSU",			"LifeBook T Series",	"",	"", 0 },
 	/* Alexander Clouter <alex@digriz.org.uk>, needs vbe_save or the vga mode is upset */
 	{ "FUJITSU SIEMENS",		"LifeBook T2010",	"",	"", VBE_POST|VBE_SAVE|PCI_SAVE },
 	/* Eckhart Woerner <ew@ewsoftware.de> */
@@ -429,6 +435,8 @@ struct machine_entry whitelist[] = {
 	/* Andrey Melentyev <andrey.melentyev@gmail.com> */
 	{ "Infomash",			"RoverBook",		"",	"", VBE_POST|VBE_MODE },
 
+	/* Stefan Kulow https://bugzilla.novell.com/show_bug.cgi?id=362928 */
+	{ "Hewlett-Packard",	"HP Compaq 2510p Notebook PC",	"",	"68MSP*", VBE_POST|VBE_MODE },
 	/* Jamil Djadala <djadala@datamax.bg> */
 	{ "Hewlett-Packard",		"HP Compaq 6510b (GB863EA*", "","68DDU*", VBE_POST|VBE_MODE },
 	/* Michal Sojka <sojkam1@fel.cvut.cz> */
@@ -586,6 +594,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"2645*",		"",	"INET17WW", VBE_POST|VBE_MODE },
 	/* George says the newer BIOS INET36WW / kernel 2.6.22 works fine with these options / without X */
 	{ "IBM",			"2645*",		"",	"", VBE_SAVE },
+	/* T23 Gernot Schilling <gernotschilling@gmx.de> */
+	{ "IBM",			"2647*",		"",	"", S3_BIOS|S3_MODE },
 	/* X22, confirmed by Richard Neill */
 	{ "IBM",			"2662*",		"",	"", S3_BIOS|S3_MODE|RADEON_OFF },
 	/* X31, confirmed by Bjoern Jacke */
@@ -745,6 +755,8 @@ struct machine_entry whitelist[] = {
 	{ "MAXDATA",			"PRO600IW",		"",	"", S3_BIOS|S3_MODE },
 	/* Oleg Broytmann <phd@phd.pp.ru> */
 	{ "MaxSelect",			"Mission_A330",		"",	"", VBE_POST|VBE_SAVE },
+	/* Nicolas HENRY <nicolas.hy@free.fr>, nvidia binary driver */
+	{ "MEDION",			"M295M",		"",	"", 0 },
 	/* Leszek Lesner <leszek.lesner@googlemail.com> Medion MD43100 */
 	{ "MEDIONNB       ",		"WID2010        ",	"",	"", VBE_POST|VBE_MODE },
 	/* Mike Galbraith <efault@gmx.de> needs X to get text console back */
@@ -839,6 +851,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite A105",	"",	"", S3_BIOS|S3_MODE },
 	/*  Jan Urbanski <j.urbanski@students.mimuw.edu.pl>, sys_version="PSAE0E-04600TPL" */
 	{ "TOSHIBA",			"Satellite A200",	"",	"", S3_BIOS|S3_MODE },
+	/* Gavin Kinsey <gavin.kinsey@gmail.com> */
+	{ "TOSHIBA",			"Satellite A210",	"",	"", S3_BIOS|S3_MODE },
 	/* Christian Schneeman <cschneemann@suse.de> */
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_MODE },
 	/* Gijs van Gemert <g.v.gemert@inter.nl.net> */
@@ -865,6 +879,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite U305",	"",	"", VBE_POST|VBE_MODE },
 	/* Bram Senders <bram@luon.net> */
 	{ "TOSHIBA",			"SP4600",	"Version 1.0",	"", 0 },
+	/* Arne Salveter <arne.salveter@googlemail.com> sys_version "PTS52E-00X00GGR" */
+	{ "TOSHIBA",			"TECRA A9",		"",	"", 0 },
 	/* Dr. Stephan Buehne <stephan.buehne@oracle.com> */
 	{ "TOSHIBA",			"TECRA M9",		"",	"", S3_MODE },
 	/* Jad Naous <jnaous@stanford.edu> */
@@ -1048,7 +1064,6 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"1850*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"1870*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// T21
-	{ "IBM",			"2647*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "IBM",			"2648*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	// T23
 	{ "IBM",			"475S*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
