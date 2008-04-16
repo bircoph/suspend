@@ -117,6 +117,8 @@ AC_PROG_LIBTOOL		# We are using libtool so it auto-find static dependencies
 PKG_PROG_PKG_CONFIG
 AC_CHECK_PROGS([M4], [m4])
 
+AC_CHECK_LIB([gcc_s], [strlen])
+
 AC_SYS_LARGEFILE
 
 if test "${enable_create_device}" = "yes"; then
@@ -220,7 +222,7 @@ if test "${enable_splashy}" = "yes"; then
 		AC_ARG_VAR([SPLASHY_LIBS], [linker flags for libsplashy])
 		AC_CHECK_LIB(
 			[splashy],
-			[splashy_open],
+			[splashy_init],
 			[SPLASHY_LIBS="-lsplashy"],
 			[AC_MSG_ERROR([Required libsplashy was not found])]
 		)
