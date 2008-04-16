@@ -117,8 +117,6 @@ AC_PROG_LIBTOOL		# We are using libtool so it auto-find static dependencies
 PKG_PROG_PKG_CONFIG
 AC_CHECK_PROGS([M4], [m4])
 
-AC_CHECK_LIB([gcc_s], [strlen])
-
 AC_SYS_LARGEFILE
 
 if test "${enable_create_device}" = "yes"; then
@@ -216,6 +214,9 @@ fi
 if test "${enable_splashy}" = "yes"; then
 	CONFIG_FEATURES="${CONFIG_FEATURES} splashy"
 	AC_DEFINE([CONFIG_SPLASHY], [1], [Define if splashy enabled])
+
+	# Workaround a wierd splashy issue
+	AC_CHECK_LIB([gcc_s], [strlen])
 
 	if test -z "${SPLASHY_LIBS}"; then
 		AC_ARG_VAR([SPLASHY_CFLAGS], [C compiler flags for libsplashy])
