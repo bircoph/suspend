@@ -16,96 +16,96 @@ AC_CANONICAL_HOST
 
 AC_ARG_ENABLE(
 	[debug],
-	[AC_HELP_STRING([--enable-debug], [Enable debug mode])],
+	[AC_HELP_STRING([--enable-debug], [enable debug mode])],
 	,
 	[enable_debug="no"]
 )
 AC_ARG_ENABLE(
 	[strict],
-	[AC_HELP_STRING([--enable-strict], [Enable strict compile mode])],
+	[AC_HELP_STRING([--enable-strict], [enable strict compile mode])],
 	,
 	[enable_strict="no"]
 )
 AC_ARG_ENABLE(
 	[pedantic],
-	[AC_HELP_STRING([--enable-pedantic], [Enable pedantic compile mode])],
+	[AC_HELP_STRING([--enable-pedantic], [enable pedantic compile mode])],
 	,
 	[enable_pedantic="no"]
 )
 AC_ARG_ENABLE(
 	[minimal],
-	[AC_HELP_STRING([--enable-minimal], [Enable minimal build])],
+	[AC_HELP_STRING([--enable-minimal], [enable minimal build])],
 	,
 	[enable_minimal="no"]
 )
 AC_ARG_ENABLE(
 	[compress],
-	[AC_HELP_STRING([--enable-compress], [Enable compress support])],
+	[AC_HELP_STRING([--enable-compress], [enable compress support])],
 	,
 	[enable_compress="no"]
 )
 AC_ARG_ENABLE(
 	[encrypt],
-	[AC_HELP_STRING([--enable-encrypt], [Enable encryption support])],
+	[AC_HELP_STRING([--enable-encrypt], [enable encryption support])],
 	,
 	[enable_encrypt="no"]
 )
 AC_ARG_ENABLE(
 	[create-device],
-	[AC_HELP_STRING([--enable-create-device], [Enable create required devices, use only if you don't have udev])],
+	[AC_HELP_STRING([--enable-create-device], [enable create required devices, use only if you don't have udev])],
 	,
 	[enable_create_device="no"]
 )
 AC_ARG_ENABLE(
 	[resume-static],
-	[AC_HELP_STRING([--disable-resume-static], [Build resume as dynamic module])],
+	[AC_HELP_STRING([--disable-resume-static], [build resume as dynamic module])],
 	,
 	[enable_resume_static="yes"]
 )
 AC_ARG_ENABLE(
 	[splashy],
-	[AC_HELP_STRING([--enable-splashy], [Enable splashy support])],
+	[AC_HELP_STRING([--enable-splashy], [enable splashy support])],
 	,
 	[enable_splashy="no"]
 )
 AC_ARG_ENABLE(
 	[fbsplash],
-	[AC_HELP_STRING([--enable-fbsplash], [Enable fbsplash support])],
+	[AC_HELP_STRING([--enable-fbsplash], [enable fbsplash support])],
 	,
 	[enable_fbsplash="no"]
 )
 AC_ARG_WITH(
 	[devdir],
-	[AC_HELP_STRING([--with-devdir=DIR], [Use if --enable-create-device, put devices in this directory, default /dev])],
+	[AC_HELP_STRING([--with-devdir=DIR], [use if --enable-create-device, put devices in this directory, default /dev])],
 	[devdir="${withval}"],
 	[devdir="/dev"]
 )
 AC_ARG_WITH(
 	[initramfsdir],
-	[AC_HELP_STRING([--with-initramfsdir=DIR], [Put initramfs binaries in this directory, default LIBDIR/suspend])],
+	[AC_HELP_STRING([--with-initramfsdir=DIR], [put initramfs binaries in this directory, default LIBDIR/suspend])],
 	[initramfsdir="${withval}"],
 	[initramfsdir="\$(libdir)/suspend"]
 )
 AC_ARG_WITH(
 	[libgcrypt-prefix],
-	[AC_HELP_STRING([--with-libgcrypt-prefix=DIR], [Define libgcrypt prefix, default /usr])],
+	[AC_HELP_STRING([--with-libgcrypt-prefix=DIR], [define libgcrypt prefix, default /usr])],
 	,
 	[with_libgcrypt_prefix="/usr" ]
 )
 AC_ARG_WITH(
 	[directfb-prefix],
-	[AC_HELP_STRING([--with-directfb-prefix=DIR], [Define directfb prefix, default /usr])],
+	[AC_HELP_STRING([--with-directfb-prefix=DIR], [define directfb prefix, default /usr])],
 	,
 	[with_directfb_prefix="/usr" ]
 )
 AC_ARG_WITH(
 	[resume-device],
-	[AC_HELP_STRING([--with-resume-device=DEVICE], [Define resume device (REQUIRED ONLY FOR BUILDING INITRAMFS DURING MAKE)])],
+	[AC_HELP_STRING([--with-resume-device=DEVICE], [define resume device (REQUIRED ONLY FOR BUILDING INITRAMFS DURING MAKE)])],
 	[RESUME_DEVICE="${withval}"]
 )
 AC_ARG_WITH(
 	[bootdir],
-	[AC_HELP_STRING([--with-bootdir=DIR], [Define boot directory, default /boot (REQUIRED ONLY FOR BUILDING INITRAMFS DURING MAKE)])],
+	[AC_HELP_STRING([--with-bootdir=DIR], [define boot directory, default /boot (REQUIRED ONLY FOR BUILDING INITRAMFS DURING MAKE)])],
 	[bootdir="${withval}"],
 	[bootdir="/boot" ]
 )

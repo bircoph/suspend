@@ -42,12 +42,12 @@ initramfs_PROGRAMS=\
 	resume
 dist_doc_DATA=\
 	TODO \
-	README* \
 	HOWTO \
-	COPYING*
+	$(srcdir)/README* \
+	$(srcdir)/COPYING*
 endif
 
-install-data-hook:
+install-data-hook:	install-sysconfDATA
 	if [ -f $(DESTDIR)$(sysconfdir)/suspend.conf ]; then \
 		$(INSTALL_DATA) $(srcdir)/conf/suspend.conf $(DESTDIR)$(sysconfdir)/suspend.conf.new; \
 	else \
