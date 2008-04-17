@@ -6,6 +6,8 @@
 # This file is released under the GPLv2.
 #
 
+MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
+
 dist_noinst_SCRIPTS=\
 	modify-system-files.sh
 

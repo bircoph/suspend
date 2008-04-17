@@ -6,6 +6,8 @@
 # This file is released under the GPLv2.
 #
 
+MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
+
 SUBDIRS=\
 	suse-10.1
 
