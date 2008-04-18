@@ -382,7 +382,7 @@ void s2ram_add_flag(int opt, const char *opt_arg)
 			break;
 		case 7:
 		case 'a':
-			flags |= (atoi(optarg) & (S3_BIOS | S3_MODE));
+			flags |= (atoi(opt_arg) & (S3_BIOS | S3_MODE));
 			break;
 		case 8:
 			fb_nosuspend = 1;
