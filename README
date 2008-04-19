@@ -53,6 +53,6 @@ work with s2ram.
 
 To compile this beast from CVS, do:
 
-autoreconf -v -i -f
+./autogen.sh
 ./configure
 make
