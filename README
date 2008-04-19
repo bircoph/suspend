@@ -50,3 +50,9 @@ For debugging, see http://suspend.sf.net/s2ram-support.html.
 acpi-support package from Ubuntu has *very* long whitelist of machines: 
 http://packages.ubuntu.org.cn/dapper/admin/acpi-support that are likely to
 work with s2ram.
+
+To compile this beast from CVS, do:
+
+autoreconf -v -i -f
+./configure
+make
