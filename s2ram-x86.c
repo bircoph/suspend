@@ -31,9 +31,10 @@ static unsigned char vga_pci_state[256];
 static struct pci_dev vga_dev;
 static struct pci_access *pacc;
 /* Flags set from whitelist */
-static int flags = 0, vbe_mode = -1, dmi_scanned = 0;
-int force;
-int fb_nosuspend = 0;
+static int flags, vbe_mode = -1, dmi_scanned;
+static int force;
+static int fb_nosuspend;
+
 char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 
 /* return codes for s2ram_is_supported */
@@ -213,7 +214,7 @@ int machine_known(void)
 	return (flags & UNSURE);
 }
 
-int find_vga(void)
+static int find_vga(void)
 {
 	struct pci_dev *dev;
 	unsigned int class;
@@ -236,12 +237,12 @@ int find_vga(void)
 	return 1;
 }
 
-void save_vga_pci(void)
+static void save_vga_pci(void)
 {
 	pci_read_block(&vga_dev, 0, vga_pci_state, 256);
 }
 
-void restore_vga_pci(void)
+static void restore_vga_pci(void)
 {
 	pci_write_block(&vga_dev, 0, vga_pci_state, 256);
 }
