@@ -29,7 +29,8 @@ int main(int argc, char **argv)
 	unsigned int offset;
 	int size, blk_size;
 	int fd;
-	int i;
+	unsigned int i;
+	ssize_t ret;
 	struct stat stat;
 	unsigned char buf[SWAP_SIG_SIZE];
 	int err = 0;
@@ -53,12 +54,12 @@ int main(int argc, char **argv)
 		perror("lseek()");
 		goto out;
 	}
-	i = read(fd, buf, SWAP_SIG_SIZE);
-	if (i < 0) {
+	ret = read(fd, buf, SWAP_SIG_SIZE);
+	if (ret < 0) {
 		err = errno;
 		perror("read()");
 		goto out;
-	} else if (i < SWAP_SIG_SIZE) {
+	} else if (ret < SWAP_SIG_SIZE) {
 		fprintf(stderr, "Failed to read swap signature: file is too short.\n");
 		err = EINVAL;
 		goto out;
