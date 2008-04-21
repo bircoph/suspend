@@ -283,7 +283,7 @@ static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start
 	return 0;
 }
 
-static int restore(struct swap_map_handle *handle, int disp)
+static ssize_t restore(struct swap_map_handle *handle, int disp)
 {
 	struct buf_block *block;
 	void *buf = handle->page_buffer;
@@ -310,7 +310,7 @@ static int restore(struct swap_map_handle *handle, int disp)
 static int swap_read_page(struct swap_map_handle *handle)
 {
 	loff_t offset;
-	size_t size;
+	ssize_t size;
 	int error = 0;
 
 	if (handle->cur_size < handle->area_size) {
@@ -549,9 +549,10 @@ Free_rsa:
 static int open_resume_dev(char *resume_dev_name, 
 			    struct swsusp_header *swsusp_header)
 {
-	unsigned int size = sizeof(struct swsusp_header);
+	ssize_t size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
-	int fd, ret;
+	ssize_t ret;
+	int fd;
 
 	fd = open(resume_dev_name, O_RDWR);
 	if (fd < 0) {
@@ -584,7 +585,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	struct swsusp_info *header = mem_pool;
 	char *buffer = (char *)mem_pool + page_size;
 	unsigned int nr_pages = 0;
-	unsigned int size = sizeof(struct swsusp_header);
+	ssize_t size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
 	char c;
 
