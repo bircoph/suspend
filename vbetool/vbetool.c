@@ -260,6 +260,7 @@ void restore_state_from(char *data)
 
 }
 
+#ifndef S2RAM
 void restore_state(void)
 {
 
@@ -284,6 +285,7 @@ void restore_state(void)
 
 	restore_state_from(data);
 }
+#endif
 
 char *__save_state(int *psize)
 {
@@ -341,6 +343,7 @@ char *__save_state(int *psize)
 	return buffer;
 }
 
+#ifndef S2RAM
 void save_state(void)
 {
 	int size;
@@ -362,6 +365,7 @@ int do_blank(int state)
 	}
 	return 0;
 }
+#endif
 
 int do_set_mode (int mode, int vga) {
 	reg_frame regs;
@@ -382,6 +386,7 @@ int do_set_mode (int mode, int vga) {
 	return 0;
 }
 
+#ifndef S2RAM
 int do_get_panel_brightness() {
 	reg_frame regs;
 	int error;
@@ -443,6 +448,7 @@ int do_set_panel_brightness(int brightness) {
 
 	return 0;
 }
+#endif
 
 int __get_mode()
 {
@@ -465,6 +471,7 @@ int do_get_mode() {
 	return 0;
 }
 
+#ifndef S2RAM
 int check_console()
 {
 	struct stat stat;
@@ -563,3 +570,4 @@ int do_get_panel_id(int just_dimensions)
 
   return 0;
 }
+#endif
