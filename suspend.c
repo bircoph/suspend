@@ -208,6 +208,19 @@ static inline loff_t check_free_swap(int dev)
 	return 0;
 }
 
+static inline loff_t get_image_size(int dev)
+{
+	int error;
+	loff_t image_size;
+
+	error = ioctl(dev, SNAPSHOT_GET_IMAGE_SIZE, &image_size);
+	if (!error)
+		return image_size;
+	else
+		suspend_error("get_image_size failed.");
+	return 0;
+}
+
 static inline unsigned long get_swap_page(int dev)
 {
 	int error;
@@ -572,12 +585,12 @@ Exit:
  *	space avaiable from the resume partition.
  */
 
-static int enough_swap(int dev, unsigned long size)
+static int enough_swap(int dev, loff_t size)
 {
 	loff_t free_swap = check_free_swap(dev);
 
-	printf("%s: Free swap: %lu kilobytes\n", my_name,
-		(unsigned long)free_swap / 1024);
+	printf("%s: Free swap: %llu kilobytes\n", my_name,
+		(unsigned long long)free_swap / 1024);
 	return free_swap > size;
 }
 
@@ -618,36 +631,70 @@ static int mark_swap(int fd, loff_t start)
 int write_image(int snapshot_fd, int resume_fd)
 {
 	static struct swap_map_handle handle;
-	struct swsusp_info *header = mem_pool;
+	struct image_header_info *header;
 	loff_t start;
+	loff_t image_size;
+	unsigned long nr_pages = 0;
 	int error;
- 	struct timeval begin;
+	int image_header_read = 0;
+	struct timeval begin;
 
 	printf("%s: System snapshot ready. Preparing to write\n", my_name);
+	/* Allocate a swap page for the additional "userland" header */
 	start = get_swap_page(snapshot_fd);
 	if (!start)
 		return -ENOSPC;
-	error = read(snapshot_fd, header, page_size);
-	if (error < (int)page_size)
-		return error < 0 ? error : -EFAULT;
-	printf("%s: Image size: %lu kilobytes\n", my_name, header->size / 1024);
-	if (!enough_swap(snapshot_fd, header->size) && !do_compress) {
+
+	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
+						mem_pool + page_size);
+	if (error)
+		return error;
+
+	image_size = get_image_size(snapshot_fd);
+	if (image_size > 0) {
+		nr_pages = (unsigned long)((image_size + page_size - 1) /
+						page_size);
+	} else {
+		/*
+		 * The kernel doesn't allow us to get the image size via ioctl,
+		 * so we need to read it from the image header.
+		 */
+		struct swsusp_info *image_header;
+
+		image_header = (struct swsusp_info *)handle.page_buffer;
+		error = read(snapshot_fd, image_header, page_size);
+		if (error < (int)page_size)
+			return error < 0 ? error : -EFAULT;
+
+		image_size = image_header->size;
+		nr_pages = image_header->pages;
+		if (!nr_pages)
+			return -ENODATA;
+
+		/*
+		 * Since we have read one image page already, we have to write
+		 * it to the swap before the other image pages.
+		 */
+		image_header_read = 1;
+	}
+	printf("%s: Image size: %lu kilobytes\n", my_name, image_size / 1024);
+	if (!enough_swap(snapshot_fd, image_size + page_size)
+	    && !do_compress) {
 		fprintf(stderr, "%s: Not enough free swap\n", my_name);
 		return -ENOSPC;
 	}
-	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
-			(char *)mem_pool + page_size);
-	if (error)
-		goto Exit;
 
+	header  = mem_pool;
+	memset(header, 0, page_size);
+	header->pages = nr_pages;
+	header->flags = 0;
 	header->map_start = handle.cur_swap;
-	header->image_flags = 0;
 	max_block_size = page_size;
 	if (compute_checksum)
-		header->image_flags |= IMAGE_CHECKSUM;
+		header->flags |= IMAGE_CHECKSUM;
 
 	if (do_compress) {
-		header->image_flags |= IMAGE_COMPRESSED;
+		header->flags |= IMAGE_COMPRESSED;
 		/*
 		 * The formula below follows from the worst-case expansion
 		 * calculation for LZO1.  sizeof(short) is due to the size field
@@ -671,7 +718,7 @@ int write_image(int snapshot_fd, int resume_fd)
 		if (error)
 			goto No_RSA;
 
-		header->image_flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
+		header->flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
 		memcpy(&header->rsa, &key_data->rsa, sizeof(struct RSA_data));
 		memcpy(&header->key, &key_data->encrypted_key,
 						sizeof(struct encrypted_key));
@@ -691,7 +738,7 @@ No_RSA:
 			error = gcry_cipher_setiv(cipher_handle, key_data->ivec,
 						CIPHER_BLOCK);
 		if (!error)
-			header->image_flags |= IMAGE_ENCRYPTED;
+			header->flags |= IMAGE_ENCRYPTED;
 	}
 
 	if (error) {
@@ -704,7 +751,14 @@ Save_image:
 #endif
 	gettimeofday(&begin, NULL);
 
-	error = save_image(&handle, header->pages - 1);
+	if (image_header_read) {
+		/* We have already loaded the image header into memory */
+		error = swap_write_page(&handle);
+		if (error)
+			goto Exit;
+		nr_pages--;
+	}
+	error = save_image(&handle, nr_pages);
 	if (error)
 		goto Exit;
 
@@ -713,7 +767,7 @@ Save_image:
 	 * modify the behavior.
 	 */
 	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
-		header->image_flags |= PLATFORM_SUSPEND;
+		header->flags |= PLATFORM_SUSPEND;
 
 	error = flush_swap_writer(&handle);
 	if (!error) {
@@ -733,10 +787,10 @@ Save_image:
 
 	if (!error) {
 		if (do_compress) {
-			double delta = header->size - compr_diff;
+			double delta = image_size - compr_diff;
 
 			printf("%s: Compression ratio %4.2lf\n", my_name,
-				delta / header->size);
+				delta / image_size);
 		}
 		printf( "S" );
 		error = mark_swap(resume_fd, start);

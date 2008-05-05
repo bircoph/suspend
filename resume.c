@@ -401,7 +401,7 @@ static char *print_checksum(char * buf, unsigned char *checksum)
 }
 
 #ifdef CONFIG_ENCRYPT
-static int decrypt_key(struct swsusp_info *header, unsigned char *key,
+static int decrypt_key(struct image_header_info *header, unsigned char *key,
 			unsigned char *ivec, void *buffer)
 {
 	gcry_ac_handle_t rsa_hd;
@@ -582,9 +582,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	static struct swap_map_handle handle;
 	static unsigned char orig_checksum[16], checksum[16];
 	int ret, error = 0;
-	struct swsusp_info *header = mem_pool;
+	struct image_header_info *header = mem_pool;
 	char *buffer = (char *)mem_pool + page_size;
-	unsigned int nr_pages = 0;
 	ssize_t size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
 	char c;
@@ -593,17 +592,17 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	if (error)
 		goto Reboot_question;
 
-	if (header->image_flags & PLATFORM_SUSPEND)
+	if (header->flags & PLATFORM_SUSPEND)
 		use_platform_suspend = 1;
 
-	if (header->image_flags & IMAGE_CHECKSUM) {
+	if (header->flags & IMAGE_CHECKSUM) {
 		memcpy(orig_checksum, header->checksum, 16);
 		print_checksum(buffer, orig_checksum);
 		printf("%s: MD5 checksum %s\n", my_name, buffer);
 		verify_checksum = 1;
 	}
 	splash.progress(10);
-	if (header->image_flags & IMAGE_COMPRESSED) {
+	if (header->flags & IMAGE_COMPRESSED) {
 		printf("%s: Compressed image\n", my_name);
 #ifdef CONFIG_COMPRESS
 		if (lzo_init() == LZO_E_OK) {
@@ -621,12 +620,12 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	if (error)
 		goto Reboot_question;
 
-	if (header->image_flags & IMAGE_ENCRYPTED) {
+	if (header->flags & IMAGE_ENCRYPTED) {
 #ifdef CONFIG_ENCRYPT
 		static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
 
 		printf("%s: Encrypted image\n", my_name);
-		if (header->image_flags & IMAGE_USE_RSA) {
+		if (header->flags & IMAGE_USE_RSA) {
 			error = decrypt_key(header, key, ivec, buffer);
 		} else {
 			int j;
@@ -669,17 +668,13 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		goto Reboot_question;
 
 	error = init_swap_reader(&handle, fd, header->map_start, buffer);
-	nr_pages = header->pages - 1;
-	ret = write(dev, header, page_size);
-	if (ret < (int)page_size)
-		error = ret < 0 ? ret : -EIO;
-
 	if (!error) {
 		struct timeval begin, end;
-		double delta, mb = header->size / (1024.0 * 1024.0);
+		double delta, mb;
 
+		mb = (header->pages * (page_size / 1024.0)) / 1024.0;
 		gettimeofday(&begin, NULL);
-		error = load_image(&handle, dev, nr_pages);
+		error = load_image(&handle, dev, header->pages);
 		gettimeofday(&end, NULL);
 
 		timersub(&end, &begin, &end);
