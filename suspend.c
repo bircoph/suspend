@@ -195,20 +195,24 @@ struct key_data *key_data;
 gcry_cipher_hd_t cipher_handle;
 #endif
 
-static inline loff_t check_free_swap(int dev)
+static loff_t check_free_swap(int dev)
 {
 	int error;
 	loff_t free_swap;
 
-	error = ioctl(dev, SNAPSHOT_AVAIL_SWAP, &free_swap);
+	error = ioctl(dev, SNAPSHOT_AVAIL_SWAP_SIZE, &free_swap);
+	if (error && errno == ENOTTY) {
+		report_unsupported_ioctl("SNAPSHOT_AVAIL_SWAP_SIZE");
+		error = ioctl(dev, SNAPSHOT_AVAIL_SWAP, &free_swap);
+	}
 	if (!error)
 		return free_swap;
-	else
-		suspend_error("check_free_swap failed.");
+
+	suspend_error("check_free_swap failed.");
 	return 0;
 }
 
-static inline loff_t get_image_size(int dev)
+static loff_t get_image_size(int dev)
 {
 	int error;
 	loff_t image_size;
@@ -216,20 +220,32 @@ static inline loff_t get_image_size(int dev)
 	error = ioctl(dev, SNAPSHOT_GET_IMAGE_SIZE, &image_size);
 	if (!error)
 		return image_size;
-	else
-		suspend_error("get_image_size failed.");
+
+	if (errno == ENOTTY)
+		report_unsupported_ioctl("SNAPSHOT_GET_IMAGE_SIZE");
+	suspend_error("get_image_size failed.");
 	return 0;
 }
 
-static inline unsigned long get_swap_page(int dev)
+static loff_t alloc_swap_page(int dev, int verbose)
 {
 	int error;
 	loff_t offset;
 
-	error = ioctl(dev, SNAPSHOT_GET_SWAP_PAGE, &offset);
+	error = ioctl(dev, SNAPSHOT_ALLOC_SWAP_PAGE, &offset);
+	if (error && errno == ENOTTY) {
+		if (verbose)
+			report_unsupported_ioctl("SNAPSHOT_ALLOC_SWAP_PAGE");
+		error = ioctl(dev, SNAPSHOT_GET_SWAP_PAGE, &offset);
+	}
 	if (!error)
 		return offset;
 	return 0;
+}
+
+static inline loff_t get_swap_page(int dev)
+{
+	return alloc_swap_page(dev, 0);
 }
 
 static inline int free_swap_pages(int dev)
@@ -237,7 +253,7 @@ static inline int free_swap_pages(int dev)
 	return ioctl(dev, SNAPSHOT_FREE_SWAP_PAGES, 0);
 }
 
-static inline int set_swap_file(int dev, u_int32_t blkdev, loff_t offset)
+static int set_swap_file(int dev, u_int32_t blkdev, loff_t offset)
 {
 	struct resume_swap_area swap;
 	int error;
@@ -248,6 +264,52 @@ static inline int set_swap_file(int dev, u_int32_t blkdev, loff_t offset)
 	if (error && !offset)
 		error = ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
 
+	return error;
+}
+
+static int atomic_snapshot(int dev, int *in_suspend)
+{
+	int error;
+
+	error = ioctl(dev, SNAPSHOT_CREATE_IMAGE, in_suspend);
+	if (error && errno == ENOTTY) {
+		report_unsupported_ioctl("SNAPSHOT_CREATE_IMAGE");
+		error = ioctl(dev, SNAPSHOT_ATOMIC_SNAPSHOT, in_suspend);
+	}
+	return error;
+}
+
+static inline int free_snapshot(int dev)
+{
+	return ioctl(dev, SNAPSHOT_FREE, 0);
+}
+
+static int set_image_size(int dev, unsigned int size)
+{
+	int error;
+
+	error = ioctl(dev, SNAPSHOT_PREF_IMAGE_SIZE, size);
+	if (error && errno == ENOTTY) {
+		report_unsupported_ioctl("SNAPSHOT_PREF_IMAGE_SIZE");
+		error = ioctl(dev, SNAPSHOT_SET_IMAGE_SIZE, size);
+	}
+	return error;
+}
+
+static inline int suspend_to_ram(int dev)
+{
+	return ioctl(dev, SNAPSHOT_S2RAM, 0);
+}
+
+static int platform_enter(int dev)
+{
+	int error;
+
+	error = ioctl(dev, SNAPSHOT_POWER_OFF, 0);
+	if (error  && errno == ENOTTY) {
+		report_unsupported_ioctl("SNAPSHOT_POWER_OFF");
+		error = ioctl(dev, SNAPSHOT_PMOPS, PMOPS_ENTER);
+	}
 	return error;
 }
 
@@ -641,7 +703,7 @@ int write_image(int snapshot_fd, int resume_fd)
 
 	printf("%s: System snapshot ready. Preparing to write\n", my_name);
 	/* Allocate a swap page for the additional "userland" header */
-	start = get_swap_page(snapshot_fd);
+	start = alloc_swap_page(snapshot_fd, 1);
 	if (!start)
 		return -ENOSPC;
 
@@ -858,9 +920,9 @@ static void suspend_shutdown(int snapshot_fd)
 	if (shutdown_method == SHUTDOWN_METHOD_REBOOT) {
 		reboot();
 	} else if (shutdown_method == SHUTDOWN_METHOD_PLATFORM) {
-		int ret = platform_enter(snapshot_fd);
-		if (ret < 0)
-			suspend_error("pm_ops->enter failed, calling power_off.");
+		if (platform_enter(snapshot_fd))
+			suspend_error("Could not enter the hibernation state, "
+					"calling power_off.");
 	}
 	power_off();
 	/* Signature is on disk, it is very dangerous to continue now.
@@ -899,10 +961,9 @@ int suspend_system(int snapshot_fd, int resume_fd)
 		goto Unfreeze;
 
 	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM) {
-		int ret = platform_prepare(snapshot_fd);
-		if (ret < 0) {
-			suspend_error("pm_ops->prepare failed, using "
-				"'shutdown mode = shutdown'.");
+		if (platform_prepare(snapshot_fd)) {
+			suspend_error("Unable to use platform hibernation "
+					"support, using shutdown mode.");
 			shutdown_method = SHUTDOWN_METHOD_SHUTDOWN;
 		}
 	}

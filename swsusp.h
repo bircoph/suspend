@@ -81,6 +81,11 @@ struct swsusp_header {
 	char	sig[10];
 } __attribute__((packed));
 
+static inline void report_unsupported_ioctl(char *name)
+{
+	printf("The %s ioctl is not supported by the kernel\n", name);
+}
+
 static inline int freeze(int dev)
 {
 	return ioctl(dev, SNAPSHOT_FREEZE, 0);
@@ -91,44 +96,21 @@ static inline int unfreeze(int dev)
 	return ioctl(dev, SNAPSHOT_UNFREEZE, 0);
 }
 
-static inline int atomic_snapshot(int dev, int *in_suspend)
-{
-	return ioctl(dev, SNAPSHOT_ATOMIC_SNAPSHOT, in_suspend);
-}
-
-static inline int atomic_restore(int dev)
-{
-	return ioctl(dev, SNAPSHOT_ATOMIC_RESTORE, 0);
-}
-
 static inline int platform_prepare(int dev)
 {
-	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_PREPARE);
-}
+	int error;
 
-static inline int platform_enter(int dev)
-{
-	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_ENTER);
+	error = ioctl(dev, SNAPSHOT_PLATFORM_SUPPORT, 1);
+	if (error && errno == ENOTTY) {
+		report_unsupported_ioctl("SNAPSHOT_PLATFORM_SUPPORT");
+		error = ioctl(dev, SNAPSHOT_PMOPS, PMOPS_PREPARE);
+	}
+	return error;
 }
 
 static inline int platform_finish(int dev)
 {
 	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_FINISH);
-}
-
-static inline int free_snapshot(int dev)
-{
-	return ioctl(dev, SNAPSHOT_FREE, 0);
-}
-
-static inline int set_image_size(int dev, unsigned int size)
-{
-	return ioctl(dev, SNAPSHOT_SET_IMAGE_SIZE, size);
-}
-
-static inline int suspend_to_ram(int dev)
-{
-	return ioctl(dev, SNAPSHOT_S2RAM, 0);
 }
 
 static inline void reboot(void)

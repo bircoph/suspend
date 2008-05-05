@@ -147,6 +147,11 @@ static struct config_par parameters[] = {
 	}
 };
 
+static inline int atomic_restore(int dev)
+{
+	return ioctl(dev, SNAPSHOT_ATOMIC_RESTORE, 0);
+}
+
 static unsigned int page_size;
 static unsigned int buffer_size;
 static void *mem_pool;
@@ -962,10 +967,12 @@ int main(int argc, char *argv[])
 		goto Close_splash;
 	}
 	if (use_platform_suspend) {
-		int ret = platform_prepare(dev);
-		if (ret < 0) {
-			fprintf(stderr, "%s: pm_ops->prepare returned "
-					"error %d\n", my_name, ret);
+		int err = platform_prepare(dev);
+
+		if (err) {
+			fprintf(stderr, "%s: Unable to use platform "
+					"hibernation support, error code %d\n",
+					my_name, err);
 			use_platform_suspend = 0;
 		}
 	}
