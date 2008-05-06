@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.121 2008/04/16 16:40:40 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.122 2008/05/06 14:33:28 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -25,6 +25,8 @@ struct machine_entry whitelist[] = {
 	{ "Apple Inc.",			"MacBookPro4,1",	"",	"", 0 },
 	/* Felix Rommel, https://bugzilla.novell.com/show_bug.cgi?id=228572 */
 	{ "Acer,Inc.",			"Aspire 1350",		"",	"", VBE_POST|VBE_MODE|NOFB },
+	/* Simon Bachmann <simonbachmann@bluewin.ch> works with proprietary ATI driver */
+	{ "Acer *",			"Aspire 1500 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* Andreas Wagner <A.Wagner@stud.uni-frankfurt.de> */
 	{ "Acer",			"Aspire 1520",		"",	"", VBE_POST|VBE_MODE },
 	/* Giorgio Lando <patroclo7@gmail.com> */
@@ -46,8 +48,9 @@ struct machine_entry whitelist[] = {
 	{ "Acer",			"Aspire 5020",		"",	"", VBE_POST },
 	/* Jim Hague <jim.hague@acm.org> */
 	{ "Acer, inc.",			"Aspire 5050 *",	"",	"", S3_BIOS },
-	/* Fadain Tariq <fadain.tariq@gmail.com> */
-	{ "Acer *",			"Aspire 5100 *",	"",	"", S3_BIOS|S3_MODE },
+	/* Fadain Tariq <fadain.tariq@gmail.com> reported S3_BIOS|S3_MODE,
+	   but for Donald Curtis <donald@curtisliberty.de> only VBE_* works... */
+	{ "Acer *",			"Aspire 5100 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Damyan Ivanov <dmn@debian.org> */
 	{ "Acer *",			"Aspire 5110 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Paul Kretek <pk@oz4.org> */
@@ -124,6 +127,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc.*",	"A6G       ",		"",	"", 0 },
 	/* Arnout Boelens <aboelens@engin.umass.edu> */
 	{ "ASUSTeK Computer Inc. ",	"A6J *",		"",	"", VBE_POST|VBE_MODE },
+	/* Piotr Drozdek <pioruns@o2.pl> */
+	{ "ASUSTeK Computer Inc. ",	"A6JC *",		"",	"", 0 },
 	/* Tom Gruben <tom.gruben@gmail.com>, maybe only with nvidia? */
 	{ "ASUSTeK Computer Inc. ",	"A6K *",		"",	"", 0 },
 	/* Patryk Zawadzki <patrys@icenter.pl> */
@@ -150,6 +155,10 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer Inc. ",	"F3JP *",		"",	"", VBE_POST|VBE_MODE },
 	/* Vladimir Pouzanov <farcaller@gmail.com>, probably only with nvidia and from X */
 	{ "ASUSTeK Computer INC. ",	"F3T",			"",	"", 0 },
+	/* Enrico Zini <enrico@enricozini.org> */
+	{ "ASUSTeK Computer Inc. *",	"F9E *",		"",	"", 0 },
+	/* Paul Cousins <namain@gmail.com> */
+	{ "ASUSTeK Computer Inc. *",	"G1S *",		"",	"", 0 },
 	/* Asus Mainboard, Ian McAnena <ianegg@gmail.com> */
 	{ "ASUSTeK Computer Inc.",	"K8V-MX",		"",	"", 0 },
 	{ "ASUSTEK ",			"L2000D",		"",	"", S3_MODE },
@@ -244,6 +253,8 @@ struct machine_entry whitelist[] = {
 	{ "Compaq",			"Armada    M700 *",	"",	"", 0 },
 	/* Martin Heimes <martin.heimes@gmx.de> */
 	{ "Compaq",			"Evo  D510 USDT",	"",	"", 0 },
+	/* Viktor Placek <viktor.placek@fs.cvut.cz> */
+	{ "Compaq",			"Evo N400c *",		"",	"", 0 },
 	/* Chris AtLee <chris@atlee.ca>, VBE_MODE does not work, text size changes. */
 	{ "Compaq ",			"Evo N800w *",		"F.05",	"", VBE_POST|VBE_SAVE },
 	/* Joel Schaerer <joel.schaerer@insa-lyon.fr> has a later BIOS and needs different Options :-/ */
@@ -309,6 +320,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Latitude D505 *",	"",	"", VBE_POST|VBE_SAVE },
 	/* tested by seife */
 	{ "Dell Inc.",			"Latitude D520 *",	"",	"", VBE_POST|VBE_MODE },
+	/* Jim <jim@zednet.org.uk> */
+	{ "Dell Inc.",			"Latitude D530 *",	"",	"", VBE_POST|VBE_MODE },
 	{ "Dell Computer Corporation",  "Latitude D600 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	{ "Dell Inc.",			"Latitude D610 *",	"",	"", VBE_POST|VBE_SAVE|NOFB },
 	/* D620 reported by Miroslav Ruda <ruda@ics.muni.cz>, <nicolae.mihalache@spaceapplications.com> */
@@ -357,6 +370,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",			"Precision M90 *",	"",	"", 0 },
 	/* Bruno Friedmann <bruno@ioda-net.ch> */
 	{ "Dell Inc.",			"Precision M4300 *",	"",	"", 0 },
+	/* Chris Debrunner <chd@evcohs.com> */
+	{ "Dell Inc.",			"Precision M6300 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Kyle Kearney <elyk53@gmail.com> */
 	{ "Dell Inc.",			"Vostro 1500 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Michael Witten mfwitten@MIT.EDU */
@@ -492,14 +507,18 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq 6710b (GB893ET*", "","68DDU*", VBE_POST|VBE_MODE },
 	/* Darek Nawrocki <dnawrock@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6715b (GB834EA*", "","68YTT*", VBE_POST|VBE_MODE },
+	/* Andrey Petrov <apetrov87@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq 6715b (RK156AV*", "","68YTT*", S3_BIOS|S3_MODE },
 	/* Paul Smet <paul.smet@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6720s",	 "",	"68MDU*", VBE_POST|VBE_MODE },
+	/* Ola Widlund <olwix@yahoo.com>, works with proprietary ATI driver */
+	{ "Hewlett-Packard",		"HP Compaq 6910p (GB951EA*", "","68MCD*", VBE_MODE },
 	/* Tomas Kejzlar <t.kejzlar@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6910p (RH241AV)", "","68MCU*", VBE_POST|VBE_MODE },
 	/* Krisztian Loki <krisztian.loki@freemail.hu>, does not work with proprietary ATI driver */
 	{ "Hewlett-Packard",		"HP Compaq 8510p ",	"",	"68MVD*", VBE_POST|VBE_MODE },
 	/* Milan Znamenacek <mznamenacek@retia.cz>, only from X */
-	{ "Hewlett-Packard",		"HP Compaq 8710p (GC102EA","",	"68MAD*", 0 },
+	{ "Hewlett-Packard",		"HP Compaq 8710p (GC102EA*","",	"68MAD*", 0 },
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
 	/* Rene Seindal <rene@seindal.dk> */
@@ -679,8 +698,9 @@ struct machine_entry whitelist[] = {
 	{ "IBM",			"",	"ThinkPad T43p",	"", S3_BIOS|S3_MODE },
 	/* G40 confirmed by David Härdeman */
 	{ "IBM",			"2388*",		"",	"", 0 },
-	/* A30, Mark Goldman <bitshifter@gmail.com> not confirmed yet */
-	{ "IBM",			"2652*",		"",	"", VBE_POST|VBE_MODE|RADEON_OFF },
+	/* A30, Axel Braun. https://bugzilla.novell.com/show_bug.cgi?id=309742
+	   Backlight stays on, but RADEON_OFF kills the machine on second suspend :-( */
+	{ "IBM",			"2652*",		"",	"", S3_BIOS|S3_MODE },
 	/* R32 */
 	{ "IBM",			"2658*",		"",	"", 0 },
 	/* R40 */
@@ -1086,6 +1106,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite L10",	"",	"", VBE_POST|VBE_MODE },
 	/* Gijs van Gemert <g.v.gemert@inter.nl.net> */
 	{ "TOSHIBA",			"Satellite L30",	"",	"", S3_BIOS|S3_MODE },
+	/* Krzysztof Lubanski <luban@nerdshack.com>, sys_version = "PSMA0U-0F301U" */
+	{ "TOSHIBA",			"Satellite M105",	"",	"", S3_BIOS|S3_MODE },
 	/* tnt.rocket@freenet.de, need to verify if S3_MODE is needed too */
 	{ "TOSHIBA",			"Satellite M30X",	"",	"", S3_BIOS },
 	/* Michaell Gurski */
@@ -1131,6 +1153,8 @@ struct machine_entry whitelist[] = {
 	/* https://bugzilla.novell.com/show_bug.cgi?id=290734 */
 	{ "Samsung Electronics",	"SX20S",		"",	"", VBE_POST|VBE_MODE },
 	{ "SHARP                           ",	"PC-AR10 *",	"",	"", 0 },
+	/* Daniel Sabanes Bove <daniel.sabanesbove@campus.lmu.de> */
+	{ "Sony Corporation",		"VGN-A115B*",		"",	"", 0 },
 	/* Dean Darlison <dean@dasco.ltd.uk>, maybe only with nvidia driver */
 	{ "Sony Corporation",		"VGN-AR31S",		"",	"", S3_BIOS|S3_MODE },
 	/* Daniel Morris <danielm@eCosCentric.com> */
@@ -1162,7 +1186,7 @@ struct machine_entry whitelist[] = {
 	   works only well with the intel, not with the nvidia */
 	{ "Sony Corporation",		"VGN-SZ5XN_C",		"",	"", 0 },
 	/* Michal Bozek <michal.bozek@gmail.com> */
-	{ "Sony Corporation",		"VGN-SZ61XN_C",		"",	"", S3_BIOS },
+	{ "Sony Corporation",		"VGN-SZ61XN_C",		"",	"", S3_BIOS|S3_MODE },
 	/* Anton Zahlheimer <anton.zahlheimer@landshut.org> */
 	{ "Sony Corporation",		"VGN-T250P",		"",	"", S3_BIOS|S3_MODE },
 	/* Timo Hoenig <thoenig@suse.de> VGN-TX3HP */
@@ -1177,6 +1201,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",		"VGN-TZ11*",		"",	"", 0 },
 	/* Hans Gunnarsson <hans.gunnarsson@gmail.com> */
 	{ "Sony Corporation",		"VGN-TZ21XN_B",		"",	"", 0 },
+	/* Raymond Russell <raymond@corvil.com> */
+	{ "Sony Corporation",		"VGN-TZ170N",		"",	"", S3_BIOS|S3_MODE },
 	/* Jan P. O. Schuemann" <jan@hep1.phys.ntu.edu.tw> */
 	{ "Sony Corporation",		"VGN-TZ91HS",		"",	"", 0 },
 	/* Mattia Dongili <malattia@linux.it> */
