@@ -42,8 +42,10 @@ static int max_loglevel = MAX_LOGLEVEL;
 static char verify_checksum;
 #ifdef CONFIG_COMPRESS
 static char do_decompress;
+static unsigned int decompress_buf_size;
 #else
 #define do_decompress 0
+#define decompress_buf_size 0
 #endif
 #ifdef CONFIG_ENCRYPT
 static char do_decrypt;
@@ -157,14 +159,12 @@ static unsigned int buffer_size;
 static void *mem_pool;
 
 /**
- *	read_area - Read data from a swap location.
- *	@fd:		File handle of the resume partition
- *	@buf:		Pointer to the area we're reading into
- *	@offset:	Swap offset of the place to read from
- *	@size:		The number of bytes to read
+ *	read_page - Read data from a swap location
+ *	@fd:		File handle of the resume partition.
+ *	@buf:		Pointer to the area we're reading into.
+ *	@offset:	Swap offset of the place to read from.
  */
-
-static int read_area(int fd, void *buf, loff_t offset, unsigned int size)
+static int read_page(int fd, void *buf, loff_t offset)
 {
 	int res = 0;
 	ssize_t cnt = 0;
@@ -173,196 +173,270 @@ static int read_area(int fd, void *buf, loff_t offset, unsigned int size)
 		return 0;
 
 	if (lseek(fd, offset, SEEK_SET) == offset)
-		cnt = read(fd, buf, size);
-	if (cnt < (ssize_t)size)
-		res = cnt < 0 ? cnt : -EIO;
+		cnt = read(fd, buf, page_size);
+	if (cnt < (ssize_t)page_size)
+		res = -EIO;
 
 	return res;
 }
 
 /*
- *	The swap_map_handle structure is used for handling the swap map in
- *	a file-alike way
+ * The swap_map_handle structure is used for handling swap in a file-alike way.
+ *
+ * @extents:	Array of extents used for trackig swap allocations.  It is
+ *		page_size bytes large and holds at most
+ *		(page_size / sizeof(struct extent) - 1) extents.  The last slot
+ *		must be all zeros and is the end marker.
+ *
+ * @cur_extent:		The extent currently used as the source of swap pages.
+ *
+ * @cur_offset:		The offset of the swap page that will be used next.
+ *
+ * @total_size:		The amount of data to read.
+ *
+ * @buffer:		Buffer used for storing image data pages.
+ *
+ * @read_buffer:	If compression is used, the compressed contents of
+ *			@buffer are stored here.  Otherwise, it is equal to
+ *			@buffer.
+ *
+ * @fd:			File handle associated with the swap.
+ *
+ * @ctx:		Used for checksum computing, if so configured.
+ *
+ * @lzo_work_buffer:	Work buffer used for decompression.
+ *
+ * @decrypt_buffer:	Buffer for storing encrypted pages (page_size bytes).
+ *
+ * cipher_handle:	gcrypt's data, used for decryption.
  */
-
 struct swap_map_handle {
-	char *page_buffer;
-	char *read_buffer;
-	struct swap_area *areas;
-	unsigned short areas_per_page;
-	loff_t *next_swap;
-	unsigned int area_size;
-	unsigned int cur_size;
-	unsigned int k;
+	struct extent *extents;
+	struct extent *cur_extent;
+	loff_t cur_offset;
+	loff_t next_extents;
+	loff_t total_size;
+	void *buffer;
+	void *read_buffer;
 	int fd;
 	struct md5_ctx ctx;
+#ifdef CONFIG_COMPRESS
+	void *lzo_work_buffer;
+#endif
 #ifdef CONFIG_ENCRYPT
 	char *decrypt_buffer;
 	gcry_cipher_hd_t cipher_handle;
 #endif
 };
 
-#define READ_AHEAD_SIZE (8*1024*1024)
-
 /**
- *	The following functions allow us to read data using a swap map
- *	in a file-alike way
+ *	load_extents_page - load the array of extents
+ *	handle:	Structure holding the pointer to the array of extents etc.
+ *
+ *	Read the table of extents from the swap location pointed to by
+ *	@handle->next_extents and store it at the address in @handle->extents.
+ *	Read the swap location of the next array of extents from the last
+ *	element of the array and fill this element with zeros.  Initialize
+ *	@handle->cur_extent and @handle->cur_offset as appropriate.
  */
-
-static int fill_buffer(struct swap_map_handle *handle)
+static int load_extents_page(struct swap_map_handle *handle)
 {
-	void *dst = handle->read_buffer;
-	int error;
+	int error, n;
 
-	int read_ahead_areas = READ_AHEAD_SIZE/buffer_size;
-	int advise_first, advise_last, i;
-
-	if (!handle->k) {
-		/* we've got a new map page */
-		advise_first = 0;
-		advise_last  = read_ahead_areas;
-	} else {
-		advise_first = handle->k + read_ahead_areas;
-		advise_last  = advise_first;
-	}
-
-	for (i = advise_first;
-	     i <= advise_last && i < handle->areas_per_page;
-	     i++) {
-		if (handle->areas[i].offset == 0)
-			break;
-
-		error = posix_fadvise(handle->fd, handle->areas[i].offset,
-				handle->areas[i].size, POSIX_FADV_NOREUSE);
-		if (error) {
-			perror("posix_fadvise");
-			break;
-		}
-	}
-
-	handle->area_size = handle->areas[handle->k].size;
-	if (handle->area_size > buffer_size)
-		return -ENOMEM;
-#ifdef CONFIG_ENCRYPT
-	if (do_decrypt)
-		dst = handle->decrypt_buffer;
-#endif
-	error = read_area(handle->fd, dst,
-			handle->areas[handle->k].offset,
-			handle->area_size);
-#ifdef CONFIG_ENCRYPT
-	if (!error && do_decrypt)
-		error = gcry_cipher_decrypt(handle->cipher_handle,
-				(void *)handle->read_buffer, handle->area_size,
-				dst, handle->area_size);
-#endif
-	return error;
+	error = read_page(handle->fd, handle->extents, handle->next_extents);
+	if (error)
+		return error;
+	n = page_size / sizeof(struct extent) - 1;
+	handle->next_extents = handle->extents[n].start;
+	memset(handle->extents + n, 0, sizeof(struct extent));
+	handle->cur_extent = handle->extents;
+	handle->cur_offset = handle->cur_extent->start;
+	return 0;
 }
 
-static int init_swap_reader(struct swap_map_handle *handle, int fd, loff_t start, void *buf)
+/**
+ *	init_swap_reader - initialize the structure used for loading the image
+ *	@handle:	Structure to initialize.
+ *	@fd:		File descriptor associated with the swap.
+ *	@start:		Swap location (offset) of the first image page.
+ *	@buf:		Memory pool to use for buffers.
+ *	@image_size:	Total size of the image data.
+ *
+ *	Initialize buffers and related fields of @handle and load the first
+ *	array of extents.
+ */
+static int init_swap_reader(struct swap_map_handle *handle, int fd,
+				loff_t start, void *buf, loff_t image_size)
 {
 	int error;
 
 	if (!start || !buf)
 		return -EINVAL;
-	handle->areas = buf;
-	handle->areas_per_page = (page_size - sizeof(loff_t)) /
-			sizeof(struct swap_area);
-	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
-	handle->page_buffer = (char *)buf + page_size;
-	handle->read_buffer = handle->page_buffer + page_size;
-#ifdef CONFIG_ENCRYPT
-	handle->decrypt_buffer = handle->read_buffer + buffer_size;
-#endif
-	error = read_area(fd, handle->areas, start, page_size);
-	if (error)
-		return error;
+
 	handle->fd = fd;
-	handle->k = 0;
-	error = fill_buffer(handle);
-	if (error)
-		return error;
-	handle->cur_size = 0;
-	if (verify_checksum)
-		md5_init_ctx(&handle->ctx);
-	return 0;
-}
+	handle->total_size = image_size;
 
-static ssize_t restore(struct swap_map_handle *handle, int disp)
-{
-	struct buf_block *block;
-	void *buf = handle->page_buffer;
+	handle->extents = buf;
+	buf += page_size;
 
-	block = (struct buf_block *)(handle->read_buffer + disp);
+	handle->buffer = buf;
+	handle->read_buffer = buf;
+	buf += buffer_size;
+
+#ifdef CONFIG_ENCRYPT
+	if (do_decrypt) {
+		handle->decrypt_buffer = buf;
+		buf += page_size;
+	}
+#endif
+
 #ifdef CONFIG_COMPRESS
 	if (do_decompress) {
-		int error;
-		lzo_uint cnt = page_size;
-
-		error = lzo1x_decompress_safe((lzo_bytep)block->data,
-						block->size,
-						buf, &cnt, NULL);
-		if (error)
-			return -EINVAL;
-		return cnt == page_size ?
-				block->size + sizeof(short) : -ENODATA;
+		handle->read_buffer = buf;
+		buf += decompress_buf_size;
+		handle->lzo_work_buffer = buf;
+		/* This buffer must hold at least LZO1X_1_MEM_COMPRESS bytes */
 	}
 #endif
-	memcpy(buf, block, page_size);
-	return page_size;
-}
 
-static int swap_read_page(struct swap_map_handle *handle)
-{
-	loff_t offset;
-	ssize_t size;
-	int error = 0;
-
-	if (handle->cur_size < handle->area_size) {
-		/* Get the data from the read buffer */
-		size = restore(handle, handle->cur_size);
-		if (size < 0)
-			return size;
-		handle->cur_size += size;
-		goto MD5;
-	}
-
-	/* There are no more data in the read buffer.  Read more */
-	if (++handle->k >= handle->areas_per_page) {
-		handle->k = 0;
-		offset = *handle->next_swap;
-		error = offset ?
-			read_area(handle->fd, handle->areas, offset, page_size)
-			: -EINVAL;
-	}
-	if (!error)
-		error = fill_buffer(handle);
+	/* Read the table of extents */
+	handle->next_extents = start;
+	error = load_extents_page(handle);
 	if (error)
 		return error;
 
-	size = restore(handle, 0);
-	if (size < 0)
-		return size;
-	handle->cur_size = size;
-
-MD5:
 	if (verify_checksum)
-		md5_process_block(handle->page_buffer, page_size, &handle->ctx);
+		md5_init_ctx(&handle->ctx);
 
 	return 0;
 }
 
 /**
- *	load_image - load the image using the swap map handle
- *	@handle and the snapshot handle @snapshot
- *	(assume there are @nr_pages pages to load)
+ *	find_next_image_page - find the next swap location holding image data
  */
+static void find_next_image_page(struct swap_map_handle *handle)
+{
+	struct extent ext;
+	int error;
 
+	handle->cur_offset += page_size;
+	if (handle->cur_offset < handle->cur_extent->end)
+		return;
+	/* We have exhausted the current extent.  Forward to the next one */
+	handle->cur_extent++;
+	if (handle->cur_extent->start < handle->cur_extent->end) {
+		handle->cur_offset = handle->cur_extent->start;
+		return;
+	}
+	/* No more extents.  Load the next extents page. */
+	error = load_extents_page(handle);
+	if (error)
+		handle->cur_offset = 0;
+}
+
+/**
+ *	load_and_decrypt_page - load a page of data from swap and decrypt it,
+ *			if necessary.
+ */
+static int load_and_decrypt_page(struct swap_map_handle *handle, void *dst)
+{
+	int error;
+	void *buf = dst;
+
+	if (!handle->cur_offset)
+		return -EINVAL;
+
+#ifdef CONFIG_ENCRYPT
+	if (do_decrypt)
+		buf = handle->decrypt_buffer;
+#endif
+
+	error = read_page(handle->fd, buf, handle->cur_offset);
+
+#ifdef CONFIG_ENCRYPT
+	if (!error && do_decrypt)
+		error = gcry_cipher_decrypt(handle->cipher_handle,
+					dst, page_size, buf, page_size);
+#endif
+
+	if (!error) {
+		handle->total_size -= page_size;
+		find_next_image_page(handle);
+	}
+	return error;
+}
+
+/**
+ *	load_buffer - load (and decrypt, if necessary) a block od data from the
+ *			swap, decompress it if necessary and store it in the
+ *			image data buffer.
+ */
+static ssize_t load_buffer(struct swap_map_handle *handle)
+{
+	void *dst;
+	ssize_t size;
+	int error;
+
+#ifdef CONFIG_COMPRESS
+	if (do_decompress) {
+		struct buf_block *block = handle->read_buffer;
+		lzo_uint cnt;
+
+		/* Read the block size from the first block page. */
+		error = load_and_decrypt_page(handle, block);
+		if (error)
+			return 0;
+		size = page_size;
+		dst = block;
+		dst += page_size;
+		/* Load the rest of the block pages */
+		while (size < block->size + sizeof(size_t)) {
+			error = load_and_decrypt_page(handle, dst);
+			if (error)
+				return 0;
+			size += page_size;
+			dst += page_size;
+		}
+		/* Decompress block */
+		error = lzo1x_decompress((lzo_bytep)block->data, block->size,
+						handle->buffer, &cnt,
+						handle->lzo_work_buffer);
+		if (error)
+			return 0;
+		size = cnt;
+		goto Checksum;
+	}
+#endif
+	dst = handle->buffer;
+	size = 0;
+	while (size < buffer_size && handle->total_size > 0) {
+		error = load_and_decrypt_page(handle, dst);
+		if (error)
+			return 0;
+		size += page_size;
+		dst += page_size;
+	}
+
+ Checksum:
+	if (verify_checksum)
+		md5_process_block(handle->buffer, size, &handle->ctx);
+
+	return size;
+}
+
+/**
+ *	load_image - load a hibernation image
+ *	@handle:	Structure containing image information.
+ *	@dev:		Special device file to write image data pages to.
+ *	@nr_pages:	Number of image data pages.
+ */
 static int load_image(struct swap_map_handle *handle, int dev,
                       unsigned int nr_pages)
 {
 	unsigned int m, n;
-	int ret;
+	ssize_t buf_size;
+	ssize_t ret;
+	void *buf;
 	int error = 0;
 	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
@@ -374,15 +448,27 @@ static int load_image(struct swap_map_handle *handle, int dev,
 	if (!m)
 		m = 1;
 	n = 0;
+	buf_size = 0;
 	do {
-		error = swap_read_page(handle);
-		if (error)
-			break;
-		ret = write(dev, handle->page_buffer, page_size);
-		if (ret < (int)page_size) {
-			error = ret < 0 ? -errno : -ENOSPC;
-			break;
+		if (buf_size <= 0) {
+			buf_size = load_buffer(handle);
+			if (buf_size <= 0) {
+				printf("\n");
+				return -EIO;
+			}
+			buf = handle->buffer;
 		}
+		ret = write(dev, buf, page_size);
+		if (ret < page_size) {
+			if (ret < 0)
+				perror("\nError while writing an image page");
+			else
+				printf("\n");
+			return -EIO;
+		}
+		buf += page_size;
+		buf_size -= page_size;
+
 		if (!(n % m)) {
 			printf("\b\b\b\b%3d%%", n / m);
 			if (n / m > 15)
@@ -593,7 +679,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	unsigned int shift = (resume_offset + 1) * page_size - size;
 	char c;
 
-	error = read_area(fd, header, swsusp_header->image, page_size);
+	error = read_page(fd, header, swsusp_header->image);
 	if (error)
 		goto Reboot_question;
 
@@ -672,7 +758,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	if (error)
 		goto Reboot_question;
 
-	error = init_swap_reader(&handle, fd, header->map_start, buffer);
+	error = init_swap_reader(&handle, fd, header->map_start, buffer,
+					header->image_data_size);
 	if (!error) {
 		struct timeval begin, end;
 		double delta, mb;
@@ -890,13 +977,24 @@ int main(int argc, char *argv[])
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
+	mem_size = 2 * page_size + buffer_size;
 #ifdef CONFIG_ENCRYPT
 	printf("%s: libgcrypt version: %s\n", my_name,
 		gcry_check_version(NULL));
 	gcry_control(GCRYCTL_INIT_SECMEM, page_size, 0);
-	mem_size = 3 * page_size + 2 * buffer_size;
-#else
-	mem_size = 3 * page_size + buffer_size;
+	mem_size += page_size;
+#endif
+#ifdef CONFIG_COMPRESS
+	/*
+	 * The formula below follows from the worst-case expansion calculation
+	 * for LZO1 (size / 16 + 67) and the fact that the size of the
+	 * compressed data must be stored in the buffer (sizeof(size_t)).
+	 * Additionally, we want the buffer size to be a multiple of page_size.
+	 */
+	decompress_buf_size = buffer_size +
+		((page_size + (buffer_size >> 4) + 66 + sizeof(size_t))
+			& ~(page_size - 1));
+	mem_size += decompress_buf_size + LZO1X_1_MEM_COMPRESS;
 #endif
 	mem_pool = malloc(mem_size);
 	if (!mem_pool) {

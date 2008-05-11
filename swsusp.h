@@ -58,6 +58,7 @@ struct image_header_info {
 	unsigned long		pages;
 	uint32_t		flags;
 	loff_t			map_start;
+	loff_t			image_data_size;
 	unsigned char		checksum[16];
 #ifdef CONFIG_ENCRYPT
 	unsigned char		salt[CIPHER_BLOCK];
@@ -151,10 +152,15 @@ struct swap_area {
 	unsigned int size;
 };
 
-/* The number 4096 below is arbitrary.  The actual size of data[] is variable */
+struct extent {
+	loff_t start;
+	loff_t end;
+};
+
+/* The number 1 below is arbitrary.  The actual size of data[] is variable */
 struct buf_block {
-	unsigned short size;
-	char data[4096];
+	size_t size;
+	char data[1];
 } __attribute__((packed));
 
 #define BUFFER_PAGES	32

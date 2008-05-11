@@ -59,19 +59,23 @@ static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
 #ifdef CONFIG_COMPRESS
 static char do_compress;
-static long long compr_diff;
+static long long compr_size;
+static unsigned int compress_buf_size;
 #else
 #define do_compress 0
-#define compr_diff 0
+#define compr_size 0
+#define compress_buf_size 0
 #endif
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
 static char use_RSA;
 static char key_name[MAX_STR_LEN] = SUSPEND_KEY_FILE;
 static char password[PASS_SIZE];
+static unsigned long encrypt_buf_size;
 #else
 #define do_encrypt 0
 #define key_name NULL
+#define encrypt_buf_size 0
 #endif
 #ifdef CONFIG_BOTH
 static char s2ram;
@@ -186,8 +190,7 @@ static struct config_par parameters[] = {
 };
 
 static unsigned int page_size;
-/* This MUST NOT be less than page_size */
-static unsigned int max_block_size;
+/* This MUST be an multipe of page_size */
 static unsigned int buffer_size;
 static void *mem_pool;
 #ifdef CONFIG_ENCRYPT
@@ -314,95 +317,273 @@ static int platform_enter(int dev)
 }
 
 /**
- *	write_area - Write data to given swap location.
- *	@fd:		File handle of the resume partition
- *	@buf:		Pointer to the area we're writing.
- *	@offset:	Offset of the swap page we're writing to
- *	@size:		The number of bytes to save
+ *	alloc_swap - allocate a number of swap pages
+ *	@dev:		Swap device to use for allocations.
+ *	@extents:	Array of extents to track the allocations.
+ *	@nr_extents:	Number of extents already in the array.
+ *	@size_p:	Points to the number of bytes to allocate, used to
+ *			return the number of allocated bytes.
+ *
+ *	Allocate the number of swap pages sufficient for saving the number of
+ *	bytes pointed to by @size_p.  Use the array @extents to track the
+ *	allocations.  This array has to be page_size big and may already
+ *	contain some initial elements (in that case @nr_extents must be the
+ *	number of these elements).
+ *	Each element of the array represents an area of allocated swap space.
+ *	These areas may be extended when swap pages that can be added to them
+ *	are found.  They also can be merged with one another.
+ *	The function returns when the requested amount of swap space is
+ *	allocated or if there is no room for more extents.  In the latter case
+ *	the last extent created is put at the end of the array and may be passed
+ *	to alloc_swap() as the initial extent when it is invoked next time.
  */
-
-static int write_area(int fd, void *buf, loff_t offset, unsigned int size)
+static int
+alloc_swap(int dev, struct extent *extents, int nr_extents, loff_t *size_p)
 {
-	int res = -EINVAL;
+	const int max_extents = page_size / sizeof(struct extent) - 1;
+	loff_t size, total_size, offset;
+
+	total_size = *size_p;
+	if (nr_extents <= 0) {
+		offset = get_swap_page(dev);
+		if (!offset)
+			return -ENOSPC;
+		extents->start = offset;
+		extents->end = offset + page_size;
+		nr_extents = 1;
+		size = page_size;
+	} else {
+		size = 0;
+	}
+	while (size < total_size && nr_extents <= max_extents) {
+		int i, j;
+
+		offset = get_swap_page(dev);
+		if (!offset)
+			return -ENOSPC;
+		/* Check if we have a matching extent. */
+		i = 0;
+		j = nr_extents - 1;
+		do {
+			struct extent *ext;
+			int k = (i + j) / 2;
+
+ Repeat:
+			ext = extents + k;
+			if (offset == ext->start - page_size) {
+				ext->start = offset;
+				/* Check if we can merge extents */
+				if (k > 0 && extents[k-1].end == offset) {
+					extents[k-1].end = ext->end;
+					/* Pull the 'later' extents forward */
+					memmove(ext, ext + 1,
+						(nr_extents - k - 1) *
+							sizeof(*ext));
+					nr_extents--;
+				}
+				offset = 0;
+				break;
+			} else if (offset == ext->end) {
+				ext->end += page_size;
+				/* Check if we can merge extents */
+				if (k + 1 < nr_extents
+				    && ext->end == extents[k+1].start) {
+					ext->end = extents[k+1].end;
+					/* Pull the 'later' extents forward */
+					memmove(ext + 1, ext + 2,
+						(nr_extents - k - 2) *
+							sizeof(*ext));
+					nr_extents--;
+				}
+				offset = 0;
+				break;
+			} else if (offset > ext->end) {
+				if (i == k) {
+					if (i < j) {
+						/* This means i == j + 1 */
+						k = j;
+						i = j;
+						goto Repeat;
+					}
+				} else {
+					i = k;
+				}
+			} else {
+				/* offset < ext->start - page_size */
+				j = k;
+			}
+		} while (i < j);
+		if (offset > 0) {
+			/* No match.  Create a new extent. */
+			struct extent *ext;
+
+			if (nr_extents < max_extents) {
+				ext = extents + i;
+				/*
+				 * We want to always replace the extent 'i' with
+				 * the new one.
+				 */
+				if (offset > ext->end) {
+					i++;
+					ext++;
+				}
+				/* Push the 'later' extents backwards. */
+				memmove(ext + 1, ext,
+					(nr_extents - i) * sizeof(*ext));
+			} else {
+				ext = extents + nr_extents;
+			}
+			ext->start = offset;
+			ext->end = offset + page_size;
+			nr_extents++;
+		}
+		size += page_size;
+	}
+	*size_p = size;
+	return nr_extents;
+}
+
+/**
+ *	write_page - Write page_size data to given swap location.
+ *	@fd:		File handle of the resume partition.
+ *	@buf:		Pointer to the area we're writing.
+ *	@offset:	Offset of the swap page we're writing to.
+ */
+static int write_page(int fd, void *buf, loff_t offset)
+{
+	int res = 0;
 	ssize_t cnt = 0;
 
-	if (offset) {
-		if (lseek(fd, offset, SEEK_SET) == offset)
-			cnt = write(fd, buf, size);
-		if (cnt == size)
-			res = 0;
-		else
-			res = cnt < 0 ? cnt : -EIO;
-	}
+	if (!offset)
+		return -EINVAL;
+
+	if (lseek(fd, offset, SEEK_SET) == offset)
+		cnt = write(fd, buf, page_size);
+	if (cnt != page_size)
+		res = -EIO;
 	return res;
 }
 
 /*
- *	The swap_map_handle structure is used for handling swap in
- *	a file-alike way
+ * The swap_map_handle structure is used for handling swap in a file-alike way.
+ *
+ * @extents:	Array of extents used for trackig swap allocations.  It is
+ *		page_size bytes large and holds at most
+ *		(page_size / sizeof(struct extent) - 1) extents.  The last slot
+ *		is used to hold the extent that will be used as an initial one
+ *		for the next batch of allocations.
+ *
+ * @nr_extents:		Number of entries in @extents actually used.
+ *
+ * @cur_extent:		The extent currently used as the source of swap pages.
+ *
+ * @cur_extent_idx:	The index of @cur_extent.
+ *
+ * @cur_offset:		The offset of the swap page that will be used next.
+ *
+ * @swap_needed:	The amount of swap needed for saving the image.
+ *
+ * @written_data:	The amount of data actually saved.
+ *
+ * @extents_spc:	The swap page to which to save @extents.
+ *
+ * @buffer:		Buffer used for storing image data pages.
+ *
+ * @write_buffer:	If compression is used, the compressed contents of
+ *			@buffer are stored here.  Otherwise, it is equal to
+ *			@buffer.
+ *
+ * @page_buffer:	Pointer to the addres to write the next image page to.
+ *
+ * @dev:		Snapshot device handle used for reading image pages and
+ *			invoking ioctls.
+ *
+ * @fd:			File handle associated with the swap.
+ *
+ * @ctx:		Used for checksum computing, if so configured.
+ *
+ * @lzo_work_buffer:	Work buffer used for compression.
+ *
+ * @encrypt_buffer:	Buffer for storing encrypted pages (page_size bytes).
+ *
+ * @encrypt_ptr:	Address to store the next encrypted page at.
  */
-
 struct swap_map_handle {
-	char *page_buffer;
-	char *write_buffer;
-	struct swap_area *areas;
-	unsigned short areas_per_page;
-	loff_t *next_swap;
-	struct swap_area cur_area;
-	unsigned int cur_alloc;
-	loff_t cur_swap;
-	unsigned int k;
+	struct extent *extents;
+	int nr_extents;
+	struct extent *cur_extent;
+	int cur_extent_idx;
+	loff_t cur_offset;
+	loff_t swap_needed;
+	loff_t written_data;
+	loff_t extents_spc;
+	void *buffer;
+	void *write_buffer;
+	void *page_buffer;
 	int dev, fd;
 	struct md5_ctx ctx;
 #ifdef CONFIG_COMPRESS
 	void *lzo_work_buffer;
 #endif
 #ifdef CONFIG_ENCRYPT
-	unsigned char *encrypt_buffer;
+	void *encrypt_buffer;
+	void *encrypt_ptr;
 #endif
 };
 
+/**
+ *	init_swap_writer - initialize the structure used for saving the image
+ *	@handle:	Structure to initialize.
+ *	@dev:		Special device file to read image pages from.
+ *	@fd:		File descriptor associated with the swap.
+ *	@buf:		Memory pool to use for buffers.
+ *
+ *	It doesn't preallocate swap, so preallocate_swap() has to be called on
+ *	@handle after this.
+ */
 static int
 init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 {
+	loff_t offset;
+
 	if (!buf)
 		return -EINVAL;
 
-	handle->areas = buf;
+	handle->extents = buf;
 	buf += page_size;
 
+	handle->buffer = buf;
 	handle->page_buffer = buf;
-	buf += page_size;
-
 	handle->write_buffer = buf;
 	buf += buffer_size;
 
-#ifdef CONFIG_COMPRESS
-	handle->lzo_work_buffer = buf;
-	buf += LZO1X_1_MEM_COMPRESS;
-#endif
-
 #ifdef CONFIG_ENCRYPT
-	handle->encrypt_buffer = buf;
+	if (do_encrypt) {
+		handle->encrypt_buffer = buf;
+		handle->encrypt_ptr = buf;
+		buf += encrypt_buf_size;
+	}
 #endif
 
-	memset(handle->areas, 0, page_size);
-	handle->areas_per_page = (page_size - sizeof(loff_t)) /
-			sizeof(struct swap_area);
-	handle->next_swap = (loff_t *)(handle->areas + handle->areas_per_page);
-
-	handle->cur_swap = get_swap_page(dev);
-	if (!handle->cur_swap)
-		return -ENOSPC;
-	handle->cur_area.offset = get_swap_page(dev);
-	if (!handle->cur_area.offset)
-		return -ENOSPC;
-	handle->cur_area.size = 0;
-	handle->cur_alloc = page_size;
-	handle->k = 0;
+#ifdef CONFIG_COMPRESS
+	if (do_compress) {
+		handle->write_buffer = buf;
+		buf += compress_buf_size;
+		handle->lzo_work_buffer = buf;
+		/* This buffer must hold at least LZO1X_1_MEM_COMPRESS bytes */
+	}
+#endif
 
 	handle->dev = dev;
 	handle->fd = fd;
+	handle->written_data = 0;
+
+	memset(handle->extents, 0, page_size);
+	handle->nr_extents = 0;
+	offset = get_swap_page(dev);
+	if (!offset)
+		return -ENOSPC;
+	handle->extents_spc = offset;
 
 	if (compute_checksum)
 		md5_init_ctx(&handle->ctx);
@@ -410,163 +591,186 @@ init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 	return 0;
 }
 
-static int prepare(struct swap_map_handle *handle, int disp)
+/**
+ *	preallocate_swap - use alloc_swap() to preallocate the number of pages
+ *			given by @handle->swap_needed
+ *	@handle:	Pointer to the structure in which to store information
+ *			about the preallocated swap pool.
+ *
+ *	Returns the offset of the first swap page available from the
+ *	preallocated pool.
+ */
+static loff_t preallocate_swap(struct swap_map_handle *handle)
 {
-	struct buf_block *block;
-	void *buf = handle->page_buffer;
+	const int max = page_size / sizeof(struct extent) - 1;
+	loff_t size;
+	int nr_extents;
 
-	block = (struct buf_block *)(handle->write_buffer + disp);
-#ifdef CONFIG_COMPRESS
-	if (do_compress) {
-		lzo_uint cnt;
-
-		lzo1x_1_compress(buf, page_size, (lzo_bytep)block->data, &cnt,
-					handle->lzo_work_buffer);
-		block->size = cnt;
-		/* Sanity check, should not trigger */
-		if (cnt + sizeof(short) > max_block_size)
-			printf("WARNING!"
-				" Data size too large after compression!\n");
-		/* We have added a sizeof(short) field to the data */
-		compr_diff += page_size - cnt - sizeof(short);
-		return cnt + sizeof(short);
-	}
-#endif
-	memcpy(block, buf, page_size);
-	return page_size;
+	if (handle->swap_needed < page_size)
+		return 0;
+	size = handle->swap_needed;
+	if (do_compress && size > page_size)
+		size /= 2;
+	nr_extents = alloc_swap(handle->dev, handle->extents,
+					handle->nr_extents, &size);
+	if (nr_extents <= 0)
+		return 0;
+	handle->nr_extents = nr_extents < max ? nr_extents : max;
+	handle->cur_extent = handle->extents;
+	handle->cur_extent_idx = 0;
+	handle->cur_offset = handle->cur_extent->start;
+	return handle->cur_offset;
 }
 
-static int try_get_more_swap(struct swap_map_handle *handle)
-{
-	loff_t offset;
-
-	while (handle->cur_area.size > handle->cur_alloc) {
-		offset = get_swap_page(handle->dev);
-		if (!offset)
-			return -ENOSPC;
-		if (offset == handle->cur_area.offset + handle->cur_alloc) {
-			handle->cur_alloc += page_size;
-		} else {
-			handle->cur_area.offset = offset;
-			handle->cur_alloc = page_size;
-		}
-	}
-	return 0;
-}
-
-static int flush_buffer(struct swap_map_handle *handle)
-{
-	void *src = handle->write_buffer;
-	int error =  0;
-
-#ifdef CONFIG_ENCRYPT
-	if (do_encrypt) {
-		error = gcry_cipher_encrypt(cipher_handle,
-			handle->encrypt_buffer, handle->cur_area.size,
-			src, handle->cur_area.size);
-		src = handle->encrypt_buffer;
-	}
-#endif
-	if (!error)
-		error = write_area(handle->fd, src, handle->cur_area.offset,
-				handle->cur_area.size);
-	if (error)
-		return error;
-	handle->areas[handle->k].offset = handle->cur_area.offset;
-	handle->areas[handle->k].size = handle->cur_area.size;
-	return 0;
-}
-
-static int swap_write_page(struct swap_map_handle *handle)
+/**
+ *	save_extents - save the array of extents
+ *	handle:	Structure holding the pointer to the array of extents etc.
+ *	finish:	If set, the last element of the extents array has to be filled
+ *		with zeros.
+ *
+ *	Save the buffer (page) holding the array of extents to the swap
+ *	location pointed to by @handle->extents_spc (this must be allocated
+ *	earlier).  Before saving the last element of the array is used to store
+ *	the swap offset of the next extents page (we allocate a swap page for
+ *	this purpose).
+ */
+static int save_extents(struct swap_map_handle *handle, int finish)
 {
 	loff_t offset = 0;
 	int error;
 
-	if (compute_checksum)
-		md5_process_block(handle->page_buffer, page_size, &handle->ctx);
+	if (!finish) {
+		struct extent *last_extent;
 
-	if (!handle->cur_area.size) {
-		/* No data in the write buffer */
-		handle->cur_area.size = prepare(handle, 0);
-		return try_get_more_swap(handle);
-	}
-
-	if (handle->cur_alloc + max_block_size <= buffer_size) {
-		if (handle->cur_area.size + max_block_size <= handle->cur_alloc) {
-			handle->cur_area.size += prepare(handle, handle->cur_area.size);
-			return 0;
-		}
 		offset = get_swap_page(handle->dev);
 		if (!offset)
 			return -ENOSPC;
-		if (offset == handle->cur_area.offset + handle->cur_alloc) {
-			handle->cur_alloc += page_size;
-			handle->cur_area.size += prepare(handle, handle->cur_area.size);
-			return try_get_more_swap(handle);
-		}
+		last_extent = handle->extents +
+				page_size / sizeof(struct extent) - 1;
+		last_extent->start = offset;
 	}
-
-	/* The write buffer is full or the offset doesn't fit.  Flush the buffer */
-	error = flush_buffer(handle);
-	if (error)
-		return error;
-
-	/* The write buffer has been flushed.  Fill it from the start */
-	if (!offset) {
-		offset = get_swap_page(handle->dev);
-		if (!offset)
-			return -ENOSPC;
-	}
-	handle->cur_area.offset = offset;
-	handle->cur_alloc = page_size;
-	handle->cur_area.size = prepare(handle, 0);
-	error = try_get_more_swap(handle);
-	if (error)
-		return error;
-	if (++handle->k >= handle->areas_per_page) {
-		offset = get_swap_page(handle->dev);
-		if (!offset)
-			return -ENOSPC;
-		*handle->next_swap = offset;
-		error = write_area(handle->fd, handle->areas, handle->cur_swap,
-				page_size);
-		if (error)
-			return error;
-		memset(handle->areas, 0, page_size);
-		handle->cur_swap = offset;
-		handle->k = 0;
-	}
-	return 0;
-}
-
-static inline int flush_swap_writer(struct swap_map_handle *handle)
-{
-	int error;
-
-	if (!handle->cur_area.offset || !handle->cur_swap)
-		return -EINVAL;
-
-	/* Flush the write buffer */
-	error = flush_buffer(handle);
-	if (!error)
-		/* Save the last swap map page */
-		error = write_area(handle->fd, handle->areas, handle->cur_swap,
-				page_size);
-
+	error = write_page(handle->fd, handle->extents, handle->extents_spc);
+	handle->extents_spc = offset;
 	return error;
 }
 
 /**
- *	save_image - save the suspend image data
+ *	next_swap_page - take one swap page out of the pool allocated using
+ *			alloc_swap() before
+ *	@handle:	Pointer to the structure containing information about
+ *			the preallocated swap pool.
  */
+static loff_t next_swap_page(struct swap_map_handle *handle)
+{
+	struct extent ext;
+	int error;
 
-static int save_image(struct swap_map_handle *handle,
-                      unsigned int nr_pages)
+	handle->cur_offset += page_size;
+	if (handle->cur_offset < handle->cur_extent->end)
+		return handle->cur_offset;
+	/* We have exhausted the current extent.  Forward to the next one */
+	handle->cur_extent++;
+	handle->cur_extent_idx++;
+	if (handle->cur_extent_idx < handle->nr_extents) {
+		handle->cur_offset = handle->cur_extent->start;
+		return handle->cur_offset;
+	}
+	/* No more extents.  Is there anything to pass to alloc_swap()? */
+	if (handle->cur_extent->start < handle->cur_extent->end) {
+		ext = *handle->cur_extent;
+		memset(handle->cur_extent, 0, sizeof(struct extent));
+	} else {
+		memset(&ext, 0, sizeof(struct extent));
+	}
+	if (save_extents(handle, 0))
+		return 0;
+	memset(handle->extents, 0, page_size);
+	*handle->extents = ext;
+	return preallocate_swap(handle);
+}
+
+/**
+ *	encrypt_and_save_page - encrypt a page of data and write it to the swap
+ */
+static int encrypt_and_save_page(struct swap_map_handle *handle, void *src)
+{
+	int error;
+	loff_t offset;
+
+#ifdef CONFIG_ENCRYPT
+	if (do_encrypt) {
+		error = gcry_cipher_encrypt(cipher_handle,
+			handle->encrypt_ptr, page_size, src, page_size);
+		if (error)
+			return error;
+		src = handle->encrypt_ptr;
+		handle->encrypt_ptr += page_size;
+		if (handle->encrypt_ptr - handle->encrypt_buffer
+		    >= encrypt_buf_size)
+			handle->encrypt_ptr = handle->encrypt_buffer;
+	}
+#endif
+	offset = next_swap_page(handle);
+	if (!offset)
+		return -ENOSPC;
+	error = write_page(handle->fd, src, offset);
+	if (error)
+		return error;
+	handle->swap_needed -= page_size;
+	handle->written_data += page_size;
+	return 0;
+}
+
+/**
+ *	save_buffer - save data stored in the buffer to the swap
+ */
+static int save_buffer(struct swap_map_handle *handle)
+{
+	ssize_t size;
+	char *src;
+	int error = 0;
+
+	/* Check if there is anything to do */
+	if (handle->page_buffer <= handle->buffer)
+		return 0;
+
+	size = handle->page_buffer - handle->buffer;
+	if (compute_checksum)
+		md5_process_block(handle->buffer, size, &handle->ctx);
+
+	/* Compress the buffer, if necessary */
+#ifdef CONFIG_COMPRESS
+	if (do_compress) {
+		struct buf_block *block = handle->write_buffer;
+		lzo_uint cnt;
+
+		lzo1x_1_compress(handle->buffer, size,
+					(lzo_bytep)block->data, &cnt,
+						handle->lzo_work_buffer);
+		block->size = cnt;
+		size = cnt + sizeof(size_t);
+		compr_size += size;
+	}
+#endif
+	/* If there's no compression, handle->buffer == handle->write_buffer */
+	for (src = handle->write_buffer;
+	     size > 0; src += page_size, size -= page_size) {
+		error = encrypt_and_save_page(handle, src);
+		if (error)
+			break;
+	}
+	return error;
+}
+
+/**
+ *	save_image - save the hibernation image data
+ */
+static int save_image(struct swap_map_handle *handle, unsigned int nr_pages)
 {
 	unsigned int m, writeout_rate;
-	int ret, abort_possible;
+	ssize_t ret;
 	struct termios newtrm, savedtrm;
-	int error = 0;
+	int abort_possible, error = 0;
 	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
 	/* Switch the state of the terminal so that we can read the keyboard
@@ -578,7 +782,7 @@ static int save_image(struct swap_map_handle *handle,
 
 	sprintf(message, "Saving %u image data pages", nr_pages);
 	if (abort_possible)
-		strcat(message, "(press " ABORT_KEY_NAME " to abort)");
+		strcat(message, " (press " ABORT_KEY_NAME " to abort) ");
 	strcat(message, "...");
 	printf("%s: %s     ", my_name, message);
 	splash.set_caption(message);
@@ -592,14 +796,17 @@ static int save_image(struct swap_map_handle *handle,
 	else
 		writeout_rate = nr_pages;
 
+	/* The buffer may be partially filled at this point */
 	for (nr_pages = 0; ; nr_pages++) {
 		ret = read(handle->dev, handle->page_buffer, page_size);
-		if (ret <= 0)
+		if (ret <= 0) {
+			if (ret) {
+				error = -errno;
+				perror("\nError writing an image page");
+			}
 			break;
-
-		error = swap_write_page(handle);
-		if (error)
-			break;
+		}
+		handle->page_buffer += page_size;
 
 		if (!(nr_pages % m)) {
 			printf("\b\b\b\b%3d%%", nr_pages / m);
@@ -625,13 +832,24 @@ static int save_image(struct swap_map_handle *handle,
 
 		if (!(nr_pages % writeout_rate))
 			start_writeout(handle->fd);
+
+		if (handle->page_buffer - handle->buffer >= buffer_size) {
+			/* The buffer is full, flush it */
+			error = save_buffer(handle);
+			if (error)
+				break;
+			handle->page_buffer = handle->buffer;
+		}
 	}
 
-	if (ret < 0)
-		error = -errno;
-
-	if (!error)
-		printf(" done (%u pages)\n", nr_pages);
+	if (!error) {
+		/* Flush whatever's left in the buffer and save the extents */
+		error = save_buffer(handle);
+		if (!error)
+			error = save_extents(handle, 1);
+		if (!error)
+			printf(" done (%u pages)\n", nr_pages);
+	}
 
 Exit:
 	if (abort_possible)
@@ -646,10 +864,11 @@ Exit:
  *	Returns TRUE or FALSE after checking the total amount of swap
  *	space avaiable from the resume partition.
  */
-
-static int enough_swap(int dev, loff_t size)
+static int enough_swap(struct swap_map_handle *handle)
 {
-	loff_t free_swap = check_free_swap(dev);
+	loff_t free_swap = check_free_swap(handle->dev);
+	loff_t size = do_compress ?
+			handle->swap_needed / 2 : handle->swap_needed;
 
 	printf("%s: Free swap: %llu kilobytes\n", my_name,
 		(unsigned long long)free_swap / 1024);
@@ -722,48 +941,44 @@ int write_image(int snapshot_fd, int resume_fd)
 		 * so we need to read it from the image header.
 		 */
 		struct swsusp_info *image_header;
+		ssize_t ret;
 
 		image_header = (struct swsusp_info *)handle.page_buffer;
-		error = read(snapshot_fd, image_header, page_size);
-		if (error < (int)page_size)
-			return error < 0 ? error : -EFAULT;
-
+		ret = read(snapshot_fd, image_header, page_size);
+		if (ret < page_size)
+			return ret < 0 ? ret : -EFAULT;
+		handle.page_buffer += page_size;
 		image_size = image_header->size;
 		nr_pages = image_header->pages;
 		if (!nr_pages)
 			return -ENODATA;
-
-		/*
-		 * Since we have read one image page already, we have to write
-		 * it to the swap before the other image pages.
-		 */
-		image_header_read = 1;
+		/* We have already read one page */
+		nr_pages--;
 	}
 	printf("%s: Image size: %lu kilobytes\n", my_name, image_size / 1024);
-	if (!enough_swap(snapshot_fd, image_size + page_size)
-	    && !do_compress) {
+
+	handle.swap_needed = image_size;
+	if (!enough_swap(&handle)) {
 		fprintf(stderr, "%s: Not enough free swap\n", my_name);
 		return -ENOSPC;
 	}
+	if (!preallocate_swap(&handle)) {
+		fprintf(stderr, "%s: Failed to allocate swap\n", my_name);
+		return -ENOSPC;
+	}
+	/* Shift handle.cur_offset for the first call to next_swap_page() */
+	handle.cur_offset -= page_size;
 
 	header  = mem_pool;
 	memset(header, 0, page_size);
 	header->pages = nr_pages;
 	header->flags = 0;
-	header->map_start = handle.cur_swap;
-	max_block_size = page_size;
+	header->map_start = handle.extents_spc;
 	if (compute_checksum)
 		header->flags |= IMAGE_CHECKSUM;
 
-	if (do_compress) {
+	if (do_compress)
 		header->flags |= IMAGE_COMPRESSED;
-		/*
-		 * The formula below follows from the worst-case expansion
-		 * calculation for LZO1.  sizeof(short) is due to the size field
-		 * in 'struct buf_block'.
-		 */
-		max_block_size += (page_size >> 4) + 67 + sizeof(short);
-	}
 
 #ifdef CONFIG_ENCRYPT
 	if (!do_encrypt)
@@ -813,29 +1028,20 @@ Save_image:
 #endif
 	gettimeofday(&begin, NULL);
 
-	if (image_header_read) {
-		/* We have already loaded the image header into memory */
-		error = swap_write_page(&handle);
-		if (error)
-			goto Exit;
-		nr_pages--;
-	}
 	error = save_image(&handle, nr_pages);
-	if (error)
-		goto Exit;
-
-	/*
-	 * NOTICE: This needs to go after save_image(), because the user may
-	 * modify the behavior.
-	 */
-	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
-		header->flags |= PLATFORM_SUSPEND;
-
-	error = flush_swap_writer(&handle);
 	if (!error) {
 		struct timeval end;
 
 		fsync(resume_fd);
+
+		header->image_data_size = handle.written_data;
+
+		/*
+		 * NOTICE: This needs to go after save_image(), because the
+		 * user may modify the behavior.
+		 */
+		if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
+			header->flags |= PLATFORM_SUSPEND;
 
 		if (compute_checksum)
 			md5_finish_ctx(&handle.ctx, header->checksum);
@@ -844,15 +1050,13 @@ Save_image:
 		timersub(&end, &begin, &end);
 		header->writeout_time = end.tv_usec / 1000000.0 + end.tv_sec;
 
-		error = write_area(resume_fd, header, start, page_size);
+		error = write_page(resume_fd, header, start);
 	}
 
 	if (!error) {
 		if (do_compress) {
-			double delta = image_size - compr_diff;
-
 			printf("%s: Compression ratio %4.2lf\n", my_name,
-				delta / image_size);
+				(double)compr_size / image_size);
 		}
 		printf( "S" );
 		error = mark_swap(resume_fd, start);
@@ -863,7 +1067,7 @@ Save_image:
 	if (!error)
 		printf( "|" );
 
-Exit:
+ Exit:
 	printf("\n");
 	return error;
 }
@@ -1550,10 +1754,21 @@ int main(int argc, char *argv[])
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
 
-	mem_size = 3 * page_size + buffer_size;
+	mem_size = 2 * page_size + buffer_size;
 #ifdef CONFIG_COMPRESS
-	if (do_compress)
-		mem_size += LZO1X_1_MEM_COMPRESS;
+	if (do_compress) {
+		/*
+		 * The formula below follows from the worst-case expansion
+		 * calculation for LZO1 (size / 16 + 67) and the fact that the
+		 * size of the compressed data must be stored in the buffer
+		 * (sizeof(size_t)).  Additionally, we want the buffer size to
+		 * be a multiple of page_size.
+		 */
+		compress_buf_size = buffer_size +
+			((page_size + (buffer_size >> 4) + 66 + sizeof(size_t))
+				& ~(page_size - 1));
+		mem_size += compress_buf_size + LZO1X_1_MEM_COMPRESS;
+	}
 #endif
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt) {
@@ -1567,7 +1782,8 @@ int main(int argc, char *argv[])
 				gcry_strerror(ret));
 			do_encrypt = 0;
 		} else {
-			mem_size += buffer_size;
+			encrypt_buf_size = ENCRYPT_BUF_PAGES * page_size;
+			mem_size += encrypt_buf_size;
 		}
 	}
 #endif
