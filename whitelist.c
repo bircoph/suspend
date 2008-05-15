@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.122 2008/05/06 14:33:28 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.123 2008/05/15 09:31:56 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -893,12 +893,6 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",			"6460*",		"",	"", S3_BIOS|VBE_MODE },
 	/* Amit Joshi <ajoshi@optonline.net>, T61 */
 	{ "LENOVO",			"6465*",		"",	"", S3_BIOS|VBE_MODE },
-	/* LENOVO X300, https://bugzilla.novell.com/show_bug.cgi?id=370690 */
-	{ "LENOVO",			"6476*",		"",	"", S3_BIOS|S3_MODE },
-	{ "LENOVO",			"6477*",		"",	"", S3_BIOS|S3_MODE },
-	{ "LENOVO",			"6478*",		"",	"", S3_BIOS|S3_MODE },
-	{ "LENOVO",			"2478*",		"",	"", S3_BIOS|S3_MODE },
-	{ "LENOVO",			"2479*",		"",	"", S3_BIOS|S3_MODE },
 	/* T61, Joe Nahmias <jello@debian.org>, debian bug #432018 */
 	{ "LENOVO",			"7658*",	"",		"", S3_BIOS|S3_MODE },
 	/* T61 with NVidia card, https://bugzilla.novell.com/show_bug.cgi?id=290618 */
