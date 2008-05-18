@@ -1751,11 +1751,9 @@ int main(int argc, char *argv[])
 
 	if (!strcmp (shutdown_method_value, "shutdown")) {
 		shutdown_method = SHUTDOWN_METHOD_SHUTDOWN;
-	}
-	else if (!strcmp (shutdown_method_value, "platform")) {
+	} else if (!strcmp (shutdown_method_value, "platform")) {
 		shutdown_method = SHUTDOWN_METHOD_PLATFORM;
-	}
-	else if (!strcmp (shutdown_method_value, "reboot")) {
+	} else if (!strcmp (shutdown_method_value, "reboot")) {
 		shutdown_method = SHUTDOWN_METHOD_REBOOT;
 	}
 
