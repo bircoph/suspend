@@ -66,6 +66,7 @@ struct image_header_info {
 	struct encrypted_key	key;
 #endif
 	double			writeout_time;
+	int			resume_pause;
 };
 
 #define IMAGE_CHECKSUM		0x0001
@@ -174,3 +175,7 @@ struct buf_block {
 #define ABORT_KEY_NAME	"backspace"
 #define REBOOT_KEY_CODE	'r'
 #define REBOOT_KEY_NAME	"r"
+#define ENTER_KEY_CODE	'\n'
+#define ENTER_KEY_NAME	"ENTER"
+
+#define RESUME_PAUSE_MAX	60

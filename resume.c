@@ -142,6 +142,11 @@ static struct config_par parameters[] = {
 	},
 #endif
 	{
+		.name = "resume pause",
+		.fmt = "%d",
+		.ptr = NULL,
+	},
+	{
 		.name = NULL,
 		.fmt = NULL,
 		.ptr = NULL,
@@ -668,6 +673,37 @@ static int open_resume_dev(char *resume_dev_name,
 	return fd;
 }
 
+static void pause_resume(int pause)
+{
+	struct termios newtrm, savedtrm;
+	char message[SPLASH_GENERIC_MESSAGE_SIZE];
+	int wait_possible = !splash.prepare_abort(&savedtrm, &newtrm);
+
+	if (!wait_possible)
+		pause = -1;
+
+	sprintf(message, "Image successfully loaded\nPress " ENTER_KEY_NAME
+			" to continue\n");
+	splash.set_caption(message);
+	printf("%s: %s", my_name, message);
+
+	if (pause > 0)
+		printf("%s: Continuing automatically in %2d seconds",
+			my_name, pause);
+
+	while (pause) {
+		if (splash.key_pressed() == ENTER_KEY_CODE)
+			break;
+		sleep(1);
+		if (pause > 0)
+			printf("\b\b\b\b\b\b\b\b\b\b%2d seconds", --pause);
+	}
+	printf("\n");
+
+	if (wait_possible)
+		splash.restore_abort(&savedtrm);
+}
+
 static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 {
 	static struct swap_map_handle handle;
@@ -846,9 +882,11 @@ Reboot_question:
 #endif
 
 	if (error) {
-		sprintf(buffer, "%s: Error %d loading the image\n"
-			"\nPress ENTER to continue\n", my_name, error);
+		sprintf(buffer, "%s: Error %d loading the image\nPress "
+			ENTER_KEY_NAME " to continue\n", my_name, error);
 		splash.dialog(buffer);
+	} else if (header->resume_pause != 0) {
+		pause_resume(header->resume_pause);
 	} else {
 		printf("%s: Image successfully loaded\n", my_name);
 	}

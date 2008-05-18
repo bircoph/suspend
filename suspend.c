@@ -92,6 +92,7 @@ static enum {
 	SHUTDOWN_METHOD_PLATFORM,
 	SHUTDOWN_METHOD_REBOOT
 } shutdown_method = SHUTDOWN_METHOD_PLATFORM;
+static int resume_pause;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
 static struct splash splash;
@@ -181,6 +182,11 @@ static struct config_par parameters[] = {
 		.len = MAX_STR_LEN,
 	},
 #endif
+	{
+		.name = "resume pause",
+		.fmt = "%d",
+		.ptr = &resume_pause,
+	},
 	{
 		.name = NULL,
 		.fmt = NULL,
@@ -1050,6 +1056,8 @@ Save_image:
 		timersub(&end, &begin, &end);
 		header->writeout_time = end.tv_usec / 1000000.0 + end.tv_sec;
 
+		header->resume_pause = resume_pause;
+
 		error = write_page(resume_fd, header, start);
 	}
 
@@ -1750,6 +1758,9 @@ int main(int argc, char *argv[])
 	else if (!strcmp (shutdown_method_value, "reboot")) {
 		shutdown_method = SHUTDOWN_METHOD_REBOOT;
 	}
+
+	if (resume_pause > RESUME_PAUSE_MAX)
+		resume_pause = RESUME_PAUSE_MAX;
 
 	page_size = getpagesize();
 	buffer_size = BUFFER_PAGES * page_size;
