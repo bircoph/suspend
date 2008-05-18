@@ -517,7 +517,7 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 	struct md5_ctx ctx;
 	struct RSA_data *rsa;
 	gcry_cipher_hd_t sym_hd;
-	int j, ret = 0;
+	int j, ret;
 
 	rsa = &header->rsa;
 
@@ -525,10 +525,8 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 	if (ret)
 		return ret;
 
-	if (!ret)
-		ret = gcry_cipher_open(&sym_hd, PK_CIPHER,
-				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
-
+	ret = gcry_cipher_open(&sym_hd, PK_CIPHER, GCRY_CIPHER_MODE_CFB,
+					GCRY_CIPHER_SECURE);
 	if (ret)
 		goto Free_rsa;
 
@@ -773,32 +771,27 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		splash.progress(15);
 		if (!error)
 			error = gcry_cipher_open(&handle.cipher_handle,
-				IMAGE_CIPHER, GCRY_CIPHER_MODE_CFB,
-				GCRY_CIPHER_SECURE);
+					IMAGE_CIPHER, GCRY_CIPHER_MODE_CFB,
+					GCRY_CIPHER_SECURE);
 		if (!error) {
-			do_decrypt = 1;
 			error = gcry_cipher_setkey(handle.cipher_handle,
 						key, KEY_SIZE);
-		}
-		if (!error)
-			error = gcry_cipher_setiv(handle.cipher_handle,
-						ivec, CIPHER_BLOCK);
-
-		if (error) {
-			if (do_decrypt)
+			if (!error)
+				error = gcry_cipher_setiv(handle.cipher_handle,
+							ivec, CIPHER_BLOCK);
+			if (error)
 				gcry_cipher_close(handle.cipher_handle);
-			do_decrypt = 0;
-			fprintf(stderr, "%s: libgcrypt error: %s\n",
-					my_name,
-					gcry_strerror(error));
+			else
+				do_decrypt = 1;
 		}
+		if (error)
+			fprintf(stderr, "%s: libgcrypt error: %s\n", my_name,
+					gcry_strerror(error));
 #else
-		fprintf(stderr, "%s: Encryption not supported\n",
-				my_name);
+		fprintf(stderr, "%s: Encryption not supported\n", my_name);
 		error = -EINVAL;
 #endif
 	}
-
 	if (error)
 		goto Reboot_question;
 
@@ -808,13 +801,28 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 		struct timeval begin, end;
 		double delta, mb;
 
-		mb = (header->pages * (page_size / 1024.0)) / 1024.0;
 		gettimeofday(&begin, NULL);
 		error = load_image(&handle, dev, header->pages);
+		if (!error && verify_checksum) {
+			md5_finish_ctx(&handle.ctx, checksum);
+			if (memcmp(orig_checksum, checksum, 16)) {
+				fprintf(stderr,
+					"%s: MD5 checksum does not match\n",
+					my_name);
+				print_checksum(buffer, checksum);
+				fprintf(stderr,
+					"%s: Computed MD5 checksum %s\n",
+					my_name, buffer);
+				error = -EINVAL;
+			}
+		}
+		if (error)
+			goto Reboot_question;
 		gettimeofday(&end, NULL);
 
 		timersub(&end, &begin, &end);
 		delta = end.tv_usec / 1000000.0 + end.tv_sec;
+		mb = (header->pages * (page_size / 1024.0)) / 1024.0;
 
 		printf("wrote %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
 			mb, header->writeout_time, mb / header->writeout_time);
@@ -824,8 +832,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 
 		mb *= 2.0;
 		delta += header->writeout_time;
-		printf("total image i/o %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
-			mb, delta, mb / delta);
+		printf("total image i/o %0.1lf MB in %0.1lf seconds "
+			"(%0.1lf MB/s)\n", mb, delta, mb / delta);
 	}
 
 Reboot_question:
@@ -855,19 +863,6 @@ Reboot_question:
 		}
 	}
 
-	/* I guess this is after the 'continue boot'-question because
-	 * there is no sense in not reseting the signature on error */
-	if (!error && verify_checksum) {
-		md5_finish_ctx(&handle.ctx, checksum);
-		if (memcmp(orig_checksum, checksum, 16)) {
-			fprintf(stderr,"%s: MD5 checksum does not match\n",
-					my_name);
-			print_checksum(buffer, checksum);
-			fprintf(stderr, "%s: Computed MD5 checksum %s\n",
-					my_name, buffer);
-			error = -EINVAL;
-		}
-	}
 	/* Reset swap signature now */
 	memcpy(swsusp_header->sig, swsusp_header->orig_sig, 10);
 	if (lseek(fd, shift, SEEK_SET) != shift) {
