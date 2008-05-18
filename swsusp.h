@@ -147,11 +147,6 @@ static inline int start_writeout(int fd)
 #endif
 }
 
-struct swap_area {
-	loff_t offset;
-	unsigned int size;
-};
-
 struct extent {
 	loff_t start;
 	loff_t end;
