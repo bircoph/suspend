@@ -15,6 +15,7 @@
 
 /* Maximum length of a passphrase, in characters */
 #define PASS_SIZE	128
+#define PASSBUF_SIZE	(2 * PASS_SIZE)
 /* Symmetric cipher used for image encryption, the size of its key and its
  * block, in bytes
  */

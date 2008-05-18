@@ -37,6 +37,7 @@
 #endif
 
 #include "swsusp.h"
+#include "memalloc.h"
 #include "config_parser.h"
 #include "md5.h"
 #include "splash.h"
@@ -70,7 +71,7 @@ static unsigned int compress_buf_size;
 static char do_encrypt;
 static char use_RSA;
 static char key_name[MAX_STR_LEN] = SUSPEND_KEY_FILE;
-static char password[PASS_SIZE];
+static char password[PASSBUF_SIZE];
 static unsigned long encrypt_buf_size;
 #else
 #define do_encrypt 0
@@ -195,10 +196,6 @@ static struct config_par parameters[] = {
 	}
 };
 
-static unsigned int page_size;
-/* This MUST be an multipe of page_size */
-static unsigned int buffer_size;
-static void *mem_pool;
 #ifdef CONFIG_ENCRYPT
 struct key_data *key_data;
 gcry_cipher_hd_t cipher_handle;
@@ -538,45 +535,55 @@ struct swap_map_handle {
 };
 
 /**
+ *	free_swap_writer - free memory allocated for saving the image
+ *	@handle:	Structure containing pointers to memory buffers to free.
+ */
+static void free_swap_writer(struct swap_map_handle *handle)
+{
+#ifdef CONFIG_COMPRESS
+	if (do_compress) {
+		freemem(handle->lzo_work_buffer);
+		freemem(handle->write_buffer);
+	}
+#endif
+#ifdef CONFIG_ENCRYPT
+	if (do_encrypt)
+		freemem(handle->encrypt_buffer);
+#endif
+	freemem(handle->buffer);
+	freemem(handle->extents);
+}
+
+/**
  *	init_swap_writer - initialize the structure used for saving the image
  *	@handle:	Structure to initialize.
  *	@dev:		Special device file to read image pages from.
  *	@fd:		File descriptor associated with the swap.
- *	@buf:		Memory pool to use for buffers.
  *
  *	It doesn't preallocate swap, so preallocate_swap() has to be called on
  *	@handle after this.
  */
-static int
-init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
+static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 {
 	loff_t offset;
 
-	if (!buf)
-		return -EINVAL;
+	handle->extents = getmem(page_size);
 
-	handle->extents = buf;
-	buf += page_size;
-
-	handle->buffer = buf;
-	handle->page_buffer = buf;
-	handle->write_buffer = buf;
-	buf += buffer_size;
+	handle->buffer = getmem(buffer_size);
+	handle->page_buffer = handle->buffer;
+	handle->write_buffer = handle->buffer;
 
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt) {
-		handle->encrypt_buffer = buf;
-		handle->encrypt_ptr = buf;
-		buf += encrypt_buf_size;
+		handle->encrypt_buffer = getmem(encrypt_buf_size);
+		handle->encrypt_ptr = handle->encrypt_buffer;
 	}
 #endif
 
 #ifdef CONFIG_COMPRESS
 	if (do_compress) {
-		handle->write_buffer = buf;
-		buf += compress_buf_size;
-		handle->lzo_work_buffer = buf;
-		/* This buffer must hold at least LZO1X_1_MEM_COMPRESS bytes */
+		handle->write_buffer = getmem(compress_buf_size);
+		handle->lzo_work_buffer = getmem(LZO1X_1_MEM_COMPRESS);
 	}
 #endif
 
@@ -587,8 +594,10 @@ init_swap_writer(struct swap_map_handle *handle, int dev, int fd, void *buf)
 	memset(handle->extents, 0, page_size);
 	handle->nr_extents = 0;
 	offset = get_swap_page(dev);
-	if (!offset)
+	if (!offset) {
+		free_swap_writer(handle);
 		return -ENOSPC;
+	}
 	handle->extents_spc = offset;
 
 	if (compute_checksum)
@@ -914,7 +923,6 @@ static int mark_swap(int fd, loff_t start)
 /**
  *	write_image - Write entire image and metadata.
  */
-
 int write_image(int snapshot_fd, int resume_fd)
 {
 	static struct swap_map_handle handle;
@@ -932,8 +940,7 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (!start)
 		return -ENOSPC;
 
-	error = init_swap_writer(&handle, snapshot_fd, resume_fd,
-						mem_pool + page_size);
+	error = init_swap_writer(&handle, snapshot_fd, resume_fd);
 	if (error)
 		return error;
 
@@ -949,15 +956,23 @@ int write_image(int snapshot_fd, int resume_fd)
 		struct swsusp_info *image_header;
 		ssize_t ret;
 
-		image_header = (struct swsusp_info *)handle.page_buffer;
+		/*
+		 * Do it in such a way that save_image() will believe it has
+		 * already read the header page.
+		 */
+		image_header = handle.page_buffer;
 		ret = read(snapshot_fd, image_header, page_size);
-		if (ret < page_size)
-			return ret < 0 ? ret : -EFAULT;
+		if (ret < page_size) {
+			error = ret < 0 ? ret : -EFAULT;
+			goto Exit;
+		}
 		handle.page_buffer += page_size;
 		image_size = image_header->size;
 		nr_pages = image_header->pages;
-		if (!nr_pages)
-			return -ENODATA;
+		if (!nr_pages) {
+			error = -ENODATA;
+			goto Exit;
+		}
 		/* We have already read one page */
 		nr_pages--;
 	}
@@ -966,16 +981,18 @@ int write_image(int snapshot_fd, int resume_fd)
 	handle.swap_needed = image_size;
 	if (!enough_swap(&handle)) {
 		fprintf(stderr, "%s: Not enough free swap\n", my_name);
-		return -ENOSPC;
+		error = -ENOSPC;
+		goto Exit;
 	}
 	if (!preallocate_swap(&handle)) {
 		fprintf(stderr, "%s: Failed to allocate swap\n", my_name);
-		return -ENOSPC;
+		error = -ENOSPC;
+		goto Exit;
 	}
 	/* Shift handle.cur_offset for the first call to next_swap_page() */
 	handle.cur_offset -= page_size;
 
-	header  = mem_pool;
+	header  = getmem(page_size);
 	memset(header, 0, page_size);
 	header->pages = nr_pages;
 	header->flags = 0;
@@ -1027,7 +1044,7 @@ No_RSA:
 	if (error) {
 		fprintf(stderr,"%s: libgcrypt error: %s\n", my_name,
 			gcry_strerror(error));
-		goto Exit;
+		goto Free_header;
 	}
 
 Save_image:
@@ -1075,7 +1092,11 @@ Save_image:
 	if (!error)
 		printf( "|" );
 
+ Free_header:
+	freemem(header);
  Exit:
+	free_swap_writer(&handle);
+
 	printf("\n");
 	return error;
 }
@@ -1114,12 +1135,13 @@ static int reset_signature(int fd)
 	}
 	fsync(fd);
 	if (error) {
-		fprintf(stderr,
-			"reset_signature: Error %d resetting the image.\n"
-			"There should be valid image on disk. Powerdown and do normal resume.\n"
-			"Continuing with this booted system will lead to data corruption.\n", 
-			error);
-		while(1);
+		fprintf(stderr, "%s: Error %d resetting the image.\n"
+			"There should be valid image on disk. "
+			"Powerdown and carry out normal resume.\n"
+			"Continuing with this booted system "
+			"will lead to data corruption.\n", myname, error);
+		while(1)
+			sleep(10);
 	}
 	return error;
 }
@@ -1246,7 +1268,6 @@ Unfreeze:
  *	console_fd - get file descriptor for given file name and verify
  *	if that's a console descriptor (based on the code of openvt)
  */
-
 static inline int console_fd(const char *fname)
 {
 	int fd;
@@ -1255,7 +1276,8 @@ static inline int console_fd(const char *fname)
 	fd = open(fname, O_RDONLY);
 	if (fd < 0 && errno == EACCES)
 		fd = open(fname, O_WRONLY);
-	if (fd >= 0 && (ioctl(fd, KDGKBTYPE, &arg) || (arg != KB_101 && arg != KB_84))) {
+	if (fd >= 0 && (ioctl(fd, KDGKBTYPE, &arg)
+	    || (arg != KB_101 && arg != KB_84))) {
 		close(fd);
 		return -ENOTTY;
 	}
@@ -1273,11 +1295,10 @@ static int set_kmsg_redirect;
  *	the standard streams to it.  The number of the currently active
  *	virtual terminal is saved via @orig_vc
  */
-
 static int prepare_console(int *orig_vc, int *new_vc)
 {
 	int fd, error, vt = -1;
-	char *vt_name = mem_pool;
+	char vt_name[GENERIC_NAME_SIZE];
 	struct vt_stat vtstat;
 	char clear_vt, tiocl[2];
 
@@ -1353,9 +1374,8 @@ Close_fd:
 
 /**
  *	restore_console - switch to the virtual console that was active before
- *	suspend
+ *	                  suspend
  */
-
 static void restore_console(int fd, int orig_vc)
 {
 	int error;
@@ -1530,7 +1550,7 @@ static int lock_vt(void)
 	struct sigaction sa;
 	struct vt_mode vtm;
 	struct vt_stat vtstat;
-	char *vt_name = mem_pool;
+	char vt_name[GENERIC_NAME_SIZE];
 	int fd, error;
 
 	fd = console_fd("/dev/console");
@@ -1715,8 +1735,7 @@ int main(int argc, char *argv[])
 	do {
 		ret = open("/dev/null", O_RDWR);
 		if (ret < 0) {
-			ret = errno;
-			suspend_error("Could not open /dev/null.");
+			perror(argv[0]);
 			return ret;
 		}
 	} while (ret < 3);
@@ -1760,8 +1779,7 @@ int main(int argc, char *argv[])
 	if (resume_pause > RESUME_PAUSE_MAX)
 		resume_pause = RESUME_PAUSE_MAX;
 
-	page_size = getpagesize();
-	buffer_size = BUFFER_PAGES * page_size;
+	get_page_and_buffer_sizes();
 
 	mem_size = 2 * page_size + buffer_size;
 #ifdef CONFIG_COMPRESS
@@ -1770,13 +1788,13 @@ int main(int argc, char *argv[])
 		 * The formula below follows from the worst-case expansion
 		 * calculation for LZO1 (size / 16 + 67) and the fact that the
 		 * size of the compressed data must be stored in the buffer
-		 * (sizeof(size_t)).  Additionally, we want the buffer size to
-		 * be a multiple of page_size.
+		 * (sizeof(size_t)).
 		 */
 		compress_buf_size = buffer_size +
-			((page_size + (buffer_size >> 4) + 66 + sizeof(size_t))
-				& ~(page_size - 1));
-		mem_size += compress_buf_size + LZO1X_1_MEM_COMPRESS;
+			round_up_page_size((buffer_size >> 4) + 67 +
+						sizeof(size_t));
+		mem_size += compress_buf_size +
+				round_up_page_size(LZO1X_1_MEM_COMPRESS);
 	}
 #endif
 #ifdef CONFIG_ENCRYPT
@@ -1792,20 +1810,21 @@ int main(int argc, char *argv[])
 			do_encrypt = 0;
 		} else {
 			encrypt_buf_size = ENCRYPT_BUF_PAGES * page_size;
-			mem_size += encrypt_buf_size;
+			mem_size += encrypt_buf_size +
+				round_up_page_size(sizeof(struct key_data));
 		}
 	}
 #endif
-	mem_pool = malloc(mem_size);
-	if (!mem_pool) {
-		ret = errno;
-		suspend_error("Could not allocate memory.");
+
+	ret = init_memalloc(page_size, mem_size);
+	if (ret) {
+		fprintf(stderr, "%s: Could not allocate memory\n", my_name);
 		return ret;
 	}
+
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt) {
-		mem_size -= buffer_size;
-		key_data = (struct key_data *)((char *)mem_pool + mem_size);
+		key_data = getmem(sizeof(struct key_data));
 		generate_key();
 	}
 #endif
@@ -1908,10 +1927,8 @@ int main(int argc, char *argv[])
 		s2ram = !s2ram_hacks();
 #endif
 #ifdef CONFIG_ENCRYPT
-        if (do_encrypt && ! use_RSA) {
-                splash.read_password((char *)mem_pool,1);
-                strncpy(password,(char *)mem_pool,PASS_SIZE);
-        }
+        if (do_encrypt && ! use_RSA)
+                splash.read_password(password, 1);
 #endif
 
 	open_printk();
@@ -1959,10 +1976,12 @@ Umount:
 		umount(chroot_path);
 	}
 #ifdef CONFIG_ENCRYPT
-	if (do_encrypt)
+	if (do_encrypt) {
 		gcry_cipher_close(cipher_handle);
+		freemem(key_data);
+	}
 #endif
-	free(mem_pool);
+	free_memalloc();
 
 	return ret;
 }

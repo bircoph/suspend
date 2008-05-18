@@ -159,8 +159,6 @@ struct buf_block {
 	char data[1];
 } __attribute__((packed));
 
-#define BUFFER_PAGES	32
-
 #define SNAPSHOT_DEVICE	"/dev/snapshot"
 #define RESUME_DEVICE ""
 
@@ -179,3 +177,5 @@ struct buf_block {
 #define ENTER_KEY_NAME	"ENTER"
 
 #define RESUME_PAUSE_MAX	60
+
+#define GENERIC_NAME_SIZE	256

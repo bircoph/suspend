@@ -29,6 +29,7 @@
 #endif
 
 #include "swsusp.h"
+#include "memalloc.h"
 #include "config_parser.h"
 #include "md5.h"
 #include "splash.h"
@@ -49,6 +50,7 @@ static unsigned int decompress_buf_size;
 #endif
 #ifdef CONFIG_ENCRYPT
 static char do_decrypt;
+static char password[PASSBUF_SIZE];
 #else
 #define do_decrypt 0
 #endif
@@ -159,10 +161,6 @@ static inline int atomic_restore(int dev)
 	return ioctl(dev, SNAPSHOT_ATOMIC_RESTORE, 0);
 }
 
-static unsigned int page_size;
-static unsigned int buffer_size;
-static void *mem_pool;
-
 /**
  *	read_page - Read data from a swap location
  *	@fd:		File handle of the resume partition.
@@ -264,55 +262,70 @@ static int load_extents_page(struct swap_map_handle *handle)
 }
 
 /**
+ *	free_swap_reader - free memory allocated for loading the image
+ *	@handle:	Structure containing pointers to memory buffers to free.
+ */
+static void free_swap_reader(struct swap_map_handle *handle)
+{
+#ifdef CONFIG_COMPRESS
+	if (do_decompress) {
+		freemem(handle->lzo_work_buffer);
+		freemem(handle->read_buffer);
+	}
+#endif
+#ifdef CONFIG_ENCRYPT
+	if (do_decrypt)
+		 freemem(handle->decrypt_buffer);
+#endif
+	 freemem(handle->buffer);
+	 freemem(handle->extents);
+}
+
+/**
  *	init_swap_reader - initialize the structure used for loading the image
  *	@handle:	Structure to initialize.
  *	@fd:		File descriptor associated with the swap.
  *	@start:		Swap location (offset) of the first image page.
- *	@buf:		Memory pool to use for buffers.
  *	@image_size:	Total size of the image data.
  *
  *	Initialize buffers and related fields of @handle and load the first
  *	array of extents.
  */
 static int init_swap_reader(struct swap_map_handle *handle, int fd,
-				loff_t start, void *buf, loff_t image_size)
+				loff_t start, loff_t image_size)
 {
 	int error;
 
-	if (!start || !buf)
+	if (!start)
 		return -EINVAL;
 
 	handle->fd = fd;
 	handle->total_size = image_size;
 
-	handle->extents = buf;
-	buf += page_size;
+	handle->extents = getmem(page_size);
 
-	handle->buffer = buf;
-	handle->read_buffer = buf;
-	buf += buffer_size;
+	handle->buffer = getmem(buffer_size);
+	handle->read_buffer = handle->buffer;
 
 #ifdef CONFIG_ENCRYPT
-	if (do_decrypt) {
-		handle->decrypt_buffer = buf;
-		buf += page_size;
-	}
+	if (do_decrypt)
+		handle->decrypt_buffer = getmem(page_size);
 #endif
 
 #ifdef CONFIG_COMPRESS
 	if (do_decompress) {
-		handle->read_buffer = buf;
-		buf += decompress_buf_size;
-		handle->lzo_work_buffer = buf;
-		/* This buffer must hold at least LZO1X_1_MEM_COMPRESS bytes */
+		handle->read_buffer = getmem(decompress_buf_size);
+		handle->lzo_work_buffer = getmem(LZO1X_1_MEM_COMPRESS);
 	}
 #endif
 
 	/* Read the table of extents */
 	handle->next_extents = start;
 	error = load_extents_page(handle);
-	if (error)
+	if (error) {
+		free_swap_reader(handle);
 		return error;
+	}
 
 	if (verify_checksum)
 		md5_init_ctx(&handle->ctx);
@@ -506,14 +519,13 @@ static char *print_checksum(char * buf, unsigned char *checksum)
 
 #ifdef CONFIG_ENCRYPT
 static int decrypt_key(struct image_header_info *header, unsigned char *key,
-			unsigned char *ivec, void *buffer)
+			unsigned char *ivec)
 {
 	gcry_ac_handle_t rsa_hd;
 	gcry_ac_data_t rsa_data_set, key_set;
 	gcry_ac_key_t rsa_priv;
 	gcry_mpi_t mpi;
 	unsigned char *buf, *out, *key_buf, *ivec_buf;
-	char *pass_buf;
 	struct md5_ctx ctx;
 	struct RSA_data *rsa;
 	gcry_cipher_hd_t sym_hd;
@@ -530,16 +542,15 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 	if (ret)
 		goto Free_rsa;
 
-	pass_buf = buffer;
-	key_buf = (unsigned char *)pass_buf + PASS_SIZE;
-	ivec_buf = key_buf + PK_KEY_SIZE;
-	out = ivec_buf + PK_CIPHER_BLOCK;
+	key_buf = getmem(PK_KEY_SIZE);
+	ivec_buf = getmem(PK_CIPHER_BLOCK);
+	out = getmem(KEY_TEST_SIZE);
 	do {
-		splash.read_password(pass_buf, 0);
+		splash.read_password(password, 0);
 		memset(ivec_buf, 0, PK_CIPHER_BLOCK);
-		strncpy((char *)ivec_buf, pass_buf, PK_CIPHER_BLOCK);
+		strncpy(ivec_buf, password, PK_CIPHER_BLOCK);
 		md5_init_ctx(&ctx);
-		md5_process_bytes(pass_buf, strlen(pass_buf), &ctx);
+		md5_process_bytes(password, strlen(password), &ctx);
 		md5_finish_ctx(&ctx, key_buf);
 		ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
 		if (!ret)
@@ -548,8 +559,8 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 
 		if (!ret)
 			ret = gcry_cipher_encrypt(sym_hd,
-					out, KEY_TEST_SIZE,
-					KEY_TEST_DATA, KEY_TEST_SIZE);
+						out, KEY_TEST_SIZE,
+						KEY_TEST_DATA, KEY_TEST_SIZE);
 
 		if (ret)
 			break;
@@ -565,7 +576,7 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 		ret = gcry_cipher_open(&sym_hd, PK_CIPHER,
 				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 	if (ret)
-		goto Free_rsa;
+		goto Free_buffers;
 
 	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
 	if (!ret)
@@ -641,6 +652,11 @@ Destroy_data_set:
 Close_cypher:
 	gcry_cipher_close(sym_hd);
 
+Free_buffers:
+	freemem(out);
+	freemem(ivec_buf);
+	freemem(key_buf);
+
 Free_rsa:
 	gcry_ac_close(rsa_hd);
 
@@ -649,7 +665,7 @@ Free_rsa:
 #endif
 
 static int open_resume_dev(char *resume_dev_name, 
-			    struct swsusp_header *swsusp_header)
+                           struct swsusp_header *swsusp_header)
 {
 	ssize_t size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
@@ -713,14 +729,14 @@ static void pause_resume(int pause)
 static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 {
 	static struct swap_map_handle handle;
-	static unsigned char orig_checksum[16], checksum[16];
+	static unsigned char orig_checksum[16], checksum[16], csum_buf[48];
+	struct image_header_info *header;
 	int ret, error = 0;
-	struct image_header_info *header = mem_pool;
-	char *buffer = (char *)mem_pool + page_size;
 	ssize_t size = sizeof(struct swsusp_header);
 	unsigned int shift = (resume_offset + 1) * page_size - size;
 	char c;
 
+	header = getmem(page_size);
 	error = read_page(fd, header, swsusp_header->image);
 	if (error)
 		goto Reboot_question;
@@ -730,8 +746,8 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 
 	if (header->flags & IMAGE_CHECKSUM) {
 		memcpy(orig_checksum, header->checksum, 16);
-		print_checksum(buffer, orig_checksum);
-		printf("%s: MD5 checksum %s\n", my_name, buffer);
+		print_checksum(csum_buf, orig_checksum);
+		printf("%s: MD5 checksum %s\n", my_name, csum_buf);
 		verify_checksum = 1;
 	}
 	splash.progress(10);
@@ -759,12 +775,12 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 
 		printf("%s: Encrypted image\n", my_name);
 		if (header->flags & IMAGE_USE_RSA) {
-			error = decrypt_key(header, key, ivec, buffer);
+			error = decrypt_key(header, key, ivec);
 		} else {
 			int j;
 
-			splash.read_password(buffer, 0);
-			encrypt_init(key, ivec, buffer);
+			splash.read_password(password, 0);
+			encrypt_init(key, ivec, password);
 			for (j = 0; j < CIPHER_BLOCK; j++)
 				ivec[j] ^= header->salt[j];
 		}
@@ -795,7 +811,7 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	if (error)
 		goto Reboot_question;
 
-	error = init_swap_reader(&handle, fd, header->map_start, buffer,
+	error = init_swap_reader(&handle, fd, header->map_start,
 					header->image_data_size);
 	if (!error) {
 		struct timeval begin, end;
@@ -809,13 +825,14 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 				fprintf(stderr,
 					"%s: MD5 checksum does not match\n",
 					my_name);
-				print_checksum(buffer, checksum);
+				print_checksum(csum_buf, checksum);
 				fprintf(stderr,
 					"%s: Computed MD5 checksum %s\n",
-					my_name, buffer);
+					my_name, csum_buf);
 				error = -EINVAL;
 			}
 		}
+		free_swap_reader(&handle);
 		if (error)
 			goto Reboot_question;
 		gettimeofday(&end, NULL);
@@ -884,10 +901,14 @@ Reboot_question:
 		gcry_cipher_close(handle.cipher_handle);
 #endif
 
+	freemem(header);
+
 	if (error) {
-		sprintf(buffer, "%s: Error %d loading the image\nPress "
+		char message[SPLASH_GENERIC_MESSAGE_SIZE];
+
+		sprintf(message, "%s: Error %d loading the image\nPress "
 			ENTER_KEY_NAME " to continue\n", my_name, error);
-		splash.dialog(buffer);
+		splash.dialog(message);
 	} else if (header->resume_pause != 0) {
 		pause_resume(header->resume_pause);
 	} else {
@@ -1016,8 +1037,8 @@ int main(int argc, char *argv[])
 	else
 		splash_param = SPL_RESUME;
 
-	page_size = getpagesize();
-	buffer_size = BUFFER_PAGES * page_size;
+	get_page_and_buffer_sizes();
+
 	mem_size = 2 * page_size + buffer_size;
 #ifdef CONFIG_ENCRYPT
 	printf("%s: libgcrypt version: %s\n", my_name,
@@ -1030,16 +1051,16 @@ int main(int argc, char *argv[])
 	 * The formula below follows from the worst-case expansion calculation
 	 * for LZO1 (size / 16 + 67) and the fact that the size of the
 	 * compressed data must be stored in the buffer (sizeof(size_t)).
-	 * Additionally, we want the buffer size to be a multiple of page_size.
 	 */
 	decompress_buf_size = buffer_size +
-		((page_size + (buffer_size >> 4) + 66 + sizeof(size_t))
-			& ~(page_size - 1));
-	mem_size += decompress_buf_size + LZO1X_1_MEM_COMPRESS;
+			round_up_page_size((buffer_size >> 4) + 67 +
+						sizeof(size_t));
+	mem_size += decompress_buf_size +
+			round_up_page_size(LZO1X_1_MEM_COMPRESS);
 #endif
-	mem_pool = malloc(mem_size);
-	if (!mem_pool) {
-		error = errno;
+
+	error = init_memalloc(page_size, mem_size);
+	if (error) {
 		fprintf(stderr, "%s: Could not allocate memory\n", my_name);
 		return error;
 	}
@@ -1134,7 +1155,7 @@ Free:
 
 	close_printk();
 
-	free(mem_pool);
+	free_memalloc();
 
 	return error;
 }

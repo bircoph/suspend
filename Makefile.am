@@ -99,6 +99,7 @@ libsuspend_common_a_SOURCES=\
 	splashy_funcs.h splashy_funcs.c \
 	fbsplash_funcs.h fbsplash_funcs.c \
 	bootsplash.h bootsplash.c \
+	memalloc.h memalloc.c \
 	whitelist.h whitelist.c \
 	s2ram.h s2ram.c
 
