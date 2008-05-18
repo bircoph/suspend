@@ -256,6 +256,10 @@ static int load_extents_page(struct swap_map_handle *handle)
 	memset(handle->extents + n, 0, sizeof(struct extent));
 	handle->cur_extent = handle->extents;
 	handle->cur_offset = handle->cur_extent->start;
+	if (posix_fadvise(handle->fd, handle->cur_offset,
+			handle->cur_extent->end - handle->cur_offset,
+			POSIX_FADV_NOREUSE))
+		perror("posix_fadvise");
 	return 0;
 }
 
@@ -331,6 +335,10 @@ static void find_next_image_page(struct swap_map_handle *handle)
 	handle->cur_extent++;
 	if (handle->cur_extent->start < handle->cur_extent->end) {
 		handle->cur_offset = handle->cur_extent->start;
+		if (posix_fadvise(handle->fd, handle->cur_offset,
+				handle->cur_extent->end - handle->cur_offset,
+				POSIX_FADV_NOREUSE))
+			perror("posix_fadvise");
 		return;
 	}
 	/* No more extents.  Load the next extents page. */
