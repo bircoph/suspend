@@ -1139,7 +1139,7 @@ static int reset_signature(int fd)
 			"There should be valid image on disk. "
 			"Powerdown and carry out normal resume.\n"
 			"Continuing with this booted system "
-			"will lead to data corruption.\n", myname, error);
+			"will lead to data corruption.\n", my_name, error);
 		while(1)
 			sleep(10);
 	}
