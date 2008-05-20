@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.124 2008/05/15 16:55:13 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.125 2008/05/20 19:00:15 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -211,6 +211,8 @@ struct machine_entry whitelist[] = {
 	{ "",		"",	"",	"ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE },
 	/* Andreas Bolsch <Andreas.Bolsch@alumni.TU-Berlin.DE> */
 	{ "",		"",	"",	"ASUS M2A-VM ACPI BIOS Revision 1101", S3_BIOS|VBE_MODE },
+	/* Tristan Hoffmann <info@tristanhoffmann.de> Newer bios revisions (1705) seem to need VBE_POST*/
+	{ "",		"",	"",	"ASUS M2A-VM ACPI BIOS Revision *", VBE_POST|VBE_MODE },
 	/* Jan Schaefer <jan.schaefer@gmail.com> */
 	{ "",	"",	"",	"ASUS M2A-VM HDMI ACPI BIOS Revision 1603", VBE_POST|VBE_MODE },
 	/* ASUS M2N-E motherboars, not much usable in DMI :-(
@@ -525,6 +527,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq 8510p ",	"",	"68MVD*", VBE_POST|VBE_MODE },
 	/* Milan Znamenacek <mznamenacek@retia.cz>, only from X */
 	{ "Hewlett-Packard",		"HP Compaq 8710p (GC102EA*","",	"68MAD*", 0 },
+	/* Marek Stopka <mstopka@opensuse.org>, kernel 2.6.25 */
+	{ "Hewlett-Packard",	"HP Compaq dc5800 Small Form Factor","","786F2*", 0 },
 	/* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 	{ "Hewlett-Packard",		"HP Compaq nc2400*",	"",	"68YOP*", VBE_POST|VBE_MODE },
 	/* Rene Seindal <rene@seindal.dk> */
@@ -998,6 +1002,8 @@ struct machine_entry whitelist[] = {
 	{ "MEDION",			"M295M",		"",	"", 0 },
 	/* Leszek Lesner <leszek.lesner@googlemail.com> Medion MD43100 */
 	{ "MEDIONNB       ",		"WID2010        ",	"",	"", VBE_POST|VBE_MODE },
+	/* Ralf Auer <ralf.auer@physik.uni-erlangen.de>, tested both with nv and binary nvidia */
+	{ "MEDIONNB       ",		"WIM 2000       ",	"",	"", 0 },
 	/* Mike Galbraith <efault@gmx.de> needs X to get text console back */
 	{ "MEDIONPC",			"MS-7012",		"",	"", 0 },
 	/* Andreas Kostyrka <andreas@kostyrka.org> */
@@ -1049,6 +1055,8 @@ struct machine_entry whitelist[] = {
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"Q35/Q36",	"",	"", S3_BIOS|S3_MODE },
 	/* Eduardo Robles Elvira <edulix@gmail.com> */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R40/R41",	"",	"", VBE_SAVE },
+	/* Tim Fischer <mail0812@online.de> works with and without ATI binary driver */
+	{ "SAMSUNG ELECTRONICS CO.,LTD",	"R50/R51 *",	"",	"", 0 },
 	/* Daniel Koester <koester@math.uni-augsburg.de> does not yet work from text mode */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"R55S *",	"",	"", 0 },
 	/* Stephen Denham <stephen.denham@gmail.com> */
