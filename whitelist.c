@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.125 2008/05/20 19:00:15 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.126 2008/05/23 09:14:08 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -517,12 +517,16 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq 6715b (RK156AV*", "","68YTT*", S3_BIOS|S3_MODE },
 	/* Matthias Hopf, https://bugzilla.novell.com/show_bug.cgi?id=390271, needs strange combination */
 	{ "Hewlett-Packard",		"HP Compaq 6715b (RM174UT*", "","68YTT*", S3_BIOS|VBE_MODE },
+	/* Petteri Tolonen <pretzel@mbnet.fi> works with radeonhd and fglrx */
+	{ "Hewlett-Packard",		"HP Compaq 6715s (GR656ET*", "","68YTT*", S3_BIOS },
 	/* Paul Smet <paul.smet@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6720s",	 "",	"68MDU*", VBE_POST|VBE_MODE },
 	/* Ola Widlund <olwix@yahoo.com>, works with proprietary ATI driver, to be verified without */
 	{ "Hewlett-Packard",		"HP Compaq 6910p (GB951EA*", "","68MCD*", VBE_MODE },
 	/* Tomas Kejzlar <t.kejzlar@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6910p (RH241AV)", "","68MCU*", VBE_POST|VBE_MODE },
+	/* Daniele Frijia <daniele@sase.de>, this machine has no model number in DMI. BIOS F.14 */
+	{ "Hewlett-Packard",		"HP Compaq 6910p",	"",	"68MCU*", VBE_POST|VBE_MODE },
 	/* Krisztian Loki <krisztian.loki@freemail.hu>, does not work with proprietary ATI driver */
 	{ "Hewlett-Packard",		"HP Compaq 8510p ",	"",	"68MVD*", VBE_POST|VBE_MODE },
 	/* Milan Znamenacek <mznamenacek@retia.cz>, only from X */
@@ -1146,6 +1150,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite Pro U300",	"",	"", 0 },
 	/* From: Jim <jim.t@vertigo.net.au> */
 	{ "TOSHIBA",			"SatellitePro4600",	"",	"", 0 },
+	/* Jean-Pierre Bergamin <james@ractive.ch>, kernel 2.6.25.3, sys_version "PLUA0E-01C007S4" */
+	{ "TOSHIBA",			"SATELLITE U200",	"",	"", 0 },
 	/* Romano Giannetti <romanol@upcomillas.es> sys_version "PSU34U-00L003" */
 	{ "TOSHIBA",			"Satellite U305",	"",	"", VBE_POST|VBE_MODE },
 	/* Bram Senders <bram@luon.net> */
