@@ -694,8 +694,10 @@ static loff_t next_swap_page(struct swap_map_handle *handle)
 	if (handle->cur_extent->start < handle->cur_extent->end) {
 		ext = *handle->cur_extent;
 		memset(handle->cur_extent, 0, sizeof(struct extent));
+		handle->nr_extents = 1;
 	} else {
 		memset(&ext, 0, sizeof(struct extent));
+		handle->nr_extents = 0;
 	}
 	if (save_extents(handle, 0))
 		return 0;
