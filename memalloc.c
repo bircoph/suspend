@@ -167,8 +167,9 @@ void freemem(void *address)
 		} else if (address > slots[k].addr) {
 			if (i != k) {
 				i = k;
-			} else if (slots[j].addr == address) {
-				free_slot(j);
+			} else {
+				if (slots[j].addr == address)
+					free_slot(j);
 				break;
 			}
 		} else {
