@@ -23,6 +23,9 @@
 #include "md5.h"
 #include "encrypt.h"
 
+gcry_cipher_hd_t cipher_handle;
+struct key_data key_data;
+
 /**
  * read_password - get non-empty, \0-terminated password from stdin
  * passbuf - buffer of at least PASS_SIZE * 2 chars

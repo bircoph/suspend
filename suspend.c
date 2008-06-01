@@ -61,11 +61,9 @@ static char compute_checksum;
 #ifdef CONFIG_COMPRESS
 static char do_compress;
 static long long compr_size;
-static unsigned int compress_buf_size;
 #else
 #define do_compress 0
 #define compr_size 0
-#define compress_buf_size 0
 #endif
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
@@ -94,12 +92,11 @@ static enum {
 	SHUTDOWN_METHOD_REBOOT
 } shutdown_method = SHUTDOWN_METHOD_PLATFORM;
 static int resume_pause;
+static char verify_image;
 
 static int suspend_swappiness = SUSPEND_SWAPPINESS;
-static struct splash splash;
 static struct vt_mode orig_vtm;
 static int vfd;
-static char *my_name;
 
 static struct config_par parameters[] = {
 	{
@@ -189,17 +186,17 @@ static struct config_par parameters[] = {
 		.ptr = &resume_pause,
 	},
 	{
+		.name = "debug verify image",
+		.fmt = "%c",
+		.ptr = &verify_image,
+	},
+	{
 		.name = NULL,
 		.fmt = NULL,
 		.ptr = NULL,
 		.len = 0,
 	}
 };
-
-#ifdef CONFIG_ENCRYPT
-struct key_data *key_data;
-gcry_cipher_hd_t cipher_handle;
-#endif
 
 static loff_t check_free_swap(int dev)
 {
@@ -468,7 +465,7 @@ static int write_page(int fd, void *buf, loff_t offset)
 }
 
 /*
- * The swap_map_handle structure is used for handling swap in a file-alike way.
+ * The swap_writer structure is used for handling swap in a file-alike way.
  *
  * @extents:	Array of extents used for trackig swap allocations.  It is
  *		page_size bytes large and holds at most
@@ -511,7 +508,7 @@ static int write_page(int fd, void *buf, loff_t offset)
  *
  * @encrypt_ptr:	Address to store the next encrypted page at.
  */
-struct swap_map_handle {
+struct swap_writer {
 	struct extent *extents;
 	int nr_extents;
 	struct extent *cur_extent;
@@ -525,31 +522,23 @@ struct swap_map_handle {
 	void *page_buffer;
 	int dev, fd;
 	struct md5_ctx ctx;
-#ifdef CONFIG_COMPRESS
 	void *lzo_work_buffer;
-#endif
-#ifdef CONFIG_ENCRYPT
 	void *encrypt_buffer;
 	void *encrypt_ptr;
-#endif
 };
 
 /**
  *	free_swap_writer - free memory allocated for saving the image
  *	@handle:	Structure containing pointers to memory buffers to free.
  */
-static void free_swap_writer(struct swap_map_handle *handle)
+static void free_swap_writer(struct swap_writer *handle)
 {
-#ifdef CONFIG_COMPRESS
 	if (do_compress) {
 		freemem(handle->lzo_work_buffer);
 		freemem(handle->write_buffer);
 	}
-#endif
-#ifdef CONFIG_ENCRYPT
 	if (do_encrypt)
 		freemem(handle->encrypt_buffer);
-#endif
 	freemem(handle->buffer);
 	freemem(handle->extents);
 }
@@ -563,7 +552,7 @@ static void free_swap_writer(struct swap_map_handle *handle)
  *	It doesn't preallocate swap, so preallocate_swap() has to be called on
  *	@handle after this.
  */
-static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
+static int init_swap_writer(struct swap_writer *handle, int dev, int fd)
 {
 	loff_t offset;
 
@@ -573,19 +562,15 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 	handle->page_buffer = handle->buffer;
 	handle->write_buffer = handle->buffer;
 
-#ifdef CONFIG_ENCRYPT
 	if (do_encrypt) {
 		handle->encrypt_buffer = getmem(encrypt_buf_size);
 		handle->encrypt_ptr = handle->encrypt_buffer;
 	}
-#endif
 
-#ifdef CONFIG_COMPRESS
 	if (do_compress) {
 		handle->write_buffer = getmem(compress_buf_size);
 		handle->lzo_work_buffer = getmem(LZO1X_1_MEM_COMPRESS);
 	}
-#endif
 
 	handle->dev = dev;
 	handle->fd = fd;
@@ -600,7 +585,7 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
 	}
 	handle->extents_spc = offset;
 
-	if (compute_checksum)
+	if (compute_checksum || verify_image)
 		md5_init_ctx(&handle->ctx);
 
 	return 0;
@@ -615,7 +600,7 @@ static int init_swap_writer(struct swap_map_handle *handle, int dev, int fd)
  *	Returns the offset of the first swap page available from the
  *	preallocated pool.
  */
-static loff_t preallocate_swap(struct swap_map_handle *handle)
+static loff_t preallocate_swap(struct swap_writer *handle)
 {
 	const int max = page_size / sizeof(struct extent) - 1;
 	loff_t size;
@@ -649,7 +634,7 @@ static loff_t preallocate_swap(struct swap_map_handle *handle)
  *	the swap offset of the next extents page (we allocate a swap page for
  *	this purpose).
  */
-static int save_extents(struct swap_map_handle *handle, int finish)
+static int save_extents(struct swap_writer *handle, int finish)
 {
 	loff_t offset = 0;
 	int error;
@@ -675,7 +660,7 @@ static int save_extents(struct swap_map_handle *handle, int finish)
  *	@handle:	Pointer to the structure containing information about
  *			the preallocated swap pool.
  */
-static loff_t next_swap_page(struct swap_map_handle *handle)
+static loff_t next_swap_page(struct swap_writer *handle)
 {
 	struct extent ext;
 	int error;
@@ -709,7 +694,7 @@ static loff_t next_swap_page(struct swap_map_handle *handle)
 /**
  *	encrypt_and_save_page - encrypt a page of data and write it to the swap
  */
-static int encrypt_and_save_page(struct swap_map_handle *handle, void *src)
+static int encrypt_and_save_page(struct swap_writer *handle, void *src)
 {
 	int error;
 	loff_t offset;
@@ -741,7 +726,7 @@ static int encrypt_and_save_page(struct swap_map_handle *handle, void *src)
 /**
  *	save_buffer - save data stored in the buffer to the swap
  */
-static int save_buffer(struct swap_map_handle *handle)
+static int save_buffer(struct swap_writer *handle)
 {
 	ssize_t size;
 	char *src;
@@ -752,7 +737,7 @@ static int save_buffer(struct swap_map_handle *handle)
 		return 0;
 
 	size = handle->page_buffer - handle->buffer;
-	if (compute_checksum)
+	if (compute_checksum || verify_image)
 		md5_process_block(handle->buffer, size, &handle->ctx);
 
 	/* Compress the buffer, if necessary */
@@ -782,7 +767,7 @@ static int save_buffer(struct swap_map_handle *handle)
 /**
  *	save_image - save the hibernation image data
  */
-static int save_image(struct swap_map_handle *handle, unsigned int nr_pages)
+static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 {
 	unsigned int m, writeout_rate;
 	ssize_t ret;
@@ -881,7 +866,7 @@ Exit:
  *	Returns TRUE or FALSE after checking the total amount of swap
  *	space avaiable from the resume partition.
  */
-static int enough_swap(struct swap_map_handle *handle)
+static int enough_swap(struct swap_writer *handle)
 {
 	loff_t free_swap = check_free_swap(handle->dev);
 	loff_t size = do_compress ?
@@ -925,9 +910,9 @@ static int mark_swap(int fd, loff_t start)
 /**
  *	write_image - Write entire image and metadata.
  */
-int write_image(int snapshot_fd, int resume_fd)
+static int write_image(int snapshot_fd, int resume_fd)
 {
-	static struct swap_map_handle handle;
+	static struct swap_writer handle;
 	struct image_header_info *header;
 	loff_t start;
 	loff_t image_size;
@@ -942,9 +927,12 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (!start)
 		return -ENOSPC;
 
+	header  = getmem(page_size);
+	memset(header, 0, page_size);
+
 	error = init_swap_writer(&handle, snapshot_fd, resume_fd);
 	if (error)
-		return error;
+		goto Exit;
 
 	image_size = get_image_size(snapshot_fd);
 	if (image_size > 0) {
@@ -966,14 +954,14 @@ int write_image(int snapshot_fd, int resume_fd)
 		ret = read(snapshot_fd, image_header, page_size);
 		if (ret < page_size) {
 			error = ret < 0 ? ret : -EFAULT;
-			goto Exit;
+			goto Free_writer;
 		}
 		handle.page_buffer += page_size;
 		image_size = image_header->size;
 		nr_pages = image_header->pages;
 		if (!nr_pages) {
 			error = -ENODATA;
-			goto Exit;
+			goto Free_writer;
 		}
 		/* We have already read one page */
 		nr_pages--;
@@ -984,21 +972,20 @@ int write_image(int snapshot_fd, int resume_fd)
 	if (!enough_swap(&handle)) {
 		fprintf(stderr, "%s: Not enough free swap\n", my_name);
 		error = -ENOSPC;
-		goto Exit;
+		goto Free_writer;
 	}
 	if (!preallocate_swap(&handle)) {
 		fprintf(stderr, "%s: Failed to allocate swap\n", my_name);
 		error = -ENOSPC;
-		goto Exit;
+		goto Free_writer;
 	}
 	/* Shift handle.cur_offset for the first call to next_swap_page() */
 	handle.cur_offset -= page_size;
 
-	header  = getmem(page_size);
-	memset(header, 0, page_size);
 	header->pages = nr_pages;
 	header->flags = 0;
 	header->map_start = handle.extents_spc;
+
 	if (compute_checksum)
 		header->flags |= IMAGE_CHECKSUM;
 
@@ -1010,34 +997,34 @@ int write_image(int snapshot_fd, int resume_fd)
 		goto Save_image;
 
 	if (use_RSA) {
-		error = gcry_cipher_setkey(cipher_handle, key_data->key,
+		error = gcry_cipher_setkey(cipher_handle, key_data.key,
 						KEY_SIZE);
 		if (error)
 			goto No_RSA;
 
-		error = gcry_cipher_setiv(cipher_handle, key_data->ivec,
+		error = gcry_cipher_setiv(cipher_handle, key_data.ivec,
 						CIPHER_BLOCK);
 		if (error)
 			goto No_RSA;
 
 		header->flags |= IMAGE_ENCRYPTED | IMAGE_USE_RSA;
-		memcpy(&header->rsa, &key_data->rsa, sizeof(struct RSA_data));
-		memcpy(&header->key, &key_data->encrypted_key,
+		memcpy(&header->rsa, &key_data.rsa, sizeof(struct RSA_data));
+		memcpy(&header->key, &key_data.encrypted_key,
 						sizeof(struct encrypted_key));
 	} else {
 		int j;
 
 No_RSA:
-		encrypt_init(key_data->key, key_data->ivec, password);
+		encrypt_init(key_data.key, key_data.ivec, password);
 		splash.progress(20);
 		get_random_salt(header->salt, CIPHER_BLOCK);
 		for (j = 0; j < CIPHER_BLOCK; j++)
-			key_data->ivec[j] ^= header->salt[j];
+			key_data.ivec[j] ^= header->salt[j];
 
-		error = gcry_cipher_setkey(cipher_handle, key_data->key,
+		error = gcry_cipher_setkey(cipher_handle, key_data.key,
 						KEY_SIZE);
 		if (!error)
-			error = gcry_cipher_setiv(cipher_handle, key_data->ivec,
+			error = gcry_cipher_setiv(cipher_handle, key_data.ivec,
 						CIPHER_BLOCK);
 		if (!error)
 			header->flags |= IMAGE_ENCRYPTED;
@@ -1046,7 +1033,7 @@ No_RSA:
 	if (error) {
 		fprintf(stderr,"%s: libgcrypt error: %s\n", my_name,
 			gcry_strerror(error));
-		goto Free_header;
+		goto Free_writer;
 	}
 
 Save_image:
@@ -1068,7 +1055,7 @@ Save_image:
 		if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
 			header->flags |= PLATFORM_SUSPEND;
 
-		if (compute_checksum)
+		if (compute_checksum || verify_image)
 			md5_finish_ctx(&handle.ctx, header->checksum);
 
 		gettimeofday(&end, NULL);
@@ -1078,6 +1065,20 @@ Save_image:
 		header->resume_pause = resume_pause;
 
 		error = write_page(resume_fd, header, start);
+		fsync(resume_fd);
+	}
+
+ Free_writer:
+	free_swap_writer(&handle);
+
+	if (!error && verify_image) {
+		splash.progress(0);
+		printf("%s: Image verification\n", my_name);
+		error = read_or_verify_image(snapshot_fd, resume_fd,
+						header, start, 1);
+		printf(error ? "%s: Image verification failed\n" :
+				"%s: Image verified successfully\n", my_name);
+		splash.progress(100);
 	}
 
 	if (!error) {
@@ -1085,21 +1086,17 @@ Save_image:
 			printf("%s: Compression ratio %4.2lf\n", my_name,
 				(double)compr_size / image_size);
 		}
-		printf( "S" );
+		printf("S");
 		error = mark_swap(resume_fd, start);
+		if (!error) {
+			fsync(resume_fd);
+			printf( "|" );
+		}
+		printf("\n");
 	}
 
-	fsync(resume_fd);
-
-	if (!error)
-		printf( "|" );
-
- Free_header:
-	freemem(header);
  Exit:
-	free_swap_writer(&handle);
-
-	printf("\n");
+	freemem(header);
 	return error;
 }
 
@@ -1251,6 +1248,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 			}
 Shutdown:
 #endif
+			close(resume_fd);
 			suspend_shutdown(snapshot_fd);
 		}
 	} while (--attempts);
@@ -1450,14 +1448,11 @@ static void generate_key(void)
 	unsigned short size;
 	int j;
 
-	if (!key_data)
-		return;
-
 	fd = open(key_name, O_RDONLY);
 	if (fd < 0)
 		return;
 
-	rsa = &key_data->rsa;
+	rsa = &key_data.rsa;
 	if (read(fd, rsa, sizeof(struct RSA_data)) <= 0)
 		goto Close;
 
@@ -1498,14 +1493,14 @@ static void generate_key(void)
 		goto Destroy_key_set;
 
 	size = KEY_SIZE + CIPHER_BLOCK;
-	if (read(rnd_fd, key_data->key, size) != size)
+	if (read(rnd_fd, key_data.key, size) != size)
 		goto Close_urandom;
 
-	gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data->key, size, NULL);
+	gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data.key, size, NULL);
 	ret = gcry_ac_data_encrypt(rsa_hd, 0, rsa_pub, mpi, &key_set);
 	gcry_mpi_release(mpi);
 	if (!ret) {
-		struct encrypted_key *key = &key_data->encrypted_key;
+		struct encrypted_key *key = &key_data.encrypted_key;
 		char *str;
 		size_t s;
 
@@ -1781,6 +1776,9 @@ int main(int argc, char *argv[])
 	if (resume_pause > RESUME_PAUSE_MAX)
 		resume_pause = RESUME_PAUSE_MAX;
 
+	if (verify_image != 'y' && verify_image != 'Y')
+		verify_image = 0;
+
 	get_page_and_buffer_sizes();
 
 	mem_size = 2 * page_size + buffer_size;
@@ -1812,8 +1810,7 @@ int main(int argc, char *argv[])
 			do_encrypt = 0;
 		} else {
 			encrypt_buf_size = ENCRYPT_BUF_PAGES * page_size;
-			mem_size += encrypt_buf_size +
-				round_up_page_size(sizeof(struct key_data));
+			mem_size += encrypt_buf_size;
 		}
 	}
 #endif
@@ -1825,10 +1822,8 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef CONFIG_ENCRYPT
-	if (do_encrypt) {
-		key_data = getmem(sizeof(struct key_data));
+	if (do_encrypt)
 		generate_key();
-	}
 #endif
 
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -1978,10 +1973,8 @@ Umount:
 		umount(chroot_path);
 	}
 #ifdef CONFIG_ENCRYPT
-	if (do_encrypt) {
+	if (do_encrypt)
 		gcry_cipher_close(cipher_handle);
-		freemem(key_data);
-	}
 #endif
 	free_memalloc();
 

@@ -21,6 +21,8 @@
 #include "fbsplash_funcs.h"
 #include "encrypt.h"
 
+struct splash splash;
+
 /**
  *	dummy functions in case if no splash system was found or
  *	bootsplashing is disabled

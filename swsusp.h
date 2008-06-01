@@ -179,3 +179,15 @@ struct buf_block {
 #define RESUME_PAUSE_MAX	60
 
 #define GENERIC_NAME_SIZE	256
+
+extern char *my_name;
+
+#ifdef CONFIG_COMPRESS
+extern unsigned int compress_buf_size;
+#else
+#define LZO1X_1_MEM_COMPRESS 0
+#define compress_buf_size 0
+#endif
+
+int read_or_verify_image(int dev, int fd, struct image_header_info *header,
+                         loff_t start, int verify);

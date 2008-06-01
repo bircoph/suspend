@@ -61,4 +61,7 @@ void get_random_salt(unsigned char *salt, size_t size);
 
 #define SUSPEND_KEY_FILE	"/etc/suspend.key"
 #define ENCRYPT_BUF_PAGES	256
+
+extern gcry_cipher_hd_t cipher_handle;
+extern struct key_data key_data;
 #endif

@@ -34,4 +34,6 @@ struct splash {
 
 void splash_prepare(struct splash *splash, int mode);
 
+extern struct splash splash;
+
 #endif /* SPLASH_H */
