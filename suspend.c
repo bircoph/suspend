@@ -796,7 +796,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 	if (early_writeout)
 		writeout_rate = m;
 	else
-		writeout_rate = nr_pages;
+		writeout_rate = nr_pages + 1;
 
 	/* The buffer may be partially filled at this point */
 	for (nr_pages = 0; ; nr_pages++) {
@@ -832,7 +832,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 			}
 		}
 
-		if (!(nr_pages % writeout_rate))
+		if (!((nr_pages + 1) % writeout_rate))
 			start_writeout(handle->fd);
 
 		if (handle->page_ptr - handle->buffer >= buffer_size) {
