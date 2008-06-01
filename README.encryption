@@ -1,0 +1,17 @@
+Suspend encryption
+~~~~~~~~~~~~~~~~~~
+
+Encryption in suspend.sf.net uses RSA internally; reason is that we
+want to only prompt for passphrase on resume. So, during suspend,
+image is effectively encrypted with public key, and during resume,
+user has to first decrypt private key using passphrase, which then
+decrypts the image.
+
+The image is always encrypted with symmetric algo. If RSA is used
+(optional) then the key for the symmetric encryption is random and the
+PK is used to safely store the key in the header of the image; the
+random key is encrypted with RSA and stored in the header, RSA private
+key is (encrypted using the password at installation time) is also
+stored in the header.  At resume the password is used to unlock the
+private key which is then used to decrypt the random key.  IOW we
+don't use RSA to encrypt the whole image ;)
