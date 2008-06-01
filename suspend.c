@@ -493,7 +493,7 @@ static int write_page(int fd, void *buf, loff_t offset)
  *			@buffer are stored here.  Otherwise, it is equal to
  *			@buffer.
  *
- * @page_buffer:	Pointer to the addres to write the next image page to.
+ * @page_ptr:		Address to write the next image page to.
  *
  * @dev:		Snapshot device handle used for reading image pages and
  *			invoking ioctls.
@@ -519,7 +519,7 @@ struct swap_writer {
 	loff_t extents_spc;
 	void *buffer;
 	void *write_buffer;
-	void *page_buffer;
+	void *page_ptr;
 	int dev, fd;
 	struct md5_ctx ctx;
 	void *lzo_work_buffer;
@@ -559,7 +559,7 @@ static int init_swap_writer(struct swap_writer *handle, int dev, int fd)
 	handle->extents = getmem(page_size);
 
 	handle->buffer = getmem(buffer_size);
-	handle->page_buffer = handle->buffer;
+	handle->page_ptr = handle->buffer;
 	handle->write_buffer = handle->buffer;
 
 	if (do_encrypt) {
@@ -733,10 +733,10 @@ static int save_buffer(struct swap_writer *handle)
 	int error = 0;
 
 	/* Check if there is anything to do */
-	if (handle->page_buffer <= handle->buffer)
+	if (handle->page_ptr <= handle->buffer)
 		return 0;
 
-	size = handle->page_buffer - handle->buffer;
+	size = handle->page_ptr - handle->buffer;
 	if (compute_checksum || verify_image)
 		md5_process_block(handle->buffer, size, &handle->ctx);
 
@@ -800,7 +800,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 
 	/* The buffer may be partially filled at this point */
 	for (nr_pages = 0; ; nr_pages++) {
-		ret = read(handle->dev, handle->page_buffer, page_size);
+		ret = read(handle->dev, handle->page_ptr, page_size);
 		if (ret <= 0) {
 			if (ret) {
 				error = -errno;
@@ -808,7 +808,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 			}
 			break;
 		}
-		handle->page_buffer += page_size;
+		handle->page_ptr += page_size;
 
 		if (!(nr_pages % m)) {
 			printf("\b\b\b\b%3d%%", nr_pages / m);
@@ -835,12 +835,12 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 		if (!(nr_pages % writeout_rate))
 			start_writeout(handle->fd);
 
-		if (handle->page_buffer - handle->buffer >= buffer_size) {
+		if (handle->page_ptr - handle->buffer >= buffer_size) {
 			/* The buffer is full, flush it */
 			error = save_buffer(handle);
 			if (error)
 				break;
-			handle->page_buffer = handle->buffer;
+			handle->page_ptr = handle->buffer;
 		}
 	}
 
@@ -950,13 +950,13 @@ static int write_image(int snapshot_fd, int resume_fd)
 		 * Do it in such a way that save_image() will believe it has
 		 * already read the header page.
 		 */
-		image_header = handle.page_buffer;
+		image_header = handle.page_ptr;
 		ret = read(snapshot_fd, image_header, page_size);
 		if (ret < page_size) {
 			error = ret < 0 ? ret : -EFAULT;
 			goto Free_writer;
 		}
-		handle.page_buffer += page_size;
+		handle.page_ptr += page_size;
 		image_size = image_header->size;
 		nr_pages = image_header->pages;
 		if (!nr_pages) {
