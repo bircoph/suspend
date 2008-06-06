@@ -1197,8 +1197,10 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	splash.switch_to();
 	splash.progress(15);
 
-	if (error)
+	if (error) {
+		suspend_error("Freeze failed.");
 		goto Unfreeze;
+	}
 
 	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM) {
 		if (platform_prepare(snapshot_fd)) {
