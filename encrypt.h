@@ -44,8 +44,8 @@ struct RSA_data {
 };
 
 struct encrypted_key {
-	unsigned short	size;
-	unsigned char	data[KEY_DATA_SIZE];
+	size_t size;
+	unsigned char data[KEY_DATA_SIZE];
 };
 
 struct key_data {

@@ -432,8 +432,11 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 						out, KEY_TEST_SIZE,
 						KEY_TEST_DATA, KEY_TEST_SIZE);
 
-		if (ret)
+		if (ret) {
+			fprintf(stderr, "%s: libgcrypt error: %s\n", my_name,
+					gcry_strerror(ret));
 			break;
+		}
 
 		ret = memcmp(out, rsa->key_test, KEY_TEST_SIZE);
 

@@ -1451,10 +1451,10 @@ static void generate_key(void)
 	gcry_ac_data_t rsa_data_set, key_set;
 	gcry_ac_key_t rsa_pub;
 	gcry_mpi_t mpi;
+	size_t size;
 	int ret, fd, rnd_fd;
 	struct RSA_data *rsa;
 	unsigned char *buf;
-	unsigned short size;
 	int j;
 
 	fd = open(key_name, O_RDONLY);
@@ -1502,10 +1502,22 @@ static void generate_key(void)
 		goto Destroy_key_set;
 
 	size = KEY_SIZE + CIPHER_BLOCK;
-	if (read(rnd_fd, key_data.key, size) != size)
-		goto Close_urandom;
+	for (;;) {
+		unsigned char *res;
+		size_t test;
+		int cmp;
 
-	gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data.key, size, NULL);
+		if (read(rnd_fd, key_data.key, size) != size)
+			goto Close_urandom;
+
+		gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, key_data.key, size, NULL);
+		gcry_mpi_aprint(GCRYMPI_FMT_USG, &res, &test, mpi);
+		cmp = memcmp(key_data.key, res, size);
+		gcry_free(res);
+		if (test == size && !cmp)
+			break;
+		gcry_mpi_release(mpi);
+	}
 	ret = gcry_ac_data_encrypt(rsa_hd, 0, rsa_pub, mpi, &key_set);
 	gcry_mpi_release(mpi);
 	if (!ret) {
