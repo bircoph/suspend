@@ -60,10 +60,8 @@ static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
 #ifdef CONFIG_COMPRESS
 static char do_compress;
-static long long compr_size;
 #else
 #define do_compress 0
-#define compr_size 0
 #endif
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
@@ -751,7 +749,6 @@ static int save_buffer(struct swap_writer *handle)
 						handle->lzo_work_buffer);
 		block->size = cnt;
 		size = cnt + sizeof(size_t);
-		compr_size += size;
 	}
 #endif
 	/* If there's no compression, handle->buffer == handle->write_buffer */
@@ -923,6 +920,7 @@ static int write_image(int snapshot_fd, int resume_fd)
 	struct image_header_info *header;
 	loff_t start;
 	loff_t image_size;
+	double real_size;
 	unsigned long nr_pages = 0;
 	int error;
 	int image_header_read = 0;
@@ -974,6 +972,7 @@ static int write_image(int snapshot_fd, int resume_fd)
 		nr_pages--;
 	}
 	printf("%s: Image size: %lu kilobytes\n", my_name, image_size / 1024);
+	real_size = image_size;
 
 	handle.swap_needed = image_size;
 	if (!enough_swap(&handle)) {
@@ -1054,6 +1053,7 @@ Save_image:
 		fsync(resume_fd);
 
 		header->image_data_size = handle.written_data;
+		real_size = handle.written_data;
 
 		/*
 		 * NOTICE: This needs to go after save_image(), because the
@@ -1091,7 +1091,7 @@ Save_image:
 	if (!error) {
 		if (do_compress) {
 			printf("%s: Compression ratio %4.2lf\n", my_name,
-				(double)compr_size / image_size);
+				real_size / image_size);
 		}
 		printf("S");
 		error = mark_swap(resume_fd, start);

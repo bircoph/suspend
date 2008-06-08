@@ -660,8 +660,32 @@ int read_or_verify_image(int dev, int fd, struct image_header_info *header,
 
 		mb *= 2.0;
 		delta += header->writeout_time;
-		printf("total image i/o %0.1lf MB in %0.1lf seconds "
+		printf("total image i/o: %0.1lf MB in %0.1lf seconds "
 			"(%0.1lf MB/s)\n", mb, delta, mb / delta);
+
+		if (do_decompress) {
+			double real_size = header->image_data_size;
+
+			printf("%s: Compression ratio %4.2lf\n", my_name,
+				real_size / (header->pages * page_size));
+			real_size /= (1024.0 * 1024.0);
+			delta -= header->writeout_time;
+
+			printf("wrote %0.1lf MB of compressed data in %0.1lf "
+				"seconds (%0.1lf MB/s)\n", real_size,
+				header->writeout_time,
+				real_size / header->writeout_time);
+
+			printf("read %0.1lf MB of compressed data in %0.1lf "
+				"seconds (%0.1lf MB/s)\n", real_size,
+				delta, real_size / delta);
+
+			real_size *= 2.0;
+			delta += header->writeout_time;
+			printf("total compressed data i/o: %0.1lf MB in %0.1lf "
+				"seconds (%0.1lf MB/s)\n", real_size, delta,
+				real_size / delta);
+		}
 	}
 
  Exit_encrypt:
