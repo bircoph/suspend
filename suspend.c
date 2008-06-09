@@ -975,6 +975,11 @@ static int write_image(int snapshot_fd, int resume_fd)
 	real_size = image_size;
 
 	handle.swap_needed = image_size;
+	if (do_compress) {
+		/* This is necessary in case the image is not compressible */
+		handle.swap_needed += round_up_page_size(
+					(handle.swap_needed >> 4) + 67);
+	}
 	if (!enough_swap(&handle)) {
 		fprintf(stderr, "%s: Not enough free swap\n", my_name);
 		error = -ENOSPC;
