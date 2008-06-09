@@ -798,20 +798,17 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 	/* The buffer may be partially filled at this point */
 	for (nr_pages = 0; ; nr_pages++) {
 		ret = read(handle->dev, handle->page_ptr, page_size);
-		if (!ret)
-			break;
-
-		if (ret != page_size) {
+		if (ret < page_size) {
 			if (ret < 0) {
-				error = -errno;
+				error = -EIO;
 				perror("\nError reading an image page");
-			} else {
+			} else if (ret > 0) {
 				error = -EFAULT;
-				perror("\nShort read from snapshot?");
+				perror("\nShort read from /dev/snapshot?");
 			}
 			break;
 		}
-			
+
 		handle->page_ptr += page_size;
 
 		if (!(nr_pages % m)) {
