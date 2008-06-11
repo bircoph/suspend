@@ -218,62 +218,50 @@ static void pause_resume(int pause)
 		splash.restore_abort(&savedtrm);
 }
 
-static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
+static void reboot_question(char *message)
 {
-	ssize_t size = sizeof(struct swsusp_header);
-	unsigned int shift = (resume_offset + 1) * page_size - size;
+	char c;
+	char full_message[SPLASH_GENERIC_MESSAGE_SIZE];
+	char *warning =
+		"\n\tYou can now boot the system and lose the saved state\n"
+		"\tor reboot and try again.\n\n"
+	        "\t[Notice that if you decide to reboot, you MUST NOT mount\n"
+	        "\tany filesystems before a successful resume.\n"
+	        "\tResuming after some filesystems have been mounted\n"
+	        "\twill badly damage these filesystems.]\n\n"
+		"\tDo you want to continue booting (Y/n)?";
+
+	snprintf(full_message, SPLASH_GENERIC_MESSAGE_SIZE, "%s\n%s",
+			message, warning);
+	c = splash.dialog(full_message);
+	if (c == 'n' || c == 'N') {
+		reboot();
+		fprintf(stderr, "%s: Reboot failed, please reboot manually.\n",
+			my_name);
+		while(1)
+			sleep(10);
+	}
+}
+
+static int read_image(int dev, int fd, loff_t start)
+{
 	struct image_header_info *header;
 	int ret, error;
 	char c;
 
 	header = getmem(page_size);
 
-	error = read_or_verify_image(dev, fd, header, swsusp_header->image, 0);
+	error = read_or_verify_image(dev, fd, header, start, 0);
 	if (error) {
-		c = splash.dialog(
+		reboot_question(
 			"\nThe system snapshot image could not be read.\n\n"
-#ifdef CONFIG_ENCRYPT
-			"\tThis might be a result of booting a wrong kernel\n"
-			"\tor typing in a wrong passphrase.\n\n"
-#else
-			"\tThis might be a result of booting a wrong kernel.\n\n"
-#endif
-			"\tYou can continue to boot the system and lose the saved state\n"
-			"\tor reboot and try again.\n\n"
-		        "\t[Notice that you may not mount any filesystem between\n"
-		        "\tnow and successful resume. That would badly damage\n"
-		        "\taffected filesystems.]\n\n"
-			"\tDo you want to continue boot (Y/n)? ");
-		ret = (c == 'n' || c == 'N');
-		if (ret) {
-			close(fd);
-			reboot();
-			fprintf(stderr, "%s: Reboot failed, please reboot manually.\n",
-					my_name);
-                       while(1)
-			   sleep(1);
-		}
+			"\tThis might be a result of booting a wrong "
+			"kernel.\n"
+		);
 	} else {
 		if (header->flags & PLATFORM_SUSPEND)
 			use_platform_suspend = 1;
 	}
-
-	/* Reset swap signature now */
-	memcpy(swsusp_header->sig, swsusp_header->orig_sig, 10);
-	if (lseek(fd, shift, SEEK_SET) != shift) {
-		error = -EIO;
-	} else {
-		ret = write(fd, swsusp_header, size);
-		if (ret != size) {
-			error = ret < 0 ? -errno : -EIO;
-			fprintf(stderr,
-				"%s: Could not restore the partition header\n",
-				my_name);
-		}
-	}
-
-	fsync(fd);
-	close(fd);
 
 	if (error) {
 		char message[SPLASH_GENERIC_MESSAGE_SIZE];
@@ -288,6 +276,33 @@ static int read_image(int dev, int fd, struct swsusp_header *swsusp_header)
 	}
 
 	freemem(header);
+
+	return error;
+}
+
+static int reset_signature(int fd, struct swsusp_header *swsusp_header)
+{
+	ssize_t ret, size = sizeof(struct swsusp_header);
+	unsigned int shift = (resume_offset + 1) * page_size - size;
+	int error = 0;
+
+	/* Reset swap signature now */
+	memcpy(swsusp_header->sig, swsusp_header->orig_sig, 10);
+
+	if (lseek(fd, shift, SEEK_SET) != shift) {
+		fprintf(stderr, "%s: Could not lseek() to the swap header",
+				my_name);
+		return -EIO;
+	}
+
+	ret = write(fd, swsusp_header, size);
+	if (ret == size) {
+		fsync(fd);
+	} else {
+		fprintf(stderr, "%s: Could not restore the swap header",
+				my_name);
+		error = -EIO;
+	}
 
 	return error;
 }
@@ -488,18 +503,26 @@ int main(int argc, char *argv[])
 	splash_prepare(&splash, splash_param);
 	splash.progress(5);
 
-	error = read_image(dev, resume_dev, &swsusp_header);
+	error = read_image(dev, resume_dev, swsusp_header.image);
 	if (error) {
-		fprintf(stderr, "%s: Could not read the image\n", my_name);
 		error = -error;
-		goto Close_splash;
+		fprintf(stderr, "%s: Could not read the image\n", my_name);
+	} else if (freeze(dev)) {
+		error = errno;
+		reboot_question("Processes could not be frozen, "
+				"cannot continue resuming.\n");
 	}
 
-	if (freeze(dev)) {
-		error = errno;
-		fprintf(stderr, "%s: Could not freeze processes\n", my_name);
+	if (reset_signature(resume_dev, &swsusp_header))
+		fprintf(stderr, "%s: Swap signature has not been restored.\n"
+			"\tRun mkswap on the resume partition/file.\n",
+			my_name);
+
+	close(resume_dev);
+
+	if (error)
 		goto Close_splash;
-	}
+
 	if (use_platform_suspend) {
 		int err = platform_prepare(dev);
 
