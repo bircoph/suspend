@@ -7,18 +7,21 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.127 2008/06/10 16:51:24 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.128 2008/07/21 15:34:45 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
 	/* Michael Wagner <michael-wagner@gmx.de> */
 	{ "4MBOL&S",			"7521 *",	"REV. A0",	"", 0 },
-	/* Alexander Wirt */
-	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_SAVE },
+	/* Alexander Wirt reported "VBE_SAVE", but Penny Leach <penny@she.geek.nz>
+	   needs VBE_POST|VBE_MODE */
+	{ "Apple Computer, Inc.",	"MacBook1,1",		"",	"", VBE_POST|VBE_MODE },
 	/* Mildred <ml.mildred593@online.fr>, needs VBE_SAVE from console, but that slows resuming */
 	{ "Apple Inc.",			"MacBook2,1",		"1.0",	"", 0 },
 	/* Marvin Stark <marv@der-marv.de> */
 	{ "Apple Computer, Inc.",	"MacBook2,1",		"",	"", VBE_POST },
+	/* <skanabiz@gmail.com>  Kernel 2.6.26-rc9, probably with i910 */
+	{ "Apple Inc.",			"MacBook3,1",		"1.0",	"", 0 },
 	/* Julien BLACHE jb@jblache.org */
 	{ "Apple Computer, Inc.",	"MacBookPro2,2",	"",	"", VBE_POST|VBE_MODE },
 	/* Tilman Vogel <tilman.vogel@web.de>, only works from X */
@@ -69,6 +72,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer, inc.",			"Aspire 5920 *",	"",	"", VBE_POST|VBE_MODE },
 	/* Christine Upadek <5upadek@informatik.uni-hamburg.de> */
 	{ "Acer",			"Extensa 2900",		"",	"", VBE_POST|VBE_MODE },
+	/* Paolo Herms <paolo.herms@gmx.net> */
+	{ "Acer",			"Extensa 3000 *",	"",	"", S3_BIOS|S3_MODE },
 	/* seife */
 	{ "Acer            ",		"Extensa 4150 *",	"",	"", S3_BIOS|S3_MODE },
 	/* Xavier Douville <s2ram@douville.org> */
@@ -249,6 +254,8 @@ struct machine_entry whitelist[] = {
 	{ "CLEVO",			"D500P",		"",	"", VBE_POST|NOFB },
 	/* Francisco Neto <frc_neto@yahoo.com.br> */
 	{ "CLEVO ",			"M5X0JE ",		"",	"", S3_BIOS },
+	/* Alexandre Viard <alexandre.viard@gmail.com> */
+	{ "CLEVO CO.",			"TN120R",		"",	"", 0 },
 	/* Justin Lewis <jlew.blackout@gmail.com> */
 	{ "COMPAL",			"HEL80C          ",	"",	"", 0 },
 	/* Leszek Kubik <leszek.kubik@googlemail.com> */
@@ -370,10 +377,14 @@ struct machine_entry whitelist[] = {
 	/* Pierre <pinaraf@robertlan.eu.org> maybe only with nvidia driver...
 	   Elie Roux <elie.roux@telecom-bretagne.eu> */
 	{ "Dell Inc.",			"XPS M1530 *",		"",	"", 0 },
+	/* Ted Percival <ted@midg3t.net>, ATI Graphics, no FB :( */
+	{ "Dell Inc.",			"OptiPlex 755 *",	"",	"", VBE_POST|NOFB },
 	/* Ian McAnena <ianegg@gmail.com> */
 	{ "Dell Computer Corporation",	"OptiPlex GX260 *",	"",	"", 0 },
 	/* Desktop with Intel graphics, Sitsofe Wheeler <sitsofe@yahoo.com> */
 	{ "Dell Inc.                ",	"OptiPlex GX520 *",	"",	"", VBE_POST|VBE_MODE },
+	/* Jon Dowland <jon+suspend-devel@alcopop.org> */
+	{ "Dell Inc. *",		"OptiPlex GX620 *",	"",	"", 0 },
 	/* Christoph Pacher <christoph.pacher@arcs.ac.at>, maybe only with nvidia driver :-( */
 	{ "Dell Computer Corporation",	"Precision WorkStation 360*","","", 0 },
 	/* Per Øyvind Karlsen <pkarlsen@mandriva.com> VBE_POST will get console working, but break X */
@@ -393,6 +404,8 @@ struct machine_entry whitelist[] = {
 	/* Allen <ducalen@sympatico.ca>, Desktop with onboard grephics */
 	{ "Dell Computer Corporation",	"Dimension 3000 *",	"",	"", VBE_POST|VBE_MODE },
 
+	/* Jarek Grzys <grzys@gazeta.pl> */
+	{ "DIXONSXP",		"To be filled by O.E.M.",	"Ver.001", "", 0 },
 	/* Michael Dickson <mike@communicatezing.com> */
 	{ "ECS",			"536",			"",	"", VBE_POST|NOFB },
 	/* Michael Bunk <michael.bunk@gmail.com> */
@@ -410,6 +423,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"Amilo A Series",	"0.01",	"", VBE_POST|VBE_SAVE },
 	/* Hendrik Golzke <hendrik.golzke@yahoo.de> */
 	{ "FUJITSU SIEMENS",		"Amilo D Series",	"",	"", VBE_POST|VBE_MODE },
+	/* Marcel Klemmer <imklemmer@web.de> */
+	{ "FUJITSU SIEMENS",		"AMILO L Series",	"",	"", VBE_POST|VBE_MODE },
 	/* Reiner Herrmann <reiner@reiner-h.de>, this one realls needs VBE_SAVE
 	   since there are many different models of the "AMILO M" series, i do a very exact match */
 	{ "FUJITSU SIEMENS",		"AMILO M        ",	"-1 *",	"R01-S0Z *", VBE_POST|VBE_SAVE },
@@ -499,6 +514,8 @@ struct machine_entry whitelist[] = {
 	{ "Gericom",			"Montara-GML ",	"FAB-2",	"", 0 },
 	/* S.Çağlar Onur <caglar@pardus.org.tr>, only works from X */
 	{ "MTC",			"Montara-GML ",	"FAB-2",	"", 0 },
+	/* Nik Tripp https://bugzilla.novell.com/show_bug.cgi?id=400356 */
+	{ "Gigabyte Technology Co., Ltd.",	"945GCM-S2L",	"",	"", 0 },
 	/* Josef Zenisek <jzenisek@gmx.de> */
 	{ "Gigabyte Technology Co., Ltd.",	"945GZM-S2",	"",	"", 0 },
 	/* Art Mitskevich <art@unlit.org> */
@@ -515,12 +532,20 @@ struct machine_entry whitelist[] = {
 	/* i wonder if we can just match for "HP Compaq 6510b.... */
 	/* Jamil Djadala <djadala@datamax.bg> */
 	{ "Hewlett-Packard",		"HP Compaq 6510b (GB863EA*", "","68DDU*", VBE_POST|VBE_MODE },
+	/* peeetax@googlemail.com */
+	{ "Hewlett-Packard",		"HP Compaq 6510b (KE134EA*", "","68DDU*", 0 },
 	/* Michal Sojka <sojkam1@fel.cvut.cz> */
 	{ "Hewlett-Packard",		"HP Compaq 6710b (GB893EA*", "","68DDU*", VBE_POST|VBE_MODE },
 	/* Harry ten Berge <htenberge@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6710b (GB893ET*", "","68DDU*", VBE_POST|VBE_MODE },
+	/* Michal Skrzypek <mskrzypek886@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq 6710b (GR681EA*", "","68DDU*", VBE_POST|VBE_MODE },
+	/* Alberto Gonzalez <luis6674@yahoo.com> */
+	{ "Hewlett-Packard",		"HP Compaq 6710s (GC014ET*", "","68DDU*", VBE_MODE },
 	/* Darek Nawrocki <dnawrock@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6715b (GB834EA*", "","68YTT*", VBE_POST|VBE_MODE },
+	/* Radu Benea <kitanatahu@gmail.com> */
+	{ "Hewlett-Packard",		"HP Compaq 6715b (GB835EA*", "","68YTT*", S3_BIOS|S3_MODE },
 	/* Andrey Petrov <apetrov87@gmail.com> */
 	{ "Hewlett-Packard",		"HP Compaq 6715b (RK156AV*", "","68YTT*", S3_BIOS|S3_MODE },
 	/* Matthias Hopf, https://bugzilla.novell.com/show_bug.cgi?id=390271, needs strange combination */
@@ -602,6 +627,8 @@ struct machine_entry whitelist[] = {
 	/* Stefan Seyfried <seife@suse.de> novell bug 259831, this machine is only available in one
 	   configuration (ATI Graphics) */
 	{ "Hewlett-Packard",	"HP Compaq nw8440 *",		"",	"68YVD*", VBE_POST|VBE_MODE },
+	/* Georg Walser <gwa@aspedi.com> Model DG286A */
+	{ "Hewlett-Packard",		"HP d330 uT*",		"",	"", 0 },
 	/* Ryan Bair <ryandbair@gmail.com> */
 	{ "Hewlett-Packard",		"HP d530 SFF*",		"",	"", 0 },
 	/* Frederic Mothe <mothe@nancy.inra.fr> */
@@ -677,6 +704,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"Pavilion zd8000 (EL030EA#*","",	"", VBE_POST },
 	/* Chris Polderman <chris.polderman@gmail.com> */
 	{ "Hewlett-Packard",	"HP Pavilion ze2000 (EK791EA#*","",	"", 0 },
+	/* Fuad Tabba <fuad@cs.auckland.ac.nz>, only available with integr. gfx */
+	{ "Hewlett-Packard ",	"hp pavilion ze4900 (*",	"",	"", 0 },
 	/* Frank Schröder <frank.schroeder@gmail.com>, zt3380us */
 	{ "Hewlett-Packard ",	"Pavilion zt3300 (PF083UA#*",	"",	"", 0 },
 	/* Karthik <molecularbiophysics@gmail.com> */
@@ -999,11 +1028,17 @@ struct machine_entry whitelist[] = {
 	/* Johannes Rohr <jorohr@gmail.com> */
 	{ "LENOVO",			"0768BYG",	"3000 N100 *",	"", 0 },
 	/* I'm not sure how to handle the 3000 N200 models... */
+	/* Thorsten Frey <thorsten@tfrey.de> */
+	{ "LENOVO",			"0769AC6",	"3000 N200 *",	"", 0 },
 	/* Hans Gunnarsson <hans.gunnarsson@gmail.com> */
 	{ "LENOVO",			"0769B9G",	"3000 N200 *",	"", 0 },
 	/* Stojan Jakotic <stojanjakotic@centrum.cz> */
 	{ "LENOVO",			"0769BBG",	"3000 N200 *",	"", S3_BIOS|S3_MODE },
 
+	/* merkur@users.sourceforge.net LM50a */
+	{ "LG Electronics",		"LM50-DGHE",		"",	"", S3_BIOS|S3_MODE },
+	/* jsusiluo@mappi.helsinki.fi */
+	{ "LG Electronics",		"LW75-SGGV1",		"",	"", S3_BIOS|S3_MODE },
 	{ "LG Electronics",		"M1-3DGBG",		"",	"", S3_BIOS|S3_MODE },
 	/* seife */
 	{ "Matsushita Electric Industrial Co.,Ltd.", "CF-51E*",	"",	"", VBE_POST|VBE_MODE },
@@ -1101,7 +1136,7 @@ struct machine_entry whitelist[] = {
 	/* Konstantin Krasnov <krkhome@gmail.com>, only with kernel 2.6.24++ */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SX22S",	"07AJ", "", VBE_SAVE },
 	/* Martin Wilck <mwilck@arcor.de> */
-	{ "Samsung Electronics",	"SX50S",	"Revision MP",	"", 0 },
+	{ "Samsung Electronics",	"SX50S",	"Revision MP",	"", VBE_POST },
 	/* <gregor.willms@web.de> & Frederic Boiteux <fboiteux@free.fr> */
 	{ "Shuttle Inc",		"SD11V10",		"",	"", S3_BIOS|S3_MODE },
 	/* Tejun Heo, https://bugzilla.novell.com/show_bug.cgi?id=390127 */
@@ -1127,6 +1162,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"PORTEGE M300",		"",	"", S3_MODE },
 	/* Mathieu Lacage <mathieu.lacage@sophia.inria.fr> */
 	{ "TOSHIBA",			"PORTEGE R100",		"",	"", 0 },
+	/* hole@gmx.li */
+	{ "TOSHIBA",			"PORTEGE R200",		"",	"", S3_BIOS|S3_MODE },
 	/* Bernhard Kausler <uabdc@stud.uni-karlsruhe.de> */
 	{ "TOSHIBA",			"PORTEGE R500",		"",	"", S3_BIOS|S3_MODE },
 	/* Fabio Olivares <fabio.olivares@alice.it> sys_version  = "PSA10E-018EZ-6A" */
@@ -1167,6 +1204,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"Satellite P200",	"",	"", S3_BIOS|S3_MODE },
 	/* cl.kerr@gmail.com */
 	{ "TOSHIBA",			"Satellite P205D",	"",	"", S3_BIOS|S3_MODE },
+	/* Stephen Jarrett-Sprague <sjarrettsprague@googlemail.com> sys_version="PSAC1E-0J3021EN" */
+	{ "TOSHIBA",			"Satellite Pro A120",	"",	"", S3_BIOS|S3_MODE },
 	/* Francisco Palomo Lozano <francisco.palomo@uca.es> sys_version="PSM75E-00G00TSP" */
 	{ "TOSHIBA",			"Satellite Pro M70",	"",	"", S3_BIOS|S3_MODE },
 	/* Neil Symington, https://bugzilla.novell.com/show_bug.cgi?id=386505, kernel 2.6.25-x86_64 */
@@ -1291,6 +1330,10 @@ struct machine_entry whitelist[] = {
 
 	/* Clevo D470K, Jasper Mackenzie <scarletpimpernal@hotmail.com> */
 	{ "VIA",			"K8T400",	"VT8204B ",	"", S3_BIOS|S3_MODE },
+	/* Dolezal Lukas <dolezallukas@sssvt.cz> */
+	{ "VIA Technologies, Inc.",	"KT400-8235",		"",	"", S3_BIOS|S3_MODE },
+	/* <dev_temp@ukr.net> */
+	{ "VIA Technologies, Inc.",	"KT400A-8235",		"",	"", S3_BIOS|S3_MODE },
 	/* VIA EPIA M Mini-ITX Motherboard with onboard gfx, reported by Monica Schilling */
 	{ "VIA Technologies, Inc.",	"VT8623-8235",		"",	"", S3_MODE },
 
@@ -1420,7 +1463,6 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",			"PORTEGE A100*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"PORTEGE A200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"PORTEGE M200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
-	{ "TOSHIBA",			"PORTEGE R200*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"Satellite 1900*",	"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"TECRA A2*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
 	{ "TOSHIBA",			"TECRA A5*",		"",	"", VBE_POST|VBE_SAVE|UNSURE },
