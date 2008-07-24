@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.129 2008/07/24 21:17:29 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.130 2008/07/24 22:23:46 tdykstra Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -501,6 +501,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",		"ESPRIMO Mobile M9400",	"",	"", 0 },
 	/* Jan Schaefer <jan.schaefer@informatik.fh-wiesbaden.de> */
 	{ "FUJITSU SIEMENS",		"ESPRIMO P*",		"",	"", 0 },
+	/* Guilhem Bonnefille <guilhem.bonnefille@gmail.com> */
+	{ "FUJITSU SIEMENS",		"ESPRIMO Mobile D9500",	"",	"", 0 },
 	/* Ulf Lange <mopp@gmx.net> */
 	{ "FUJITSU SIEMENS",		"SCENIC N300/N600",	"",	"", VBE_POST|VBE_MODE },
 	/* Guenther Schwarz <guenther.schwarz@gmx.de> */
