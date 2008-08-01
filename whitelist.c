@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.131 2008/07/25 11:16:38 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.132 2008/08/01 20:46:27 tdykstra Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -652,6 +652,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard *",		"Presario 2100 (DP835E)*",	"",	"", 0 },
 	/* Matto Marjanovic <maddog@mir.com> */
 	{ "Hewlett-Packard",		"Presario C500 (RZ341UA#*",	"",	"", 0 },
+	/* Robert Gomulka <r.gom1977@gmail.com>*/
+	{ "Hewlett-Packard",		"Presario F500 (GF596UA#*",	"",	"", 0 },
 	/* Fatih Alabas https://bugzilla.novell.com/show_bug.cgi?id=230528 */
 	{ "Hewlett-Packard",		"Presario M2000 (EQ547PA#*",	"",	"", S3_BIOS|VBE_MODE },
 	/* Sitsofe Wheeler <sitsofe@yahoo.com> */
