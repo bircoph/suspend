@@ -80,6 +80,12 @@ AC_ARG_WITH(
 	[devdir="${withval}"],
 	[devdir="/dev"]
 )
+AC_ARG_ENABLE(
+	[threads],
+	[AC_HELP_STRING([--enable-threads], [enable threads support])],
+	,
+	[enable_threads="no"]
+)
 AC_ARG_WITH(
 	[initramfsdir],
 	[AC_HELP_STRING([--with-initramfsdir=DIR], [put initramfs binaries in this directory, default LIBDIR/suspend])],
@@ -240,6 +246,20 @@ if test "${enable_fbsplash}" = "yes"; then
 		,
 		[AC_MSG_ERROR([Required libfbsplashrender was not found])]
 	)
+fi
+
+if test "${enable_threads}" = "yes"; then
+	CONFIG_FEATURES="${CONFIG_FEATURES} threads"
+	AC_DEFINE([CONFIG_THREADS], [1], [Define if threads enabled])
+	if test -z "${PTHREAD_LIBS}"; then
+		AC_ARG_VAR([PTHREAD_LIBS], [linker flags for threads])
+		AC_CHECK_LIB(
+			[pthread],
+			[pthread_create],
+			[PTHREAD_LIBS="-lpthread"],
+			[AC_MSG_ERROR([Required pthread library not found])]
+		)
+	fi
 fi
 
 AC_DEFINE_UNQUOTED([CONFIG_FEATURES], ["${CONFIG_FEATURES## }"], [String representation of available features])

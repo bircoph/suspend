@@ -72,7 +72,8 @@ AM_CFLAGS=\
 
 common_s2disk_libs=\
 	$(LZO_LIBS) \
-	$(LIBGCRYPT_LIBS)
+	$(LIBGCRYPT_LIBS) \
+	$(PTHREAD_LIBS)
 common_s2ram_libs=
 
 if ENABLE_SPLASHY

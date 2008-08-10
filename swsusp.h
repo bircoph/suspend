@@ -173,6 +173,8 @@ struct buf_block {
 
 #define GENERIC_NAME_SIZE	256
 
+#define WRITE_BUFFERS	4
+
 extern char *my_name;
 
 #ifdef CONFIG_COMPRESS

@@ -131,6 +131,13 @@ static struct config_par parameters[] = {
 		.fmt = "%d",
 		.ptr = NULL,
 	},
+#ifdef CONFIG_THREADS
+	{
+		.name = "threads",
+		.fmt = "%c",
+		.ptr = NULL,
+	},
+#endif
 	{
 		.name = "debug verify image",
 		.fmt = "%c",
