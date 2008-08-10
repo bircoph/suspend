@@ -567,12 +567,12 @@ static int restore_key(struct image_header_info *header)
 }
 #endif
 
-int read_or_verify_image(int dev, int fd, struct image_header_info *header,
-                         loff_t start, int verify)
+int read_or_verify(int dev, int fd, struct image_header_info *header,
+                   loff_t start, int verify, int test)
 {
 	static struct swap_reader handle;
 	static unsigned char orig_checksum[16], checksum[16], csum_buf[48];
-	int error = 0;
+	int error = 0, test_mode = (verify || test);
 
 	error = read_page(fd, header, start);
 	if (error)
@@ -606,7 +606,7 @@ int read_or_verify_image(int dev, int fd, struct image_header_info *header,
 	if (header->flags & IMAGE_ENCRYPTED) {
 #ifdef CONFIG_ENCRYPT
 		printf("%s: Encrypted image\n", my_name);
-		error = verify ?
+		error = test_mode ?
 			gcry_cipher_setiv(cipher_handle, key_data.ivec,
 						CIPHER_BLOCK) :
 			restore_key(header);
@@ -632,7 +632,7 @@ int read_or_verify_image(int dev, int fd, struct image_header_info *header,
 		double delta, mb;
 
 		gettimeofday(&begin, NULL);
-		error = load_image(&handle, dev, header->pages, verify);
+		error = load_image(&handle, dev, header->pages, test_mode);
 		if (!error && verify_checksum) {
 			md5_finish_ctx(&handle.ctx, checksum);
 			if (memcmp(orig_checksum, checksum, 16)) {
@@ -693,7 +693,7 @@ int read_or_verify_image(int dev, int fd, struct image_header_info *header,
 
  Exit_encrypt:
 #ifdef CONFIG_ENCRYPT
-	if (do_decrypt && !verify)
+	if (do_decrypt && !test_mode)
 		gcry_cipher_close(cipher_handle);
 #endif
 

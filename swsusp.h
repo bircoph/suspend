@@ -184,5 +184,7 @@ extern unsigned int compress_buf_size;
 #define compress_buf_size 0
 #endif
 
-int read_or_verify_image(int dev, int fd, struct image_header_info *header,
-                         loff_t start, int verify);
+#define MIN_TEST_IMAGE_PAGES	1024
+
+int read_or_verify(int dev, int fd, struct image_header_info *header,
+                   loff_t start, int verify, int test);

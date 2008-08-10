@@ -139,6 +139,11 @@ static struct config_par parameters[] = {
 	},
 #endif
 	{
+		.name = "debug test file",
+		.fmt = "%s",
+		.ptr = NULL,
+	},
+	{
 		.name = "debug verify image",
 		.fmt = "%c",
 		.ptr = NULL,
@@ -258,7 +263,7 @@ static int read_image(int dev, int fd, loff_t start)
 
 	header = getmem(page_size);
 
-	error = read_or_verify_image(dev, fd, header, start, 0);
+	error = read_or_verify(dev, fd, header, start, 0, 0);
 	if (error) {
 		reboot_question(
 			"\nThe system snapshot image could not be read.\n\n"

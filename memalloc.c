@@ -50,6 +50,16 @@ size_t round_up_page_size(size_t size)
 }
 
 /**
+ *	round_down_page_size - round given number down to the closest multiple
+ *                             of the page size lesser than that number
+ *	@size: the number to round
+ */
+size_t round_down_page_size(size_t size)
+{
+	return size & page_mask;
+}
+
+/**
  *	init_memalloc - initialize memory allocation structures
  *	@aux: Number of bytes for the internal use of the allocator
  *	@pool: Number of bytes to preallocate for the users

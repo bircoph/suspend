@@ -49,6 +49,8 @@
 #ifdef CONFIG_BOTH
 #include "s2ram.h"
 #endif
+static char test_file_name[MAX_STR_LEN] = "";
+static loff_t test_image_size;
 
 #define suspend_error(msg, args...) \
 do { \
@@ -190,6 +192,12 @@ static struct config_par parameters[] = {
 		.name = "resume pause",
 		.fmt = "%d",
 		.ptr = &resume_pause,
+	},
+	{
+		.name = "debug test file",
+		.fmt = "%s",
+		.ptr = test_file_name,
+		.len = MAX_STR_LEN
 	},
 	{
 		.name = "debug verify image",
@@ -533,7 +541,7 @@ struct swap_writer {
 	void *buffer;
 	void *write_buffer;
 	void *page_ptr;
-	int dev, fd;
+	int dev, fd, input;
 	struct md5_ctx ctx;
 	void *lzo_work_buffer;
 	void *encrypt_buffer;
@@ -565,7 +573,7 @@ static void free_swap_writer(struct swap_writer *handle)
  *	It doesn't preallocate swap, so preallocate_swap() has to be called on
  *	@handle after this.
  */
-static int init_swap_writer(struct swap_writer *handle, int dev, int fd)
+static int init_swap_writer(struct swap_writer *handle, int dev, int fd, int in)
 {
 	loff_t offset;
 	unsigned int write_buf_size = 0;
@@ -599,6 +607,7 @@ static int init_swap_writer(struct swap_writer *handle, int dev, int fd)
 
 	handle->dev = dev;
 	handle->fd = fd;
+	handle->input = (in >= 0) ? in : dev;
 	handle->written_data = 0;
 
 	memset(handle->extents, 0, page_size);
@@ -1283,7 +1292,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 
 	/* The buffer may be partially filled at this point */
 	for (nr_pages = 0; ; nr_pages++) {
-		ret = read(handle->dev, handle->page_ptr, page_size);
+		ret = read(handle->input, handle->page_ptr, page_size);
 		if (ret < page_size) {
 			if (ret < 0) {
 				error = -EIO;
@@ -1403,8 +1412,15 @@ static int mark_swap(int fd, loff_t start)
 
 /**
  *	write_image - Write entire image and metadata.
+ *	@snapshot_fd: File handle of the snapshot device
+ *	@resume_fd: File handle of the swap device used for image saving
+ *	@test_fd: (Optional) File handle of a file to read the image from
+ *
+ *	If @test_fd is not negative, the function works in the test mode in
+ *	which the image is read from a regular file instead of the snapshot
+ *	device.
  */
-static int write_image(int snapshot_fd, int resume_fd)
+static int write_image(int snapshot_fd, int resume_fd, int test_fd)
 {
 	static struct swap_writer handle;
 	struct image_header_info *header;
@@ -1412,7 +1428,7 @@ static int write_image(int snapshot_fd, int resume_fd)
 	loff_t image_size;
 	double real_size;
 	unsigned long nr_pages = 0;
-	int error;
+	int error, test_mode = (test_fd >= 0);
 	struct timeval begin;
 
 	printf("%s: System snapshot ready. Preparing to write\n", my_name);
@@ -1424,11 +1440,11 @@ static int write_image(int snapshot_fd, int resume_fd)
 	header  = getmem(page_size);
 	memset(header, 0, page_size);
 
-	error = init_swap_writer(&handle, snapshot_fd, resume_fd);
+	error = init_swap_writer(&handle, snapshot_fd, resume_fd, test_fd);
 	if (error)
 		goto Exit;
 
-	image_size = get_image_size(snapshot_fd);
+	image_size = test_mode ? test_image_size : get_image_size(snapshot_fd);
 	if (image_size > 0) {
 		nr_pages = (unsigned long)((image_size + page_size - 1) /
 						page_size);
@@ -1572,13 +1588,16 @@ Save_image:
  Free_writer:
 	free_swap_writer(&handle);
 
-	if (!error && verify_image) {
+	if (!error && (verify_image || test_mode)) {
 		splash.progress(0);
-		printf("%s: Image verification\n", my_name);
-		error = read_or_verify_image(snapshot_fd, resume_fd,
-						header, start, 1);
-		printf(error ? "%s: Image verification failed\n" :
-				"%s: Image verified successfully\n", my_name);
+		if (verify_image)
+			printf("%s: Image verification\n", my_name);
+		error = read_or_verify(snapshot_fd, resume_fd, header, start,
+					verify_image, test_mode);
+		if (verify_image)
+			printf(error ? "%s: Image verification failed\n" :
+					"%s: Image verified successfully\n",
+					my_name);
 		splash.progress(100);
 	}
 
@@ -1602,7 +1621,6 @@ Save_image:
 	return error;
 }
 
-#ifdef CONFIG_BOTH
 static int reset_signature(int fd)
 {
 	int ret, error = 0;
@@ -1646,7 +1664,6 @@ static int reset_signature(int fd)
 	}
 	return error;
 }
-#endif
 
 static void suspend_shutdown(int snapshot_fd)
 {
@@ -1667,7 +1684,7 @@ static void suspend_shutdown(int snapshot_fd)
 		sleep (60);
 }
 
-int suspend_system(int snapshot_fd, int resume_fd)
+int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 {
 	loff_t avail_swap;
 	unsigned long image_size;
@@ -1680,7 +1697,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 	else
 		image_size = avail_swap;
 	if (!avail_swap) {
-		fprintf(stderr, "%s: No swap space for suspend\n", my_name);
+		suspend_error("Not enough swap space for suspend");
 		return ENOSPC;
 	}
 
@@ -1694,6 +1711,16 @@ int suspend_system(int snapshot_fd, int resume_fd)
 
 	if (error) {
 		suspend_error("Freeze failed.");
+		goto Unfreeze;
+	}
+
+	if (test_fd >= 0) {
+		printf("%s: Running in test mode\n", my_name);
+		error = write_image(snapshot_fd, resume_fd, test_fd);
+		if (error)
+			error = -error;
+		reset_signature(resume_fd);
+		free_swap_pages(snapshot_fd);
 		goto Unfreeze;
 	}
 
@@ -1726,7 +1753,7 @@ int suspend_system(int snapshot_fd, int resume_fd)
 			break;
 		}
 
-		error = write_image(snapshot_fd, resume_fd);
+		error = write_image(snapshot_fd, resume_fd, -1);
 		if (error) {
 			free_swap_pages(snapshot_fd);
 			free_snapshot(snapshot_fd);
@@ -2235,6 +2262,7 @@ int main(int argc, char *argv[])
 	unsigned int mem_size;
 	struct stat stat_buf;
 	int resume_fd, snapshot_fd, vt_fd, orig_vc = -1, suspend_vc = -1;
+	int test_fd = -1;
 	dev_t resume_dev;
 	int orig_loglevel, orig_swappiness, ret;
 	struct rlimit rlim;
@@ -2326,8 +2354,7 @@ int main(int argc, char *argv[])
 		ret = gcry_cipher_open(&cipher_handle, IMAGE_CIPHER,
 				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
 		if (ret) {
-			fprintf(stderr, "%s: libgcrypt error %s\n", my_name, 
-				gcry_strerror(ret));
+			suspend_error("libgcrypt error %s", gcry_strerror(ret));
 			do_encrypt = 0;
 		} else {
 			encrypt_buf_size = ENCRYPT_BUF_PAGES * page_size;
@@ -2345,7 +2372,7 @@ int main(int argc, char *argv[])
 
 	ret = init_memalloc(page_size, mem_size);
 	if (ret) {
-		fprintf(stderr, "%s: Could not allocate memory\n", my_name);
+		suspend_error("Could not allocate memory.");
 		return ret;
 	}
 
@@ -2363,6 +2390,28 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
+	if (strlen(test_file_name) > 0) {
+		if (stat(test_file_name, &stat_buf)) {
+			ret = errno;
+			suspend_error("Unable to stat test image file %s",
+					test_file_name);
+			return ret;
+		}
+		test_image_size = round_down_page_size(stat_buf.st_size);
+		if (test_image_size < MIN_TEST_IMAGE_PAGES * page_size) {
+			suspend_error("Test image file %s is too small",
+					test_file_name);
+			return ENODATA;
+		}
+		test_fd = open(test_file_name, O_RDONLY);
+		if (test_fd < 0) {
+			ret = errno;
+			suspend_error("Unable to open test image file %s",
+					test_file_name);
+			return ret;
+		}
+	}
+
 	snprintf(chroot_path, MAX_STR_LEN, "/proc/%d", getpid());
 	if (mount("none", chroot_path, "tmpfs", 0, NULL)) {
 		ret = errno;
@@ -2377,7 +2426,7 @@ int main(int argc, char *argv[])
 		goto Umount;
 	}
 	if (!S_ISBLK(stat_buf.st_mode)) {
-		fprintf(stderr, "%s: Invalid resume device\n", my_name);
+		suspend_error("Invalid resume device.");
 		ret = EINVAL;
 		goto Umount;
 	}
@@ -2407,7 +2456,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (!S_ISCHR(stat_buf.st_mode)) {
-		fprintf(stderr, "%s: Invalid snapshot device\n", my_name);
+		suspend_error("Invalid snapshot device.");
 		ret = EINVAL;
 		goto Close_resume_fd;
 	}
@@ -2474,7 +2523,7 @@ int main(int argc, char *argv[])
 	setrlimit(RLIMIT_NPROC, &rlim);
 	setrlimit(RLIMIT_CORE, &rlim);
 
-	ret = suspend_system(snapshot_fd, resume_fd);
+	ret = suspend_system(snapshot_fd, resume_fd, test_fd);
 
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
@@ -2500,6 +2549,10 @@ Umount:
 	} else {
 		umount(chroot_path);
 	}
+
+	if (test_fd >= 0)
+		close(test_fd);
+
 #ifdef CONFIG_ENCRYPT
 	if (do_encrypt)
 		gcry_cipher_close(cipher_handle);

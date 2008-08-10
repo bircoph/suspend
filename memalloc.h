@@ -24,6 +24,7 @@ extern unsigned int buffer_size;
 
 extern void get_page_and_buffer_sizes(void);
 extern size_t round_up_page_size(size_t size);
+extern size_t round_down_page_size(size_t size);
 extern int init_memalloc(size_t aux, size_t pool);
 extern void *getmem(size_t size);
 extern void freemem(void *address);
