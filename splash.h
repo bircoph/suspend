@@ -12,12 +12,20 @@
 #ifndef SPLASH_H
 #define SPLASH_H
 
+#include <linux/input.h>
+#include <termios.h>
+
+#define ABORT_KEY_CODE	KEY_BACKSPACE
+#define ABORT_KEY_NAME	"backspace"
+#define REBOOT_KEY_CODE	KEY_R
+#define REBOOT_KEY_NAME	"r"
+#define ENTER_KEY_CODE	KEY_ENTER
+#define ENTER_KEY_NAME	"ENTER"
+
 #define SPL_SUSPEND 1
 #define SPL_RESUME 2
 
 #define SPLASH_GENERIC_MESSAGE_SIZE 1024
-
-#include <termios.h>
 
 /* generic interface functions for an arbitary splash method */
 struct splash {

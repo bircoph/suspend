@@ -59,7 +59,7 @@ void read_password(char *pass_buf, int vrfy);
 void encrypt_init(unsigned char *, unsigned char *, char *);
 void get_random_salt(unsigned char *salt, size_t size);
 
-#define SUSPEND_KEY_FILE	"/etc/suspend.key"
+#define SUSPEND_KEY_FILE_PATH	"/etc/suspend.key"
 #define ENCRYPT_BUF_PAGES	256
 
 extern gcry_cipher_hd_t cipher_handle;

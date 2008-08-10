@@ -198,23 +198,6 @@ char fbsplashfuncs_key_pressed(void)
 				fbsplash_set_silent();
 			return 0;
 		} else {
-			switch (c) {
-				case KEY_R:
-					c = REBOOT_KEY_CODE;
-					break;
-				case KEY_BACKSPACE:
-					c = ABORT_KEY_CODE;
-					break;
-				case KEY_ENTER:
-					c = ENTER_KEY_CODE;
-					break;
-				case 0:
-					break;
-				default:
-					c = '?';
-					break;
-			}
-
 			return c;
 		}
 	}

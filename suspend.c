@@ -66,7 +66,7 @@ static char do_compress;
 #ifdef CONFIG_ENCRYPT
 static char do_encrypt;
 static char use_RSA;
-static char key_name[MAX_STR_LEN] = SUSPEND_KEY_FILE;
+static char key_name[MAX_STR_LEN] = SUSPEND_KEY_FILE_PATH;
 static char password[PASSBUF_SIZE];
 static unsigned long encrypt_buf_size;
 #else
@@ -769,7 +769,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 	unsigned int m, writeout_rate;
 	ssize_t ret;
 	struct termios newtrm, savedtrm;
-	int abort_possible, error = 0;
+	int abort_possible, key, error = 0;
 	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
 	/* Switch the state of the terminal so that we can read the keyboard
@@ -815,7 +815,8 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 			printf("\b\b\b\b%3d%%", nr_pages / m);
 			splash.progress(20 + (nr_pages / m) * 0.75);
 
-			switch (splash.key_pressed()) {
+			while ((key = splash.key_pressed()) > 0) {
+				switch (key) {
 				case ABORT_KEY_CODE:
 					if (abort_possible) {
 						printf(" aborted!\n");
@@ -830,6 +831,7 @@ static int save_image(struct swap_writer *handle, unsigned int nr_pages)
 					shutdown_method =
 							SHUTDOWN_METHOD_REBOOT;
 					break;
+				}
 			}
 		}
 

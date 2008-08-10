@@ -169,13 +169,6 @@ struct buf_block {
 
 #define SUSPEND_SWAPPINESS	100
 
-#define ABORT_KEY_CODE	127
-#define ABORT_KEY_NAME	"backspace"
-#define REBOOT_KEY_CODE	'r'
-#define REBOOT_KEY_NAME	"r"
-#define ENTER_KEY_CODE	'\n'
-#define ENTER_KEY_NAME	"ENTER"
-
 #define RESUME_PAUSE_MAX	60
 
 #define GENERIC_NAME_SIZE	256
