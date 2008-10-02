@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# Assisted s2ram testing
+#
+# Author: <alan-jenkins@tuffmail.co.uk>
+# Released as public domain.
+#
+
+touch s2ram.log || (echo "C" exit 1)
+# Need a read-write filesystem for logging.
+mount / -oremount,rw
+
+# Need swap for s2disk
+swapon -a
+
+# Commands are logged to "s2ram.log".  Mark start of run.
+echo "--- Starting s2ram test run ---" >> s2ram.log
+
+# Routine to test a set of s2ram options
+test-s2ram() {
+    echo "Now trying command: s2ram $@"
+    echo
+    echo "s2ram $@" >> s2ram.log
+    s2ram $@ | tee -a s2ram.log || exit 1
+
+    # User: once suspended, hit power button to resume
+    # User: if display remains blank then just wait 10 seconds, or hit return
+
+    echo "If you can read this, then suspend succeeded (using the command above)."
+    echo "Press Ctrl-C NOW - timeout in 10 seconds"
+    read -t 10
+
+    clear
+    echo "Assuming display failed to restore (with s2ram $@)"
+    echo "Restoring display using s2disk"
+    echo
+    s2disk | tee -a s2ram.log || exit 1
+
+    # TODO - if s2disk fails?  We want to reboot / shutdown -
+    # but init is not running
+}
+
+test-s2ram -f
+test-s2ram -f -a 3
+test-s2ram -f -a 2
+test-s2ram -f -a 1
+test-s2ram -f -p -m
+test-s2ram -f -p -s
+test-s2ram -f -m
+test-s2ram -f -s
+test-s2ram -f -p
+test-s2ram -f -a 1 -m
+test-s2ram -f -a 1 -s
+
+# Second round - try again with -v
+test-s2ram -f -v
+test-s2ram -f -v -a 3
+test-s2ram -f -v -a 2
+test-s2ram -f -v -a 1
+test-s2ram -f -v -p -m
+test-s2ram -f -v -p -s
+test-s2ram -f -v -m
+test-s2ram -f -v -s
+test-s2ram -f -v -p
+test-s2ram -f -v -a 1 -m
+test-s2ram -f -v -a 1 -s
+
