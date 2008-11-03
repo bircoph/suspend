@@ -79,6 +79,11 @@ static int set_acpi_video_mode(int mode)
 	/* rewind() seems not to work on /proc files, so close and reopen it */
 	fclose(f);
 	f = fopen("/proc/sys/kernel/acpi_video_flags", "w");
+	if (!f) {
+		printf("cannot open /proc/sys/kernel/acpi_video_flags "
+			"for writing (not running as root?)\n");
+		return S2RAM_FAIL;
+	}
 	/* mask out bits 0 and 1 */
 	acpi_video_flags = acpi_video_flags & (~0UL - S3_BIOS - S3_MODE);
 	fprintf(f, "%ld", acpi_video_flags | mode);
