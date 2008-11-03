@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.134 2008/10/17 18:55:30 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.135 2008/11/03 13:07:16 seife Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -812,6 +812,11 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard ",	"Pavilion zt3300 (PF083UA#*",	"",	"", 0 },
 	/* Karthik <molecularbiophysics@gmail.com> */
 	{ "Hewlett-Packard ",		"Pavilion zt3300 *",	"",	"68BAL*", S3_BIOS },
+	/* 4 workstations tested by HP https://bugzilla.novell.com/show_bug.cgi?id=436284 */
+	{ "Hewlett-Packard",	"HP xw4550 Workstation",	"",	"786F7*", 0 },
+	{ "Hewlett-Packard",	"HP xw6600 Workstation",	"",	"786F4*", 0 },
+	{ "Hewlett-Packard",	"HP xw8600 Workstation",	"",	"786F5*", 0 },
+	{ "Hewlett-Packard",	"HP xw9400 Workstation",	"",	"786D6*", 0 },
 	/* Arun Gupta <axgupta1@gmail.com>, works only with nvidia driver :( */
 	{ "HP-Pavilion",		"RP829AV-ABA d4790y",	"",	"", 0 },
 	/* Gijs van Gemert <g.v.gemert@inter.nl.net> */
