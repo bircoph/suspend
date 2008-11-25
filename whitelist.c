@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c,v 1.135 2008/11/03 13:07:16 seife Exp $";
+char *whitelist_version = "$Id: whitelist.c,v 1.136 2008/11/25 11:44:49 pavel Exp $";
 
 struct machine_entry whitelist[] = {
 	{ "IBM",			"",		"ThinkPad X32",	"", RADEON_OFF|S3_BIOS|S3_MODE },
@@ -609,6 +609,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",		"HP Compaq 2510p *",	"",	"68MSP*", VBE_POST|VBE_MODE },
 	/* Holger Sickenberg https://bugzilla.novell.com/show_bug.cgi?id=376715 */
 	{ "Hewlett-Packard",		"HP Compaq 2710p *",	"",	"68MOU*", VBE_POST|VBE_MODE },
+	/* Pavel Machek */
+	{ "Hewlett-Packard",		"HP Compaq nx6315",	"",	"68MOU*", S3_BIOS|S3_MODE },
 	/* i wonder if we can just match for "HP Compaq 6510b.... */
 	/* Jamil Djadala <djadala@datamax.bg> */
 	{ "Hewlett-Packard",		"HP Compaq 6510b (GB863EA*", "","68DDU*", VBE_POST|VBE_MODE },
