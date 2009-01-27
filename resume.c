@@ -172,7 +172,7 @@ static int open_resume_dev(char *resume_dev_name,
                            struct swsusp_header *swsusp_header)
 {
 	ssize_t size = sizeof(struct swsusp_header);
-	unsigned int shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = (resume_offset + 1) * page_size - size;
 	ssize_t ret;
 	int fd;
 
@@ -183,7 +183,7 @@ static int open_resume_dev(char *resume_dev_name,
 				my_name);
 		return ret;
 	}
-	if (lseek(fd, shift, SEEK_SET) != shift)
+	if (lseek64(fd, shift, SEEK_SET) != shift)
 		return -EIO;
 	ret = read(fd, swsusp_header, size);
 	if (ret == size) {
@@ -295,13 +295,13 @@ static int read_image(int dev, int fd, loff_t start)
 static int reset_signature(int fd, struct swsusp_header *swsusp_header)
 {
 	ssize_t ret, size = sizeof(struct swsusp_header);
-	unsigned int shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = (resume_offset + 1) * page_size - size;
 	int error = 0;
 
 	/* Reset swap signature now */
 	memcpy(swsusp_header->sig, swsusp_header->orig_sig, 10);
 
-	if (lseek(fd, shift, SEEK_SET) != shift) {
+	if (lseek64(fd, shift, SEEK_SET) != shift) {
 		fprintf(stderr, "%s: Could not lseek() to the swap header",
 				my_name);
 		return -EIO;

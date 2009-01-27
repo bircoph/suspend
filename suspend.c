@@ -478,7 +478,7 @@ static int write_page(int fd, void *buf, loff_t offset)
 	if (!offset)
 		return -EINVAL;
 
-	if (lseek(fd, offset, SEEK_SET) == offset)
+	if (lseek64(fd, offset, SEEK_SET) == offset)
 		cnt = write(fd, buf, page_size);
 	if (cnt != page_size)
 		res = -EIO;
@@ -1386,9 +1386,9 @@ static int mark_swap(int fd, loff_t start)
 {
 	int error = 0;
 	unsigned int size = sizeof(struct swsusp_header);
-	unsigned int shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = (resume_offset + 1) * page_size - size;
 
-	if (lseek(fd, shift, SEEK_SET) != shift)
+	if (lseek64(fd, shift, SEEK_SET) != shift)
 		return -EIO;
 
 	if (read(fd, &swsusp_header, size) < size)
@@ -1399,7 +1399,7 @@ static int mark_swap(int fd, loff_t start)
 		memcpy(swsusp_header.orig_sig, swsusp_header.sig, 10);
 		memcpy(swsusp_header.sig, SWSUSP_SIG, 10);
 		swsusp_header.image = start;
-		if (lseek(fd, shift, SEEK_SET) != shift)
+		if (lseek64(fd, shift, SEEK_SET) != shift)
 			return -EIO;
 
 		if (write(fd, &swsusp_header, size) < size)
@@ -1625,9 +1625,9 @@ static int reset_signature(int fd)
 {
 	int ret, error = 0;
 	unsigned int size = sizeof(struct swsusp_header);
-	unsigned int shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = (resume_offset + 1) * page_size - size;
 
-	if (lseek(fd, shift, SEEK_SET) != shift)
+	if (lseek64(fd, shift, SEEK_SET) != shift)
 		return -EIO;
 
 	memset(&swsusp_header, 0, size);
@@ -1644,7 +1644,7 @@ static int reset_signature(int fd)
 	if (!error) {
 		/* Reset swap signature now */
 		memcpy(swsusp_header.sig, swsusp_header.orig_sig, 10);
-		if (lseek(fd, shift, SEEK_SET) == shift) {
+		if (lseek64(fd, shift, SEEK_SET) == shift) {
 			ret = write(fd, &swsusp_header, size);
 			if (ret != size)
 				error = ret < 0 ? ret : -EIO;
