@@ -86,8 +86,12 @@ int main(int argc, char *argv[])
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
-	printf("Switching from vt%d to vt1\n", active_console);
-	chvt(1);
+	printf("Switching from vt%d to vt1", active_console);
+	if (chvt(1))
+		printf("... succeeded\n");
+	else
+		printf("... failed\n");
+
 
 	ret = s2ram_hacks();
 	if (ret)
@@ -98,8 +102,11 @@ int main(int argc, char *argv[])
  out:
 	/* if we switched consoles before suspend, switch back */
 	if (active_console > 0) {
-		printf("switching back to vt%d\n", active_console);
-		chvt(active_console);
+		printf("switching back to vt%d", active_console);
+		if (chvt(active_console))
+			printf("... succeeded\n");
+		else
+			printf("... failed\n");
 	}
 
 	return ret;

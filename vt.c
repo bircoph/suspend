@@ -85,15 +85,24 @@ int fgconsole(void)
 	return vtstat.v_active;
 }
 
-void chvt(int num)
+int chvt(int num)
 {
-	int fd = getconsolefd();
-	if (ioctl(fd, VT_ACTIVATE, num)) {
-		perror("chvt: VT_ACTIVATE");
+#define	USER_WAIT_SLEEP_US		100000
+#define	USER_WAIT_MAX_ITERATIONS	50
+	int i, fd, active = 0;
+
+	for (i = 0; i < USER_WAIT_MAX_ITERATIONS; i++) {
+		if (fgconsole() == num) {
+			active = 1;
+			break;
+		}
+		fd = getconsolefd();
+		if (ioctl(fd, VT_ACTIVATE, num)) {
+			perror("chvt: VT_ACTIVATE");
+		}
+		usleep(USER_WAIT_SLEEP_US);
 	}
-	if (ioctl(fd, VT_WAITACTIVE, num)) {
-		perror("VT_WAITACTIVE");
-	}
+	return active;
 }
 
 int is_framebuffer(void)
