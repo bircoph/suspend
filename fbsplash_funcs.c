@@ -36,7 +36,7 @@ int fbsplashfuncs_open(int mode)
 	int have_render = 0;
 	int ret = 0;
 
-	cfg = fbsplash_lib_init(fbspl_bootup);
+	cfg = fbsplash_lib_init((mode==SPL_RESUME) ? fbspl_resume : fbspl_suspend);
 	if (!cfg) {
 		ret = -1;
 		goto cleanup;
