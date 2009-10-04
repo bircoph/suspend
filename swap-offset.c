@@ -47,6 +47,16 @@ int main(int argc, char **argv)
 		perror("open()");
 		return err;
 	}
+	if (fstat(fd, &stat)) {
+		err = errno;
+		perror("fstat()");
+		goto out;
+	}
+	if (!S_ISREG(stat.st_mode)) {
+		fprintf(stderr, "Not a regular file\n");
+		err = EINVAL;
+		goto out;
+	}
 
 	/* Check swap signature */
 	if (lseek(fd, page_size - SWAP_SIG_SIZE, SEEK_SET) < 0) {
@@ -71,11 +81,6 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	if (fstat(fd, &stat)) {
-		err = errno;
-		perror("fstat()");
-		goto out;
-	}
 	if (ioctl(fd, FIGETBSZ, &blk_size)) {
 		err = errno;
 		perror("ioctl(FIGETBSZ) failed");
