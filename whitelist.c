@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "whitelist.h"
 
-char *whitelist_version = "$Id: whitelist.c ver. 20091120 00:53:24 automatic generation - kix - Exp $";
+char *whitelist_version = "$Id: whitelist.c ver. 20091123 11:49:43 automatic generation - kix - Exp $";
 
 struct machine_entry whitelist[] = {
 	/* Michael Wagner <michael-wagner@gmx.de> */
@@ -23,8 +23,12 @@ struct machine_entry whitelist[] = {
 	{ "Acer *",	"Aspire 1500 *",	"",	"",	VBE_POST|VBE_SAVE },
 	/* Andreas Wagner <A.Wagner@stud.uni-frankfurt.de> */
 	{ "Acer",	"Aspire 1520",	"",	"",	VBE_POST|VBE_MODE },
+	/* Acer Aspire 1620, Sascha Warner <PRX@gmx.net> */
+	{ "Acer           ",	"Aspire 1620    ",	"0100           ",	"V1.05     ",	0 },
 	/* Stefano Sabatini https://bugzilla.novell.com/show_bug.cgi?id=415675 */
 	{ "Acer *",	"Aspire 1670     ",	"",	"",	S3_BIOS|S3_MODE },
+	/* Acer 1810TZ, tom <thoemu@gmail.com> */
+	{ "Acer",	"Aspire 1810TZ",	"v0.3115",	"v0.3115",	0 },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "Acer",	"Aspire 2000*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* Eberhard Niendorf <Eberhard.Niendorf@t-online.de>, kernel 2.6.25.9 */
@@ -49,6 +53,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer            ",	"Aspire 5610Z *",	"",	"",	S3_BIOS|S3_MODE },
 	/* Andrey Popov <potopi@gmx.net> */
 	{ "Acer *",	"Aspire 5630 *",	"",	"",	S3_BIOS|S3_MODE },
+	/* Acer Aspire 5730Z, Will Donnelly <will.donnelly@gmail.com> */
+	{ "Acer           ",	"Aspire 5730                    ",	"0100           ",	"V1.07          ",	0 },
 	/* Christine Upadek <5upadek@informatik.uni-hamburg.de> */
 	{ "Acer",	"Extensa 2900",	"",	"",	VBE_POST|VBE_MODE },
 	/* Paolo Herms <paolo.herms@gmx.net> */
@@ -147,6 +153,8 @@ struct machine_entry whitelist[] = {
 	{ "Acer",	"TravelMate 800",	"",	"",	VBE_POST },
 	/* */
 	{ "Acer           ",	"TravelMate C300",	"",	"",	VBE_SAVE },
+	/* AMI :-), Mario Maas <mariomaas@googlemail.com> */
+	{ "American Megatrends Inc.",	"Uknown",	"1.0",	"P2.00",	0 },
 	/* Ian <no-spam@people.net.au> ASI Claro TW7M Notebook */
 	{ "AnabelleB",	"Claro TW7M",	"",	"",	S3_BIOS|S3_MODE },
 	/* Alexander Wirt reported "VBE_SAVE", but Penny Leach <penny@she.geek.nz> needs VBE_POST|VBE_MODE */
@@ -161,6 +169,8 @@ struct machine_entry whitelist[] = {
 	{ "Apple Inc.",	"MacBook3,1",	"1.0",	"",	0 },
 	/* Tilman Vogel <tilman.vogel@web.de>, only works from X */
 	{ "Apple Inc.",	"MacBookPro4,1",	"",	"",	0 },
+	/* Macbook 5,5, Giorgio <giorgio@gilestro.tk> */
+	{ "Apple Inc.",	"MacBookPro5,5",	"1.0",	"   MBP55.88Z.00AC.B03.0906151708",	0 },
 	/* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-( reported by James Spencer */
 	{ "",	"",	"",	"ASUS A7V600 ACPI BIOS Revision *",	S3_BIOS|S3_MODE },
 	/* Gabriel <gabriel@opensuse.org> */
@@ -183,10 +193,16 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTEK ",	"A2H/L ",	"",	"",	0 },
 	/* Daniel Willkomm <plabo@willkomms.de> EEE 1000H */
 	{ "ASUSTeK Computer INC.",	"1000H",	"",	"",	0 },
+	/* ASUS Eeepc 1002HA, Miguel Figueiredo <elmig@debianpt.org> */
+	{ "ASUSTeK Computer INC.",	"1002HA",	"x.x",	"0802   ",	0 },
+	/* ASUS Eeepc 1005HA, Raphael Scholer <raphael@scholer-online.de> */
+	{ "ASUSTeK Computer INC.",	"1005HA",	"x.x",	"0703   ",	0 },
 	/* Andrea Zucchelli <zukka77@gmail.com> EEE-PC 4G */
 	{ "ASUSTeK Computer INC.",	"701",	"",	"",	VBE_POST|VBE_MODE },
 	/* From: Julien Puydt <jpuydt@free.fr> */
 	{ "ASUSTeK Computer Inc.",	"A2D       ",	"",	"",	S3_BIOS|S3_MODE },
+	/* Asus A3N, Stephan Schaller <raw-jaw@gmx.de> */
+	{ "ASUSTeK Computer Inc.        ",	"A3N       ",	"1.0       ",	"0215                     ",	S3_BIOS },
 	/* Thomas Thrainer <tom_t@gmx.at> */
 	{ "ASUSTeK Computer Inc.*",	"A6G       ",	"",	"",	0 },
 	/* Piotr Drozdek <pioruns@o2.pl> */
@@ -225,6 +241,8 @@ struct machine_entry whitelist[] = {
 	{ "ASUSTeK Computer INC. *",	"F3Sg *",	"",	"",	0 },
 	/* Vladimir Pouzanov <farcaller@gmail.com>, probably only with nvidia and from X */
 	{ "ASUSTeK Computer INC. ",	"F3T",	"",	"",	0 },
+	/* Asus F80L laptop, Manuel Pégourié-Gonnard <mpg@elzevir.fr> */
+	{ "ASUSTeK Computer Inc.        ",	"F80L                ",	"1.0       ",	"204    ",	VBE_POST },
 	/* Enrico Zini <enrico@enricozini.org> */
 	{ "ASUSTeK Computer Inc. *",	"F9E *",	"",	"",	0 },
 	/* Paul Cousins <namain@gmail.com> */
@@ -413,6 +431,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.                ",	"Dell DXP051 *",	"",	"",	0 },
 	/* Edward Webb https://bugzilla.novell.com/show_bug.cgi?id=428181 */
 	{ "Dell Inc. *",	"Dimension 9100 *",	"",	"",	VBE_POST|VBE_MODE },
+	/* Dell Inspiron 1010, Alfredo Rezinovsky <alfredo@rezinovsky.com.ar> */
+	{ "Dell Inc.",	"Inspiron 1010   ",	"A09",	"A09",	VBE_POST|VBE_SAVE },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "Dell Inc.",	"Inspiron 1200*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* joey <joey7d6@yahoo.com> */
@@ -421,8 +441,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",	"Inspiron 1501 ",	"",	"",	S3_BIOS|S3_MODE },
 	/* Sebastian Rittau <srittau@jroger.in-berlin.de> */
 	{ "Dell Inc.",	"Inspiron 1520 *",	"",	"",	0 },
-	/* Klaus Thoennissen <klaus.thoennissen@web.de> */
-	{ "Dell Inc.",	"Inspiron 1525 *",	"",	"",	VBE_POST|VBE_MODE },
+	/* Horvath Andras / Log69.com <mail@log69.com> previously Klaus Thoennissen <klaus.thoennissen@web.de> (VBE_POST|VBE_MODE) */
+	{ "Dell Inc.",	"Inspiron 1525 *",	"",	"",	VBE_SAVE },
 	/* Christophe Gay <christophegay@free.fr>, maybe only with binary only driver */
 	{ "Dell Inc.",	"Inspiron 1720 *",	"",	"",	0 },
 	/* Dell Inspiron 510m, Jose Carlos Garcia Sogo <jsogo@debian.org> */
@@ -467,6 +487,8 @@ struct machine_entry whitelist[] = {
 	{ "Dell Inc.",	"Latitude D820 *",	"",	"",	VBE_POST|VBE_MODE },
 	/* Gabriel Ambuehl <gabriel_ambuehl@buz.ch>, version with intel graphics */
 	{ "Dell Inc.",	"Latitude D830 *",	"",	"",	VBE_POST|VBE_MODE },
+	/* Dell Latitude E4300, Nicolas Estibals <Nicolas.Estibals@gmail.com> & Frank Ploss <frank@frankploss.de> */
+	{ "Dell Inc.",	"Latitude E4300                  ",	"",	"A09",	0 },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "Dell Inc.",	"Latitude X1*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* imported from acpi-support 0.59 "half known". */
@@ -529,6 +551,8 @@ struct machine_entry whitelist[] = {
 	{ "ERGOUK                       ",	"M2N       ",	"",	"",	S3_BIOS|S3_MODE },
 	/* Aurelien Jacobs <aurel@gnuage.org> */
 	{ "FUJITSO",	"FMVLT70R",	"",	"",	S3_BIOS|S3_MODE|PCI_SAVE },
+	/* Fujitsu S6120, Andre Kusuma <andrekusuma@gmail.com> */
+	{ "FUJITSU",	"0000000000",	" ",	"Version 1.04 ",	0 },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "FUJITSU",	"Amilo M*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* Stephen Gildea <stepheng@gildea.com> */
@@ -591,12 +615,16 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",	"AMILO Pro V2040",	"",	"",	0 },
 	/* <arild.haugstad@gmx.net> / https://bugzilla.novell.com/show_bug.cgi?id=279944 */
 	{ "FUJITSU SIEMENS",	"AMILO Pro V3205",	"",	"",	S3_BIOS|S3_MODE },
+	/* AmiloPro V3515, Julian Wollrath <jwollrath@web.de> */
+	{ "FUJITSU SIEMENS",	"AMILO PRO V3515",	"20",	"1.0M-2309-8A20",	VBE_POST|VBE_MODE },
 	/* Steffen <mlsone@forevers.de> */
 	{ "FUJITSU SIEMENS",	"AMILO PRO V8010 *",	"",	"",	VBE_POST|VBE_MODE },
 	/* Markus Meyer <markus.meyer@koeln.de>, Christian Illy <christian.illy@gmx.de> */
 	{ "FUJITSU SIEMENS",	"Amilo Si 1520",	"",	"",	S3_BIOS|S3_MODE },
 	/* <noname1@onlinehome.de> */
 	{ "FUJITSU SIEMENS",	"AMILO Xi 1546",	"",	"",	S3_BIOS|S3_MODE },
+	/* Elmar Stellnberger <estellnb@gmail.com> */
+	{ "FUJITSU SIEMENS",	"AMILO Xi 2550",	"                                ",	"1.11C",	VBE_POST|VBE_MODE },
 	/* Guilhem Bonnefille <guilhem.bonnefille@gmail.com> */
 	{ "FUJITSU SIEMENS",	"ESPRIMO Mobile D9500",	"",	"",	0 },
 	/* Martin Wilck <martin.wilck@fujitsu-siemens.com> */
@@ -653,6 +681,8 @@ struct machine_entry whitelist[] = {
 	{ "FUJITSU SIEMENS",	"Stylistic ST5000",	"",	"",	S3_BIOS|S3_MODE },
 	/* Mario Nigrovic <Mario@nigrovic.net> */
 	{ "Gateway *",	"MT6707 *",	"",	"",	S3_BIOS|S3_MODE },
+	/* Gateway MX3228, The Space Man <thespaceman@verizon.net> */
+	{ "Gateway",	"MX3228",	"73.08   ",	"73.08   ",	VBE_POST|VBE_MODE },
 	/* Ilya Eremin <che_guevara_3@bk.ru> */
 	{ "Gateway *",	"MX6922B *",	"",	"",	0 },
 	/* Christoph Wiesmeyr <christoph.wiesmeyr@liwest.at> */
@@ -667,6 +697,16 @@ struct machine_entry whitelist[] = {
 	{ "Gigabyte Technology Co., Ltd.",	"945GCMX-S2",	"",	"",	VBE_POST|VBE_MODE },
 	/* Josef Zenisek <jzenisek@gmx.de> */
 	{ "Gigabyte Technology Co., Ltd.",	"945GZM-S2",	"",	"",	0 },
+	/* Florian Sesser <florian@sesser.at> */
+	{ "Gigabyte Technology Co., Ltd.",	"GA-MA69G-S3H",	" ",	"F5",	0 },
+	/* Andi Valachi <avalachi@2link.ca> */
+	{ "Gigabyte Technology Co., Ltd.",	"GA-MA785GM-US2H",	" ",	"F5",	S3_BIOS|S3_MODE },
+	/* Ian-Xue Li <da.mi.spirit@gmail.com> */
+	{ "Gigabyte Technology Co., Ltd.",	"GA-MA78GPM-DS2H",	" ",	"F1",	S3_BIOS },
+	/* Thorsten Goetzke <th.goetzke@gmx.net> */
+	{ "Gigabyte Technology Co., Ltd.",	"P35-DS3",	" ",	"F6",	0 },
+	/* Gigabyte P35-DS3L, Kainráth Roland <kainrath.roland@gmail.com> */
+	{ "Gigabyte Technology Co., Ltd.",	"P35-DS3L",	" ",	"F8",	0 },
 	/* Roberto Lumbreras <rover@lumbreras.org> */
 	{ "Gigabyte Technology Co., Ltd.",	"P35-DS4",	"",	"",	VBE_POST|VBE_MODE },
 	/* Michal Sedkowski <msedkowski@gmail.com>,  VBE_POST (Michal Vyskocil <michal.vyskocil@gmail.com>), VBE_POST|VBE_MODE (Danny Kukawka <dkukawka@suse.de>), Hendrik Tews <tews@cs.ru.nl> "HP Compaq nc6320 (RH367ET*" */
@@ -699,6 +739,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Compaq 6510b (GB863EA*",	"",	"68DDU*",	VBE_POST|VBE_MODE },
 	/* peeetax@googlemail.com */
 	{ "Hewlett-Packard",	"HP Compaq 6510b (KE134EA*",	"",	"68DDU*",	0 },
+	/* Jamalulkhair Khairedin <jalut78@gmail.com>, tested on console and X */
+	{ "Hewlett-Packard",	"HP Compaq 6520s",	"F.0A",	"68MDU Ver. F.0A",	0 },
 	/* Michal Sojka <sojkam1@fel.cvut.cz> */
 	{ "Hewlett-Packard",	"HP Compaq 6710b (GB893EA*",	"",	"68DDU*",	VBE_POST|VBE_MODE },
 	/* Harry ten Berge <htenberge@gmail.com> */
@@ -731,6 +773,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Compaq 6910p",	"",	"68MCU*",	VBE_POST|VBE_MODE },
 	/* Ola Widlund <olwix@yahoo.com>, works with proprietary ATI driver, to be verified without */
 	{ "Hewlett-Packard",	"HP Compaq 6910p (GB951EA*",	"",	"68MCD*",	VBE_MODE },
+	/* HP Compaq 6910p, Alexander Mikhailian <mikhailian@mova.org> */
+	{ "Hewlett-Packard",	"HP Compaq 6910p (GH717AW#UUG)",	"F.15",	"68MCD Ver. F.15",	VBE_POST|VBE_MODE },
 	/* Tomas Kejzlar <t.kejzlar@gmail.com> */
 	{ "Hewlett-Packard",	"HP Compaq 6910p (RH241AV)",	"",	"68MCU*",	VBE_POST|VBE_MODE },
 	/* Krisztian Loki <krisztian.loki@freemail.hu>, does not work with proprietary ATI driver */
@@ -789,10 +833,14 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Compaq nx7400 (RH412EA#)",	"",	"",	VBE_POST|VBE_MODE },
 	/* */
 	{ "Hewlett-Packard",	"HP Compaq nx8220 *",	"",	"",	VBE_SAVE|NOFB },
+	/* HP Compaq nx9420, Adam <ajett2@gmail.com> */
+	{ "Hewlett-Packard",	"HP Compaq nx9420 (RB549UT#ABA)",	"F.1D",	"68YAF Ver. F.1D",	S3_BIOS|S3_MODE },
 	/* Georg Walser <gwa@aspedi.com> Model DG286A */
 	{ "Hewlett-Packard",	"HP d330 uT*",	"",	"",	0 },
 	/* Ryan Bair <ryandbair@gmail.com> */
 	{ "Hewlett-Packard",	"HP d530 SFF*",	"",	"",	0 },
+	/* HP OmniBook 500, Oliver Redner <oliver.redner@arcor.de> */
+	{ "Hewlett-Packard",	"HP OmniBook PC         ",	"HP OmniBook 500 FA     ",	"FA.M2.71",	0 },
 	/* Frederic Mothe <mothe@nancy.inra.fr> */
 	{ "Hewlett Packard",	"",	"HP OmniBook XE3 GC *",	"",	VBE_POST|VBE_SAVE },
 	/* */
@@ -809,6 +857,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Pavilion dv2000 (RN066EA#*",	"",	"",	0 },
 	/* Robert Hart <Robert.Hart@BuroHappold.com> */
 	{ "Hewlett-Packard",	"HP Pavilion dv2500 Notebook PC",	"",	"",	0 },
+	/* HP Pavilion dv2, Mike Leimon <leimon@gmail.com> */
+	{ "Hewlett-Packard",	"HP Pavilion dv2 Notebook PC     ",	"F.03    ",	"F.03    ",	VBE_POST|VBE_SAVE },
 	/* Benjamin Kudria <ben@kudria.net> */
 	{ "Hewlett-Packard",	"HP Pavilion dv6000 (EW434AV#*",	"",	"",	S3_BIOS|S3_MODE },
 	/* Carlos Andrade <crandrad@gmail.com> */
@@ -829,6 +879,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Pavilion dv6500 Notebook PC *",	"",	"",	S3_BIOS },
 	/* fsuzzi@libero.it, dv6855el */
 	{ "Hewlett-Packard",	"HP Pavilion dv6700 Notebook PC *",	"",	"",	S3_BIOS|S3_MODE },
+	/* Wael Nasreddine <wael.nasreddine@gmail.com */
+	{ "Hewlett-Packard",	"HP Pavilion dv7 Notebook PC*",	"",	"",	0 },
 	/* Bengt Gorden <bengan@bag.org> */
 	{ "Hewlett-Packard",	"HP Pavilion dv9700 Notebook PC *",	"",	"",	0 },
 	/* <admin@tomobiki.dyndns.org> hp pavilion xz275 */
@@ -845,6 +897,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"HP Tablet PC TR1105*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "Hewlett-Packard",	"HP Tablet PC Tx1100*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
+	/* HP xw4300 Workstation, Florian Reitmeir <florian@reitmeir.org> */
+	{ "Hewlett-Packard",	"HP xw4300 Workstation",	" ",	"786D3 v01.11",	0 },
 	/* tested by HP https://bugzilla.novell.com/show_bug.cgi?id=436284 */
 	{ "Hewlett-Packard",	"HP xw4550 Workstation",	"",	"786F7*",	0 },
 	/* tested by HP https://bugzilla.novell.com/show_bug.cgi?id=436284 */
@@ -861,6 +915,8 @@ struct machine_entry whitelist[] = {
 	{ "Hewlett-Packard",	"Pavilion dv4000 (PX306UA#*",	"",	"",	S3_BIOS|S3_MODE },
 	/* Wally Valters <deepsky99@gmail.com> */
 	{ "Hewlett-Packard",	"Pavilion dv5000 (EZ535UA#*",	"",	"",	0 },
+	/* HP Pavilion dv5244eu, Adrian Connolly <aconnolly08@qub.ac.uk> */
+	{ "Hewlett-Packard",	"Pavilion dv5000 (RA648EA#ABU)     ",	"F.42",	"F.42",	0 },
 	/* Arun Gupta <axgupta1@gmail.com> */
 	{ "Hewlett-Packard",	"Pavilion dv6000 (EY798AV#*",	"",	"",	0 },
 	/* imported from acpi-support 0.59 "half known". */
@@ -913,6 +969,8 @@ struct machine_entry whitelist[] = {
 	{ "HP Pavilion 061",	"ES061AA-ABD t3320*",	"",	"",	0 },
 	/* Levi Larsen <levi.larsen@gmail.com> */
 	{ "HP Pavilion 061",	"PC098A-ABA M1070N",	"",	"",	0 },
+	/* Philippe LEBOURG <ph.l@wanadoo.fr> */
+	{ "HP-Pavilion",	"NB965AA-ABF s3715fr",	" ",	"5.08 ",	0 },
 	/* Arun Gupta <axgupta1@gmail.com>, works only with nvidia driver :( */
 	{ "HP-Pavilion",	"RP829AV-ABA d4790y",	"",	"",	0 },
 	/* Gijs van Gemert <g.v.gemert@inter.nl.net> */
@@ -925,6 +983,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",	"1832*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* R50/p imported from acpi-support 0.59 "half known". */
 	{ "IBM",	"1833*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
+	/* ThinkPad R50e, Ferenc Wagner <wferi@niif.hu> */
+	{ "IBM",	"1834S5G",	"ThinkPad R50e",	"1WET90WW (2.10 )",	0 },
 	/* R50/p imported from acpi-support 0.59 "half known". */
 	{ "IBM",	"1836*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* R50/p imported from acpi-support 0.59 "half known". */
@@ -969,8 +1029,8 @@ struct machine_entry whitelist[] = {
 	{ "IBM",	"2370*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* X40 confirmed by Christian Deckelmann */
 	{ "IBM",	"2371*",	"ThinkPad X40",	"",	S3_BIOS|S3_MODE },
-	/* X40 imported from acpi-support 0.59 "half known". */
-	{ "IBM",	"2372*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
+	/* X40, Confirmed by Ville Kovács (From X and console) */
+	{ "IBM",	"2372*",	"ThinkPad X40",	"",	S3_BIOS },
 	/* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
 	{ "IBM",	"2373*",	"",	"",	S3_BIOS|S3_MODE },
 	/* T41p, Stefan Gerber */
@@ -1103,6 +1163,8 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",	"0769AC6",	"3000 N200 *",	"",	S3_BIOS|S3_MODE },
 	/* Moritz Schaefer <mollitz@googlemail.com> */
 	{ "LENOVO",	"0769AH9",	"3000 N200 *",	"",	0 },
+	/* Lenovo 3000 N200, Kyle Jones -- Hotelicom <kyle@hotelicom.com> */
+	{ "LENOVO",	"0769AVU",	"3000 N200                       ",	"68ET31WW",	0 },
 	/* Hans Gunnarsson <hans.gunnarsson@gmail.com> */
 	{ "LENOVO",	"0769B9G",	"3000 N200 *",	"",	0 },
 	/* Stojan Jakotic <stojanjakotic@centrum.cz> */
@@ -1121,6 +1183,10 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",	"2478*",	"",	"",	S3_BIOS|S3_MODE },
 	/* LENOVO X300, 2008-04-03 https://bugzilla.novell.com/show_bug.cgi?id=370690 */
 	{ "LENOVO",	"2479*",	"",	"",	S3_BIOS|S3_MODE },
+	/* Lenovo T400, Chris Cain <zshazz@gmail.com> */
+	{ "LENOVO",	"2764CTO",	"ThinkPad T400",	"7UET43WW (1.13 )",	VBE_POST|VBE_MODE },
+	/* IBM T400, Erez Zarum <erez@erezzarum.com> */
+	{ "LENOVO",	"2768EB7",	"ThinkPad T400",	"7UET71WW (3.01 )",	VBE_SAVE|VBE_MODE|PCI_SAVE },
 	/* T61 / R61 2008-01-29, bug https://bugzilla.novell.com/show_bug.cgi?id=334522#c10 */
 	{ "LENOVO",	"4108*",	"",	"",	S3_BIOS|S3_MODE },
 	/* T61 / R61 2008-01-29, bug https://bugzilla.novell.com/show_bug.cgi?id=334522#c10 */
@@ -1153,7 +1219,7 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",	"6463*",	"",	"",	S3_BIOS|S3_MODE },
 	/* T61 */
 	{ "LENOVO",	"6464*",	"",	"",	S3_BIOS|S3_MODE },
-	/* Amit Joshi <ajoshi@optonline.net>, T61 */
+	/* Amit Joshi <ajoshi@optonline.net>, T61 / No flags KyuHwa Lee <lee.kyuh@gmail.com> */
 	{ "LENOVO",	"6465*",	"",	"",	S3_BIOS|VBE_MODE },
 	/* T61 */
 	{ "LENOVO",	"6466*",	"",	"",	S3_BIOS|S3_MODE },
@@ -1245,7 +1311,7 @@ struct machine_entry whitelist[] = {
 	{ "LENOVO",	"7762*",	"",	"",	S3_BIOS|S3_MODE },
 	/*ThinkPad X61 Tablet https://bugzilla.novell.com/show_bug.cgi?id=353896 */
 	{ "LENOVO",	"7763*",	"",	"",	S3_BIOS|S3_MODE },
-	/*ThinkPad X61 Tablet https://bugzilla.novell.com/show_bug.cgi?id=353896 */
+	/*ThinkPad X61 Tablet https://bugzilla.novell.com/show_bug.cgi?id=353896 or VBE_POST|VBE_MODE  Baylis Shanks <bshanks3@hotmail.com>, possible problems with video */
 	{ "LENOVO",	"7764*",	"",	"",	S3_BIOS|S3_MODE },
 	/*ThinkPad X61 Tablet https://bugzilla.novell.com/show_bug.cgi?id=353896 */
 	{ "LENOVO",	"7767*",	"",	"",	S3_BIOS|S3_MODE },
@@ -1381,6 +1447,10 @@ struct machine_entry whitelist[] = {
 	{ "MICRO-STAR INT'L CO.,LTD",	"MS-1013",	"",	"",	S3_BIOS },
 	/* Gergely Csepany <cheoppy@gmail.com> */
 	{ "MICRO-STAR INT'L CO.,LTD.",	"MS-1057",	"",	"",	S3_BIOS|S3_MODE },
+	/* Armin Braunstein <armin.braunstein@gmx.at> */
+	{ "                                ",	"                                ",	"                        ",	"MQ96510J.86A.0816.2006.0716.2308",	VBE_POST|VBE_MODE },
+	/* MSI IM-945GSE, Martin Teufel <teufel@informatik.uni-frankfurt.de> */
+	{ "MSI",	"A9830IMS",	"11",	"080015 ",	S3_BIOS|S3_MODE },
 	/* Matej Tyc <matej.tyc@gmail.com> */
 	{ "MSI",	"MS-6417",	"",	"",	0 },
 	/* Petric Frank <pfrank@gmx.de> MSI K8T Neo-FIS2R */
@@ -1403,6 +1473,8 @@ struct machine_entry whitelist[] = {
 	{ "NOTEBOOK",	"MIM2080",	"",	"",	S3_BIOS|S3_MODE },
 	/* Jan Willies <jan@willies.info> medion md 96400 */
 	{ "NOTEBOOK",	"SAM2000",	"0131",	"",	0 },
+	/* Tomas Groth <tomasgroth@yahoo.dk> */
+	{ "Notebook",	"SAM2010",	"1058",	"A1058AM7 V7.23",	VBE_SAVE },
 	/* Thomas Braun <thomas.braun@newthinking.de>, rebranded Uniwill P53IN */
 	{ "OEM",	"P53IN4",	"",	"",	0 },
 	/* Wolf Geldmacher <wolf@womaro.ch> */
@@ -1425,7 +1497,7 @@ struct machine_entry whitelist[] = {
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SQ1US",	"01ME",	"",	VBE_SAVE },
 	/* Maximilian Mehnert <maximilian.mehnert@googlemail.com> */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SQ35S",	"",	"",	VBE_POST },
-	/* Frank Ruell <frank@ruell.com> */
+	/* Frank Ruell <frank@ruell.com> or Jérémie <jeremie@lamah.info> no flags */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SQ45S70S",	"",	"",	S3_BIOS|S3_MODE },
 	/* Jens Ott <jo@opteamax.de> */
 	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SR700",	"",	"",	0 },
@@ -1489,6 +1561,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",	"VGN-A115B*",	"",	"",	0 },
 	/* Dean Darlison <dean@dasco.ltd.uk>, maybe only with nvidia driver */
 	{ "Sony Corporation",	"VGN-AR31S",	"",	"",	S3_BIOS|S3_MODE },
+	/* Sony VGN-B1VP, M. Vefa Bicakci <bicave@superonline.com> */
+	{ "Sony Corporation",	"VGN-B1VP(GB)",	"J000L04A",	"R0042G9",	S3_BIOS|S3_MODE },
 	/* Daniel Morris <danielm@eCosCentric.com> */
 	{ "Sony Corporation",	"VGN-B1XP*",	"",	"",	S3_BIOS },
 	/* Dhananjaya Rao <phaze87@gmail.com> */
@@ -1527,6 +1601,8 @@ struct machine_entry whitelist[] = {
 	{ "Sony Corporation",	"VGN-FW11*",	"",	"",	VBE_POST|VBE_MODE },
 	/* Stefano Avallone <stavallo@unina.it> */
 	{ "Sony Corporation",	"VGN-FZ39VN",	"",	"",	0 },
+	/* 03/08/2009, Sony Vaio VGN-N21Z_W, Raphael Scholer <raphael@scholer-online.de> */
+	{ "Sony Corporation",	"VGN-N21Z_W",	"C3LNT6WK",	"R0070J4",	0 },
 	/* Fredrik Roubert <roubert@df.lth.se> */
 	{ "Sony Corporation",	"VGN-N320E",	"",	"",	0 },
 	/* daryl@mail.bg */
@@ -1565,6 +1641,8 @@ struct machine_entry whitelist[] = {
 	{ "System manufacturer",	"P5KR",	"System Version",	"",	0 },
 	/* ASUS Mainboard, Gary Andrew https://bugzilla.novell.com/show_bug.cgi?id=419813 */
 	{ "System manufacturer",	"P5Q DELUXE",	"System Version",	"",	S3_BIOS|S3_MODE },
+	/* Asus P4B266, s2ram -f -a 3 Olivier Berger <oberger@ouvaton.org> */
+	{ "System Manufacturer",	"System Name",	"System Version",	"ASUS P4B266 ACPI BIOS Revision 1010",	S3_BIOS|S3_MODE },
 	/* Pavol Otcenas <Pavol.Otcenas@2c.cz>, "Prestigio Nobile 159W" */
 	{ "To Be Filled By O.E.M.",	"259IA1",	"To Be Filled By O.E.M.",	"080010 ",	S3_MODE },
 	/* Petr Pudlak <naradapuri@gmail.com> */
@@ -1591,6 +1669,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",	"PORTEGE A100*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "TOSHIBA",	"PORTEGE A200*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
+	/* Toshiba Portege A600-13Y, Gregor Zattler <grfz@gmx.de> */
+	{ "TOSHIBA",	"PORTEGE A600",	"PPA61E-01700EGR",	"Version 1.50",	0 },
 	/* imported from acpi-support 0.59 "half known". */
 	{ "TOSHIBA",	"PORTEGE M200*",	"",	"",	VBE_POST|VBE_SAVE|UNSURE },
 	/* Alan Mycroft <Alan.Mycroft@cl.cam.ac.uk> */
@@ -1613,7 +1693,7 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",	"Satellite A10",	"",	"",	S3_BIOS|S3_MODE },
 	/*  Jan Urbanski <j.urbanski@students.mimuw.edu.pl>, sys_version="PSAE0E-04600TPL" */
 	{ "TOSHIBA",	"Satellite A200",	"",	"",	S3_BIOS|S3_MODE },
-	/* Brian Conn <Brian_Conn@Brown.edu> sys_version="PSAE3U-087023" */
+	/* Brian Conn <Brian_Conn@Brown.edu> sys_version="PSAE3U-087023" Andrew Barilla <andrew@exit66.com> "PSAE3U-07R025" */
 	{ "TOSHIBA",	"Satellite A205",	"",	"",	S3_BIOS|S3_MODE },
 	/* Gavin Kinsey <gavin.kinsey@gmail.com> */
 	{ "TOSHIBA",	"Satellite A210",	"",	"",	S3_BIOS|S3_MODE },
@@ -1623,12 +1703,18 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",	"Satellite A300D",	"",	"",	VBE_POST|VBE_SAVE },
 	/* */
 	{ "TOSHIBA",	"Satellite A30",	"",	"",	VBE_SAVE },
+	/* TOSHIBA Satellite A45, Shawn A. Wilson <shawn@lannocc.com> */
+	{ "TOSHIBA",	"Satellite A45",	"PSA40U-000HNV",	"Version 1.30",	0 },
 	/* Diego Ocampo <diegoocampo8@gmail.com> */
 	{ "TOSHIBA",	"Satellite A80",	"",	"",	0 },
 	/* Christian Schneeman <cschneemann@suse.de> */
 	{ "TOSHIBA",	"Satellite L10",	"",	"",	VBE_POST|VBE_MODE },
+	/* Toshiba Satellite L305-S5955, Dan <daniel.kneezel@gmail.com> */
+	{ "TOSHIBA",	"Satellite L305",	"PSLB8U-13T038",	"1.80",	VBE_POST|VBE_MODE },
 	/* Gijs van Gemert <g.v.gemert@inter.nl.net> */
 	{ "TOSHIBA",	"Satellite L30",	"",	"",	S3_BIOS|S3_MODE },
+	/* Toshiba Satellite M100, Ji.í Appl <j.appl@seznam.cz> */
+	{ "TOSHIBA",	"SATELLITE M100",	"PSMA0E-030014CZ",	"V1.60",	0 },
 	/* Krzysztof Lubanski <luban@nerdshack.com>, sys_version = "PSMA0U-0F301U" */
 	{ "TOSHIBA",	"Satellite M105",	"",	"",	S3_BIOS|S3_MODE },
 	/* tnt.rocket@freenet.de, need to verify if S3_MODE is needed too */
@@ -1651,6 +1737,8 @@ struct machine_entry whitelist[] = {
 	{ "TOSHIBA",	"SatellitePro4600",	"",	"",	0 },
 	/* Stephen Jarrett-Sprague <sjarrettsprague@googlemail.com> sys_version="PSAC1E-0J3021EN" */
 	{ "TOSHIBA",	"Satellite Pro A120",	"",	"",	S3_BIOS|S3_MODE },
+	/* Toshiba Satellite Pro M15, Mark Chace <markcha@chacefamily.org> */
+	{ "TOSHIBA",	"Satellite Pro M15",	"PS630U-G205HV",	"Version 1.50",	0 },
 	/* Francisco Palomo Lozano <francisco.palomo@uca.es> sys_version="PSM75E-00G00TSP" */
 	{ "TOSHIBA",	"Satellite Pro M70",	"",	"",	S3_BIOS|S3_MODE },
 	/* Neil Symington, https://bugzilla.novell.com/show_bug.cgi?id=386505, kernel 2.6.25-x86_64 */
@@ -1705,115 +1793,5 @@ struct machine_entry whitelist[] = {
 	{ "VIA Technologies, Inc.",	"VT8623-8235",	"",	"",	S3_MODE },
 	/* Rene Seindal <rene@seindal.dk> */
 	{ "ZEPTO",	"ZNOTE *",	"3215W *",	"",	0 },
-	/* 03/08/2009, Sony Vaio VGN-N21Z_W, Raphael Scholer <raphael@scholer-online.de> */
-	{ "Sony Corporation",	"VGN-N21Z_W",	"C3LNT6WK",	"R0070J4",	0 },
-	/* Toshiba Satellite L305-S5955, Dan <daniel.kneezel@gmail.com> FAILS, only minimal mode |kix: BIOS update recomended */
-	{ "TOSHIBA",	"Satellite L305",	"PSLB8U-13T038",	"1.80",	VBE_POST|VBE_MODE },
-	/* Toshiba Satellite M100, Ji.í Appl <j.appl@seznam.cz> */
-	{ "TOSHIBA",	"SATELLITE M100",	"PSMA0E-030014CZ",	"V1.60",	0 },
-	/* Toshiba Satellite L305-S5955, Dan <daniel.kneezel@gmail.com> */
-	{ "TOSHIBA",	"Satellite L305",	"PSLB8U-13T038",	"1.80",	VBE_POST|VBE_MODE },
-	/* Toshiba Satellite Pro M15, Mark Chace <markcha@chacefamily.org> */
-	{ "TOSHIBA",	"Satellite Pro M15",	"PS630U-G205HV",	"Version 1.50",	0 },
-	/* TOSHIBA Satellite A45, Shawn A. Wilson <shawn@lannocc.com> */
-	{ "TOSHIBA",	"Satellite A45",	"PSA40U-000HNV",	"Version 1.30",	0 },
-	/* TOSHIBA Satellite A205, Andrew Barilla <andrew@exit66.com> */
-	{ "TOSHIBA",	"Satellite A205",	"PSAE3U-07R025",	"V2.50",	0 },
-	/* Toshiba Portege A600-13Y, Gregor Zattler <grfz@gmx.de> */
-	{ "TOSHIBA",	"PORTEGE A600",	"PPA61E-01700EGR",	"Version 1.50",	0 },
-	/* Samsung NP-Q45, Jérémie <jeremie@lamah.info> */
-	{ "SAMSUNG ELECTRONICS CO., LTD.",	"SQ45S70S",	"15ST",	"15ST",	0 },
-	/* Florian Sesser <florian@sesser.at> */
-	{ "Gigabyte Technology Co., Ltd.",	"GA-MA69G-S3H",	" ",	"F5",	0 },
-	/* Andi Valachi <avalachi@2link.ca> */
-	{ "Gigabyte Technology Co., Ltd.",	"GA-MA785GM-US2H",	" ",	"F5",	S3_BIOS|S3_MODE },
-	/* Thorsten Goetzke <th.goetzke@gmx.net> */
-	{ "Gigabyte Technology Co., Ltd.",	"P35-DS3",	" ",	"F6",	0 },
-	/* Gigabyte P35-DS3L, Kainráth Roland <kainrath.roland@gmail.com> */
-	{ "Gigabyte Technology Co., Ltd.",	"P35-DS3L",	" ",	"F8",	0 },
-	/* Ian-Xue Li <da.mi.spirit@gmail.com> */
-	{ "Gigabyte Technology Co., Ltd.",	"GA-MA78GPM-DS2H",	" ",	"F1",	S3_BIOS },
-	/* Asus P4B266, s2ram -f -a 3 Olivier Berger <oberger@ouvaton.org> */
-	{ "System Manufacturer",	"System Name",	"System Version",	"ASUS P4B266 ACPI BIOS Revision 1010",	S3_BIOS|S3_MODE },
-	/* Acer Aspire 5730Z, Will Donnelly <will.donnelly@gmail.com> */
-	{ "Acer           ",	"Aspire 5730                    ",	"0100           ",	"V1.07          ",	0 },
-	/* Acer Aspire 1620, Sascha Warner <PRX@gmx.net> */
-	{ "Acer           ",	"Aspire 1620    ",	"0100           ",	"V1.05     ",	0 },
-	/* Acer 1810TZ, tom <thoemu@gmail.com> */
-	{ "Acer",	"Aspire 1810TZ",	"v0.3115",	"v0.3115",	0 },
-	/* Dell Inspiron 1525 notebook, Horvath Andras / Log69.com <mail@log69.com> */
-	{ "Dell Inc.",	"Inspiron 1525                   ",	"",	"A08",	VBE_SAVE },
-	/* Dell Inspiron 1010, Alfredo Rezinovsky <alfredo@rezinovsky.com.ar> */
-	{ "Dell Inc.",	"Inspiron 1010   ",	"A09",	"A09",	VBE_POST|VBE_SAVE },
-	/* D630 reported by Christer Edwards <christer.edwards@gmail.com> */
-	{ "Dell Inc.",	"Latitude D630 *",	"",	"",	0 },
-	/* Dell Inc. Latitude D430, Humbert, Arnim <AHumbert@whopper.com> */
-	{ "Dell Inc.",	"Latitude D430                   ",	"",	"A08",	0 },
-	/* Dell Latitude E4300, Nicolas Estibals <Nicolas.Estibals@gmail.com> & Frank Ploss <frank@frankploss.de> */
-	{ "Dell Inc.",	"Latitude E4300                  ",	"",	"A09",	0 },
-	/* Lenovo 3000 N200, Kyle Jones -- Hotelicom <kyle@hotelicom.com> */
-	{ "LENOVO",	"0769AVU",	"3000 N200                       ",	"68ET31WW",	0 },
-	/* IBM T400, Erez Zarum <erez@erezzarum.com> */
-	{ "LENOVO",	"2768EB7",	"ThinkPad T400",	"7UET71WW (3.01 )",	VBE_SAVE|VBE_MODE|PCI_SAVE },
-	/* Lenovo T400, Chris Cain <zshazz@gmail.com> */
-	{ "LENOVO",	"2764CTO",	"ThinkPad T400",	"7UET43WW (1.13 )",	VBE_POST|VBE_MODE },
-	/* ThinkPad X61 Tablet, Baylis Shanks <bshanks3@hotmail.com>, possible problems with video */
-	{ "LENOVO",	"7764CTO",	"ThinkPad X61 Tablet",	"7SET18WW (1.04 )",	VBE_POST|VBE_MODE },
-	/* ThinkPad T61, KyuHwa Lee <lee.kyuh@gmail.com> */
-	{ "LENOVO",	"6465CTO",	"ThinkPad T61",	"7LETC5WW (2.25 )",	0 },
-	/* HP Pavilion dv2, Mike Leimon <leimon@gmail.com> */
-	{ "Hewlett-Packard",	"HP Pavilion dv2 Notebook PC     ",	"F.03    ",	"F.03    ",	VBE_POST|VBE_SAVE },
-	/* Wael Nasreddine <wael.nasreddine@gmail.com */
-	{ "Hewlett-Packard",	"HP Pavilion dv7 Notebook PC*",	"",	"",	0 },
-	/* HP Pavilion dv5244eu, Adrian Connolly <aconnolly08@qub.ac.uk> */
-	{ "Hewlett-Packard",	"Pavilion dv5000 (RA648EA#ABU)     ",	"F.42",	"F.42",	0 },
-	/* HP Compaq 6910p, Alexander Mikhailian <mikhailian@mova.org> */
-	{ "Hewlett-Packard",	"HP Compaq 6910p (GH717AW#UUG)",	"F.15",	"68MCD Ver. F.15",	VBE_POST|VBE_MODE },
-	/* HP Compaq nx9420, Adam <ajett2@gmail.com> */
-	{ "Hewlett-Packard",	"HP Compaq nx9420 (RB549UT#ABA)",	"F.1D",	"68YAF Ver. F.1D",	S3_BIOS|S3_MODE },
-	/* Presario F500, Richard Pinnell <pinr@rocketmail.com> */
-	{ "Hewlett-Packard",	"Presario F500 (GF596UA#ABA)       ",	"Rev 1",	"F.1C    ",	0 },
-	/* HP OmniBook 500, Oliver Redner <oliver.redner@arcor.de> */
-	{ "Hewlett-Packard",	"HP OmniBook PC         ",	"HP OmniBook 500 FA     ",	"FA.M2.71",	0 },
-	/* HP xw4300 Workstation, Florian Reitmeir <florian@reitmeir.org> */
-	{ "Hewlett-Packard",	"HP xw4300 Workstation",	" ",	"786D3 v01.11",	0 },
-	/* Philippe LEBOURG <ph.l@wanadoo.fr> */
-	{ "HP-Pavilion",	"NB965AA-ABF s3715fr",	" ",	"5.08 ",	0 },
-	/* X40, Confirmed by Ville Kovács (From X and console) */
-	{ "IBM",	"23726JG",	"ThinkPad X40",	"1UETD3WW*",	S3_BIOS },
-	/* ThinkPad R50e, Ferenc Wagner <wferi@niif.hu> */
-	{ "IBM",	"1834S5G",	"ThinkPad R50e",	"1WET90WW (2.10 )",	0 },
-	/* MSI IM-945GSE, Martin Teufel <teufel@informatik.uni-frankfurt.de> */
-	{ "MSI",	"A9830IMS",	"11",	"080015 ",	S3_BIOS|S3_MODE },
-	/* Fujitsu S6120, Andre Kusuma <andrekusuma@gmail.com> */
-	{ "FUJITSU",	"0000000000",	" ",	"Version 1.04 ",	0 },
-	/* Elmar Stellnberger <estellnb@gmail.com> */
-	{ "FUJITSU SIEMENS",	"AMILO Xi 2550",	"                                ",	"1.11C",	VBE_POST|VBE_MODE },
-	/* AmiloPro V3515, Julian Wollrath <jwollrath@web.de> */
-	{ "FUJITSU SIEMENS",	"AMILO PRO V3515",	"20",	"1.0M-2309-8A20",	VBE_POST|VBE_MODE },
-	/* ASUS Eeepc 1005HA, Raphael Scholer <raphael@scholer-online.de> */
-	{ "ASUSTeK Computer INC.",	"1005HA",	"x.x",	"0703   ",	0 },
-	/* ASUS Eeepc 1000HA, John Combs <guitarjohn91@gmail.com> */
-	{ "ASUSTeK Computer INC.",	"1000H",	"x.x",	"2003   ",	0 },
-	/* ASUS Eeepc 1002HA, Miguel Figueiredo <elmig@debianpt.org> */
-	{ "ASUSTeK Computer INC.",	"1002HA",	"x.x",	"0802   ",	0 },
-	/* Asus F80L laptop, Manuel Pégourié-Gonnard <mpg@elzevir.fr> */
-	{ "ASUSTeK Computer Inc.        ",	"F80L                ",	"1.0       ",	"204    ",	VBE_POST },
-	/* Asus A3N, Stephan Schaller <raw-jaw@gmx.de> */
-	{ "ASUSTeK Computer Inc.        ",	"A3N       ",	"1.0       ",	"0215                     ",	S3_BIOS },
-	/* Sony VGN-B1VP, M. Vefa Bicakci <bicave@superonline.com> */
-	{ "Sony Corporation",	"VGN-B1VP(GB)",	"J000L04A",	"R0042G9",	S3_BIOS|S3_MODE },
-	/* AMI :-), Mario Maas <mariomaas@googlemail.com> */
-	{ "American Megatrends Inc.",	"Uknown",	"1.0",	"P2.00",	0 },
-	/* Tomas Groth <tomasgroth@yahoo.dk> */
-	{ "Notebook",	"SAM2010",	"1058",	"A1058AM7 V7.23",	VBE_SAVE },
-	/* Gateway MX3228, The Space Man <thespaceman@verizon.net> */
-	{ "Gateway",	"MX3228",	"73.08   ",	"73.08   ",	VBE_POST|VBE_MODE },
-	/* Benq JoyBook S32, Ciprian Dorin, Craciun <ciprian.craciun@gmail.com> */
-	{ "BenQ",	"Joybook S32",	"2.3.1",	"01.17 ",	0 },
-	/* Macbook 5,5, Giorgio <giorgio@gilestro.tk> */
-	{ "Apple Inc.",	"MacBookPro5,5",	"1.0",	"   MBP55.88Z.00AC.B03.0906151708",	0 },
-	/* Armin Braunstein <armin.braunstein@gmx.at> */
-	{ "                                ",	"                                ",	"                        ",	"MQ96510J.86A.0816.2006.0716.2308",	VBE_POST|VBE_MODE },
 	{ NULL, NULL, NULL, NULL, 0 }
 };
