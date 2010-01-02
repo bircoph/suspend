@@ -174,6 +174,12 @@ fbsplash_test_SOURCES=\
 fbsplash_test_LDADD=\
 	$(FBSPLASH_LIBS)
 
+whitelist.c: whitelist.csv
+	$(PERL) wlcsv2c.pl whitelist.csv whitelist.c
+
+clean-local:
+	rm -f whitelist.c
+
 #
 # Misc functions
 #

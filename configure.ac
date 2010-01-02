@@ -122,6 +122,7 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL		# We are using libtool so it auto-find static dependencies
 PKG_PROG_PKG_CONFIG
 AC_CHECK_PROGS([M4], [m4])
+AC_CHECK_PROG(PERL, perl, perl)
 
 AC_SYS_LARGEFILE
 
