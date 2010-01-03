@@ -304,10 +304,11 @@ int s2ram_is_supported(void)
 
 	if (!force) {
 		if (flags) {
-		printf("The acpi_sleep, vbe_save, vbe_post, radeontool and "
-			"pci_save parameters must be used with --force\n\n");
-		return EINVAL;
-	}
+			printf("The acpi_sleep, vbe_save, vbe_post, radeontool"
+				" and pci_save parameters must be used with"
+				" --force\n\n");
+			return EINVAL;
+		}
 
 		id = machine_match();
 		ret = s2ram_check(id);
