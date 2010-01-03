@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <whitelist.h>
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -31,10 +32,8 @@ struct dmi_header
 };
 
 #ifdef S2RAM
-extern char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define PRINTF(a...)
 #else
-char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
 #define PRINTF printf
 #endif
 

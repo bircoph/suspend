@@ -3,6 +3,9 @@
  * and all the workarounds
  */
 
+/* Item size */
+#define ITEMSZ	1024
+
 /* flags for the whitelist */
 #define S3_BIOS     0x01	/* machine needs acpi_sleep=s3_bios */
 #define S3_MODE     0x02	/* machine needs acpi_sleep=s3_mode */
@@ -22,6 +25,8 @@ struct machine_entry
 	const char *bios_version;
 	unsigned int flags;
 };
+
+char bios_version[ITEMSZ], sys_vendor[ITEMSZ], sys_product[ITEMSZ], sys_version[ITEMSZ];
 
 extern char *whitelist_version;
 extern struct machine_entry whitelist[];

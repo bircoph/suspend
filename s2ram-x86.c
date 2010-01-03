@@ -35,8 +35,6 @@ static int flags, vbe_mode = -1, dmi_scanned;
 static int force;
 static int fb_nosuspend;
 
-char bios_version[1024], sys_vendor[1024], sys_product[1024], sys_version[1024];
-
 /* return codes for s2ram_is_supported */
 #define S2RAM_OK	0
 #define S2RAM_FAIL	1
