@@ -2,6 +2,7 @@
  * Suspend-to-RAM
  *
  * Copyright 2006 Pavel Machek <pavel@suse.cz>
+ * Copyright 2009 Rodolfo Garcia <kix@kix.es>
  * Distribute under GPLv2.
  */
 
@@ -86,11 +87,11 @@ int main(int argc, char *argv[])
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
-	printf("Switching from vt%d to vt1", active_console);
+	printf("switching from vt%d to vt1... ", active_console);
 	if (chvt(1))
-		printf("... succeeded\n");
+		printf("succeeded\n");
 	else
-		printf("... failed\n");
+		printf("failed\n");
 
 
 	ret = s2ram_hacks();
@@ -102,11 +103,11 @@ int main(int argc, char *argv[])
  out:
 	/* if we switched consoles before suspend, switch back */
 	if (active_console > 0) {
-		printf("switching back to vt%d", active_console);
+		printf("switching back to vt%d... ", active_console);
 		if (chvt(active_console))
-			printf("... succeeded\n");
+			printf("succeeded\n");
 		else
-			printf("... failed\n");
+			printf("failed\n");
 	}
 
 	return ret;
