@@ -172,7 +172,7 @@ static int open_resume_dev(char *resume_dev_name,
                            struct swsusp_header *swsusp_header)
 {
 	ssize_t size = sizeof(struct swsusp_header);
-	off64_t shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = ((off64_t)resume_offset + 1) * page_size - size;
 	ssize_t ret;
 	int fd;
 
@@ -295,7 +295,7 @@ static int read_image(int dev, int fd, loff_t start)
 static int reset_signature(int fd, struct swsusp_header *swsusp_header)
 {
 	ssize_t ret, size = sizeof(struct swsusp_header);
-	off64_t shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = ((off64_t)resume_offset + 1) * page_size - size;
 	int error = 0;
 
 	/* Reset swap signature now */

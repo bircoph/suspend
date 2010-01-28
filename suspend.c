@@ -1386,7 +1386,7 @@ static int mark_swap(int fd, loff_t start)
 {
 	int error = 0;
 	unsigned int size = sizeof(struct swsusp_header);
-	off64_t shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = ((off64_t)resume_offset + 1) * page_size - size;
 
 	if (lseek64(fd, shift, SEEK_SET) != shift)
 		return -EIO;
@@ -1625,7 +1625,7 @@ static int reset_signature(int fd)
 {
 	int ret, error = 0;
 	unsigned int size = sizeof(struct swsusp_header);
-	off64_t shift = (resume_offset + 1) * page_size - size;
+	off64_t shift = ((off64_t)resume_offset + 1) * page_size - size;
 
 	if (lseek64(fd, shift, SEEK_SET) != shift)
 		return -EIO;
