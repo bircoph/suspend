@@ -102,7 +102,7 @@ libsuspend_common_a_SOURCES=\
 	fbsplash_funcs.h fbsplash_funcs.c \
 	bootsplash.h bootsplash.c \
 	memalloc.h memalloc.c load.c \
-	whitelist.h whitelist.c \
+	whitelist.h whitelist.csv whitelist.c \
 	s2ram.h s2ram.c
 
 if ARCH_X86
