@@ -394,7 +394,7 @@
 "Hewlett-Packard", "HP Compaq dc5800 Small Form Factor", "", "786F2*", 0, /* Marek Stopka <mstopka@opensuse.org>, kernel 2.6.25 */
 "Hewlett-Packard", "HP Compaq nc2400*", "", "68YOP*", VBE_POST|VBE_MODE, /* hp compaq nc2400, tested by seife. sometimes has keyboard problems after resume */
 "Hewlett-Packard", "HP Compaq nc4200*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
-"Hewlett-Packard", "HP Compaq nc4400*", "", "68YHV*", VBE_POST|VBE_MODE, /* Antti Laine <antti.a.laine@tut.fi>, "did not work with older BIOS", now has F.09  sys_ver="F.08": VBE_POST|VBE_SAVE, /* Rene Seindal <rene@seindal.dk> */
+"Hewlett-Packard", "HP Compaq nc4400*", "", "68YHV*", VBE_POST|VBE_MODE, /* Antti Laine <antti.a.laine@tut.fi>, "did not work with older BIOS", now has F.09  sys_ver="F.08": VBE_POST|VBE_SAVE, Rene Seindal <rene@seindal.dk> */
 "Hewlett-Packard*", "HP Compaq nc6000 *", "", "68BDD*", S3_BIOS|S3_MODE, /* there seem to be versions with a " " after Hewlett-Packard and without. */
 "Hewlett-Packard", "HP Compaq nc6120 *", "", "", VBE_POST|VBE_MODE, /* Winfried Dobbe, https://bugzilla.novell.com/show_bug.cgi?id=159688 */
 "Hewlett-Packard", "HP Compaq nc6220*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
