@@ -210,7 +210,6 @@ static int init_swap_reader(struct swap_reader *handle, int fd, loff_t start,
  */
 static void find_next_image_page(struct swap_reader *handle)
 {
-	struct extent ext;
 	int error;
 
 	handle->cur_offset += page_size;
@@ -332,7 +331,7 @@ static int load_image(struct swap_reader *handle, int dev,
 	unsigned int m, n;
 	ssize_t buf_size;
 	ssize_t ret;
-	void *buf;
+	void *buf = 0;
 	int error = 0;
 	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
@@ -571,7 +570,8 @@ int read_or_verify(int dev, int fd, struct image_header_info *header,
                    loff_t start, int verify, int test)
 {
 	static struct swap_reader handle;
-	static unsigned char orig_checksum[16], checksum[16], csum_buf[48];
+	static unsigned char orig_checksum[16], checksum[16];
+	static char csum_buf[48];
 	int error = 0, test_mode = (verify || test);
 
 	error = read_page(fd, header, start);
