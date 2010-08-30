@@ -258,8 +258,7 @@ static void reboot_question(char *message)
 static int read_image(int dev, int fd, loff_t start)
 {
 	struct image_header_info *header;
-	int ret, error;
-	char c;
+	int error;
 
 	header = getmem(page_size);
 

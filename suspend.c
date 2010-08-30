@@ -1476,7 +1476,7 @@ static int write_image(int snapshot_fd, int resume_fd, int test_fd)
 		/* We have already read one page */
 		nr_pages--;
 	}
-	printf("%s: Image size: %lu kilobytes\n", my_name, image_size / 1024);
+	printf("%s: Image size: %lu kilobytes\n", my_name, (unsigned long) image_size / 1024);
 	real_size = image_size;
 
 	handle.swap_needed = image_size;

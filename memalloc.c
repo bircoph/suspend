@@ -68,7 +68,7 @@ int init_memalloc(size_t aux, size_t pool)
 {
 	void *mem;
 	unsigned long addr;
-	size_t size, slots_size;
+	size_t slots_size;
 
 	slots_size = round_up_page_size(aux);
 	pool_size = round_up_page_size(pool);
