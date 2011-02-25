@@ -1,10 +1,12 @@
 "4MBOL&S", "7521 *", "REV. A0", "", 0, /* Michael Wagner <michael-wagner@gmx.de> */
 "Acer *", "AcerPower 2000", "", "", 0, /* Klaus Ade Johnstad <klaus@skolelinux.no> */
-"Acer            ", "AO751h           ", "Not Applicable", "V0.3206", 0, /* Jan 29, 2010 - Luca Rei <luca.rei@ge...> */
+"Acer            ", "AO532h          ", "V1.25", "V1.25", 0, /* TomÃ¡Å¡ KaluÅ¾a <elpraga@gmail.com> */
+"Acer            ", "AO751h           ", "Not Applicable", "V0.32*", 0, /* Jan 29, 2010 - Luca Rei <luca.rei@ge...> */
 "Acer", "AOA110", "", "", 0, /* Jan Matuska <jan.matuska@s-help.sk>, Aspire One 110 */
 "Acer", "AOA150", "", "", 0, /* Matt Harlum <Matt@cactuar.net> Aspire One 150 + Dec 29, 2009 - Scott Lees <plmeister@gmail.com> */
 "Acer *", "Aspire 1500 *", "", "", VBE_POST|VBE_SAVE, /* Simon Bachmann <simonbachmann@bluewin.ch> works with proprietary ATI driver */
 "Acer", "Aspire 1520", "", "", VBE_POST|VBE_MODE, /* Andreas Wagner <A.Wagner@stud.uni-frankfurt.de> */
+"Acer           ", "Aspire 1551                    ", "V1.11          ", "V1.11          ", S3_BIOS|VBE_SAVE, /* Mario J. Borgnia <mborgnia@verizon.net> */
 "Acer           ", "Aspire 1620    ", "0100           ", "V1.05     ", 0, /* Acer Aspire 1620, Sascha Warner <PRX@gmx.net> */
 "Acer *", "Aspire 1670     ", "", "", S3_BIOS|S3_MODE, /* Stefano Sabatini https://bugzilla.novell.com/show_bug.cgi?id=415675 */
 "Acer", "Aspire 1810TZ", "v0.3115", "v0.3115", 0, /* Acer 1810TZ, tom <thoemu@gmail.com> */
@@ -21,6 +23,7 @@
 "Acer            ", "Aspire 5500Z *", "", "", 0, /* Paul Kretek <pk@oz4.org> */
 "Acer            ", "Aspire 5610Z *", "", "", S3_BIOS|S3_MODE, /* Vadim Dashkevich <vadim.dashkevich@gmail.com> */
 "Acer *", "Aspire 5630 *", "", "", S3_BIOS|S3_MODE, /* Andrey Popov <potopi@gmx.net> */
+"Acer *", "Aspire 5670 *", "", "v1.3219", RADEON_OFF, /* Eduardo Bach <hellbach@gmail.com> */
 "Acer           ", "Aspire 5730                    ", "0100           ", "V1.07          ", 0, /* Acer Aspire 5730Z, Will Donnelly <will.donnelly@gmail.com> */
 "Acer", "Extensa 2900", "", "", VBE_POST|VBE_MODE, /* Christine Upadek <5upadek@informatik.uni-hamburg.de> */
 "Acer", "Extensa 3000 *", "", "", S3_BIOS|S3_MODE, /* Paolo Herms <paolo.herms@gmx.net> */
@@ -38,6 +41,7 @@
 "Acer, inc.", "Aspire 5580 *", "", "", 0, /* <vanhtu1987@gmail.com>, probably only with nvidia driver :-( */
 "Acer, inc.", "Aspire 5920G *", "", "", 0, /* Adrian Levi <adrian.levi@gmail.com>. S3_BIOS reported by: Jun 29, 2010 - morpheus <jacopogg83@li...>. No flags: Feb 10, 2010 - Juraj Misur <juraj.misur@gm...> */
 "Acer, inc.", "Aspire 5920 *", "", "", VBE_POST|VBE_MODE, /* Ronny Dahl <ronny.dahl@gmx.net> */
+"Acer", "Aspire One 753", "V1.11", "V1.11", 0, /* Vladimir Zapolskiy <vzapolskiy@gmail.com> */
 "Acer, inc.", "Ferrari 1000    ", "", "", VBE_POST|VBE_SAVE, /* Hannes Reinecke https://bugzilla.novell.com/show_bug.cgi?id=354728 */
 "Acer, inc.", "Ferrari 4000    ", "", "", VBE_POST|VBE_SAVE|NOFB, /* */
 "Acer, inc.", "Ferrari 5000    ", "", "", VBE_POST|VBE_MODE, /* Russ Dill <russ.dill@gmail.com> * does not work with fglrx, trenn@suse.de */
@@ -86,7 +90,7 @@
 "", "", "", "ASUS A7V600 ACPI BIOS Revision *", S3_BIOS|S3_MODE, /* ASUS a7v600 motherboard, has no usable sys_* entries besides bios_version :-( reported by James Spencer */
 "", "", "", "ASUS A7V8X-X ACPI BIOS Revision *", VBE_POST|VBE_MODE, /* Gabriel <gabriel@opensuse.org> */
 "", "", "", "ASUS A7V ACPI BIOS Revision *", 0, /* ASUS A7V Mainboard, Michael Klein <michael.klein@puffin.lb.shuttle.de> */
-"", "", "", "ASUS M2A-VM ACPI BIOS Revision *", VBE_POST|VBE_MODE, /* Tristan Hoffmann <info@tristanhoffmann.de> Newer bios revisions (1705) seem to need VBE_POST, bios_ver: "ASUS M2A-VM ACPI BIOS Revision 1101", S3_BIOS|VBE_MODE, Andreas Bolsch <Andreas.Bolsch@alumni.TU-Berlin.DE>, Lajos Boróczki <boroczki.lajos@gmail.com> reports S3_BIOS|S3_MODE because -f fails on console */
+"", "", "", "ASUS M2A-VM ACPI BIOS Revision *", VBE_POST|VBE_MODE, /* Tristan Hoffmann <info@tristanhoffmann.de> Newer bios revisions (1705) seem to need VBE_POST, bios_ver: "ASUS M2A-VM ACPI BIOS Revision 1101", S3_BIOS|VBE_MODE, Andreas Bolsch <Andreas.Bolsch@alumni.TU-Berlin.DE>, Lajos Borï¿½czki <boroczki.lajos@gmail.com> reports S3_BIOS|S3_MODE because -f fails on console */
 "", "", "", "ASUS M2A-VM HDMI ACPI BIOS Revision 1603", VBE_POST|VBE_MODE, /* Jan Schaefer <jan.schaefer@gmail.com> */
 "", "", "", "ASUS M2N32-SLI DELUXE ACPI BIOS Revision 1101", VBE_POST|VBE_MODE, /* */
 "", "", "", "ASUS M2N32-SLI DELUXE ACPI BIOS Revision 1201", VBE_POST|VBE_MODE, /* another ASUS Mainboard, reported by mailinglist@prodigy7.de */
@@ -95,7 +99,8 @@
 "ASUSTEK ", "A2H/L ", "", "", 0, /* Cristian Rigamonti */
 "ASUSTeK Computer INC.", "1000H", "", "", 0, /* Daniel Willkomm <plabo@willkomms.de> EEE 1000H */
 "ASUSTeK Computer INC.", "1002HA", "x.x", "0802   ", 0, /* ASUS Eeepc 1002HA, Miguel Figueiredo <elmig@debianpt.org> */
-"ASUSTeK Computer INC.", "1005HA", "x.x", "", 0, /* ASUS Eeepc 1005HA, Raphael Scholer <raphael@scholer-online.de> (bios_version="0703   ", Jérôme Hénin <heninj@gmail.com>, (bios_version="0505   ") */
+"ASUSTeK Computer INC.", "1005HA", "x.x", "", 0, /* ASUS Eeepc 1005HA, Raphael Scholer <raphael@scholer-online.de> (bios_version="0703   ", Jï¿½rï¿½me Hï¿½nin <heninj@gmail.com>, (bios_version="0505   ") */
+"ASUSTeK Computer INC.", "1005PR", "x.x", "0201   ", S3_BIOS|S3_MODE, /* James Dewar <ameotoko@gmail.com> */
 "ASUSTeK Computer INC.", "1201T", "x.x", "0317   ", 0, /* Jul 2, 2010 - Brian Harkness <maestro_bwh@ya...> */
 "ASUSTeK Computer INC.", "701", "", "", VBE_POST|VBE_MODE, /* Andrea Zucchelli <zukka77@gmail.com> EEE-PC 4G */
 "ASUSTeK Computer INC.", "900", "0704", "0802*", 0, /* Jul 3, 2010 - <jon@wh...> */
@@ -121,7 +126,7 @@
 "ASUSTeK Computer Inc. ", "F3Ka *", "", "", VBE_POST|VBE_SAVE|NOFB, /* Oliver Neukum, only works without FB, https://bugzilla.novell.com/show_bug.cgi?id=425071 */
 "ASUSTeK Computer INC. *", "F3Sg *", "", "", 0, /* Anghinolfi Luca <anghi83@gmail.com> */
 "ASUSTeK Computer INC. ", "F3T", "", "", 0, /* Vladimir Pouzanov <farcaller@gmail.com>, probably only with nvidia and from X */
-"ASUSTeK Computer Inc.        ", "F80L                ", "1.0       ", "204    ", VBE_POST, /* Asus F80L laptop, Manuel Pégourié-Gonnard <mpg@elzevir.fr> */
+"ASUSTeK Computer Inc.        ", "F80L                ", "1.0       ", "204    ", VBE_POST, /* Asus F80L laptop, Manuel Pï¿½gouriï¿½-Gonnard <mpg@elzevir.fr> */
 "ASUSTeK Computer Inc. *", "F9E *", "", "", 0, /* Enrico Zini <enrico@enricozini.org> */
 "ASUSTeK Computer Inc. *", "G1S *", "", "", 0, /* Paul Cousins <namain@gmail.com> */
 "ASUSTek Computer Inc.", "K8N-E-Deluxe", "", "", S3_BIOS, /* ASUS Mainboard, Christoph Jaeschke <chrjae@arcor.de> */
@@ -225,6 +230,7 @@
 "Dell Inc. *", "Dimension 9100 *", "", "", VBE_POST|VBE_MODE, /* Edward Webb https://bugzilla.novell.com/show_bug.cgi?id=428181 */
 "Dell Inc.", "Inspiron 1010   ", "A09", "A09", VBE_POST|VBE_SAVE, /* Dell Inspiron 1010, Alfredo Rezinovsky <alfredo@rezinovsky.com.ar> */
 "Dell Inc.", "Inspiron 1011", "A06", "A06", 0, /* Alex Palecek <alex.palecek@gmail.com> +  May 23, 2010 - Graeme Roberts <chee@sn...> */
+"Dell Inc.", "Inspiron 1120   ", "A03", "A03", 0, /* Jamie Kitson <jamie@kitten-x.com> */
 "Dell Inc.", "Inspiron 1200*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
 "Dell Inc.", "Inspiron 1420 *", "", "", VBE_POST|VBE_MODE, /* joey <joey7d6@yahoo.com> */
 "Dell Inc.", "Inspiron 1501 ", "", "", S3_BIOS|S3_MODE, /* Dell Inspiron 1501, https://bugzilla.novell.com/show_bug.cgi?id=304281 */
@@ -239,6 +245,7 @@
 "Dell Inc.", "Inspiron 8200*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
 "Dell Inc.", "Inspiron 8600*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
 "Dell Inc.", "Inspiron 9300*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
+"Dell Inc.", "Inspiron N5010", "A08", "A08", 0, /* Adams Micsku <adams_micsku1994@yahoo.com> */
 "Dell Inc.", "Latitude 110L*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
 "Dell Inc.", "Latitude D410 *", "", "", VBE_POST|VBE_MODE, /* https://bugzilla.novell.com/show_bug.cgi?id=220865 */
 "Dell Inc.", "Latitude D420 *", "", "", VBE_POST|VBE_MODE, /* tested by seife and Nenad ANTONIC <nenad.antonic@gmail.com> */
@@ -257,6 +264,7 @@
 "Dell Inc.", "Latitude E5400", "", "A15", 0, /* Jul 9, 2010 - JoÃ£o Santiago <exalowprofile@gm...> */
 "Dell Inc.", "Latitude E6400                  ", "", "A15", 0, /* Feb 9, 2010 - Krzysztof SOCHA <kszysss@gm...> */
 "Dell Inc.", "Latitude E6400                  ", "", "A20", 0, /* Apr 25, 2010 - George B. <i93.borg@gm...> */
+"Dell Inc.", "Latitude E6500                  ", "", "A23", 0, /* Martin Jungmann <74258byme@gmx.de> */
 "Dell Inc.", "Latitude X1*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
 "Dell Inc.", "Latitude X300*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* imported from acpi-support 0.59 "half known". */
 "Dell Inc.", "ME051 *", "", "", 0, /* Dell inspiron 1300, Tim Dijkstra <tim@famdijkstra.org> */
@@ -277,11 +285,13 @@
 "Dell Inc.", "Precision M6300 *", "", "", VBE_POST|VBE_MODE, /* Chris Debrunner <chd@evcohs.com> */
 "Dell Inc.", "Precision M65 *", "", "", VBE_POST|VBE_MODE, /* gaofi@gaofi.com */
 "Dell Inc.", "Precision M90 *", "", "", 0, /* Manoj Srivastava <srivasta@debian.org> */
+"Dell Inc.", "Studio XPS 1640", "A113", "A11", 0, /* JackDesBwa <jackdesbwa@gmail.com> */
 "Dell Inc.", "Studio XPS 1645", "A08 ", "A08", 0, /* Apr 6, 2010 - Jon Arne JÃ¸rgensen <jonjon.arnearne@gm...> Not minimal mode */
 "Dell Inc.", "Vostro   1000 ", "", "", S3_BIOS|S3_MODE, /* Florian Buether <fbuether@jasminefields.net> */
 "Dell Inc.", "Vostro 1500 *", "", "", VBE_POST|VBE_MODE, /* Kyle Kearney <elyk53@gmail.com> */
 "Dell Inc.", "Vostro1710", "", "", 0, /* Luciano A. Ferrer <laferrer@gmail.com> */
 "Dell Inc.", "Vostro 3500", "Not Specified", "A01  ", 0, /* Aug 9, 2010 - Anton Olsson <exuvo@ex...> */
+"Dell Inc.", "Vostro 3700", "", "A09  ", 0, /* Petr MorÃ¡vek [Xificurk] <xificurk@gmail.com> */
 "Dell Inc.", "XPS M1330 *", "", "", VBE_POST|VBE_MODE, /* Dell XPS M1330, Danny Kukawka <dkukawka@suse.de> */
 "Dell Inc.", "XPS M1530 *", "", "", 0, /* Pierre <pinaraf@robertlan.eu.org> maybe only with nvidia driver...  Elie Roux <elie.roux@telecom-bretagne.eu> */
 "DIXONSXP", "To be filled by O.E.M.", "Ver.001", "", 0, /* Jarek Grzys <grzys@gazeta.pl> */
@@ -353,6 +363,7 @@
 "FUJITSU SIEMENS", "LIFEBOOK T4010", "", "", S3_BIOS|S3_MODE, /* Eckhart Woerner <ew@ewsoftware.de> */
 "FUJITSU SIEMENS", "LIFEBOOK T4210", "", "", S3_BIOS|S3_MODE|PCI_SAVE, /* Jay <jay@jay.cz> */
 "FUJITSU SIEMENS", "LifeBook T4310", "10601127925", "Version 1.05 ", 0, /* Apr 27, 2010 - H.-Dirk Schmitt <dirk@co...> */
+"FUJITSU SIEMENS", "P5GD1-FM", "", "1004.001", 0, /* Dennis Koll <dennis.koll@gmx.de> */
 "Fujitsu Siemens", "P6VAP-AP", "", "", 0, /* Tomas Pospisek <tpo@sourcepole.ch> */
 "FUJITSU SIEMENS", "SCENIC N300/N600", "", "", VBE_POST|VBE_MODE, /* Ulf Lange <mopp@gmx.net> */
 "FUJITSU SIEMENS", "SCENIC P / SCENICO P", "", "", VBE_POST|VBE_MODE, /* Guenther Schwarz <guenther.schwarz@gmx.de> */
@@ -379,8 +390,9 @@
 "Gigabyte Technology Co., Ltd.", "GA-MA790XT-UD4P", " ", "F4", 0, /* Mar 12, 2010 - Vit <vitruss@gm...> */
 "Gigabyte Technology Co., Ltd.", "M61PM-S2", " ", "Beta F9c", 0, /* Mar 5, 2010 - MÃ¡rcio Spezani <spezani@gm...> */
 "Gigabyte Technology Co., Ltd.", "P35-DS3", " ", "F6", 0, /* Thorsten Goetzke <th.goetzke@gmx.net> */
-"Gigabyte Technology Co., Ltd.", "P35-DS3L", " ", "F8", 0, /* Gigabyte P35-DS3L, Kainráth Roland <kainrath.roland@gmail.com> */
+"Gigabyte Technology Co., Ltd.", "P35-DS3L", " ", "F8", 0, /* Gigabyte P35-DS3L, Kainrï¿½th Roland <kainrath.roland@gmail.com> */
 "Gigabyte Technology Co., Ltd.", "P35-DS4", "", "", VBE_POST|VBE_MODE, /* Roberto Lumbreras <rover@lumbreras.org> */
+"Gigabyte Technology Co., Ltd.", "P55M-UD2", "", "F11", 0, /* Andreas Mueller <andreas@anmueller.de> */
 "Gigabyte Technology Co., Ltd.", "X58A-UD7", " ", "F6", 0, /* Jun 7, 2010 - Damir Perisa <damir.perisa@gm...> */
 "Hewlett-Packard", "", "", "68YDU*", 0, /* Michal Sedkowski <msedkowski@gmail.com>,  VBE_POST (Michal Vyskocil <michal.vyskocil@gmail.com>), VBE_POST|VBE_MODE (Danny Kukawka <dkukawka@suse.de>), Hendrik Tews <tews@cs.ru.nl> "HP Compaq nc6320 (RH367ET*" */
 "Hewlett-Packard", "", "", "68YGU*", VBE_POST, /* Michael Meskes <meskes@debian.org>, this is a NX 7400 */
@@ -389,11 +401,13 @@
 "Hewlett-Packard*", "Compaq nx5000 *", "", "68BCU*", VBE_POST|VBE_MODE, /* */
 "Hewlett-Packard ", "Compaq nx 7010 (DU394T#*", "", "68BAL*", S3_BIOS|S3_MODE, /* Philippe Marzouk <phil@ozigo.org> */
 "Hewlett-Packard ", "Compaq nx 7010 (PG588EA#*", "", "", S3_BIOS, /* FranÃ§ois MÃ¼nch <francois.munch@free.fr> */
+"Hewlett-Packard ", "Compaq Presario CQ60 Notebook PC", "F.32", "F.32", 0, /* egelor <e.trifonidis@gmail.com> */
 "Hewlett-Packard ", "Compaq Presario X1000 (DK454AV)*", "", "", S3_BIOS, /* "Zirkel, Timothy K" <zirkelt@lafayette.edu> */
 "Hewlett-Packard", "EW434AVABA *", "", "", S3_BIOS|S3_MODE, /* Marcos Pinto <markybob@gmail.com>, HP dv6000 */
 "Hewlett-Packard", "HP 2133", "", "68VGU*", S3_BIOS|S3_MODE, /* hp compaq 2133, https://bugzilla.novell.com/show_bug.cgi?id=409246 */
 "Hewlett-Packard", "HP 550", "", "68MVU*", VBE_POST|VBE_MODE, /* arideyla@web.de */
 "Hewlett-Packard", "HP Compaq 2133", "", "68VGU*", S3_BIOS|S3_MODE, /* hp compaq 2133, https://bugzilla.novell.com/show_bug.cgi?id=363240 */
+"Hewlett-Packard", "HP Compaq 2230s (FU312EA)", "F.0D", "68PHU Ver. F.0D", 0, /* Wouter Verhelst <w@uter.be> */
 "Hewlett-Packard", "HP Compaq 2510p *", "", "68MSP*", VBE_POST|VBE_MODE, /* Stefan Kulow https://bugzilla.novell.com/show_bug.cgi?id=362928 */
 "Hewlett-Packard", "HP Compaq 2710p *", "", "68MOU*", VBE_POST|VBE_MODE, /* Holger Sickenberg https://bugzilla.novell.com/show_bug.cgi?id=376715 */
 "Hewlett-Packard", "HP Compaq 6510b (GB863EA*", "", "68DDU*", VBE_POST|VBE_MODE, /* Jamil Djadala <djadala@datamax.bg> */
@@ -450,7 +464,7 @@
 "Hewlett-Packard", "HP Compaq nx9420 (RB549UT#ABA)", "F.1D", "68YAF Ver. F.1D", S3_BIOS|S3_MODE, /* HP Compaq nx9420, Adam <ajett2@gmail.com> */
 "Hewlett-Packard", "HP d330 uT*", "", "", 0, /* Georg Walser <gwa@aspedi.com> Model DG286A */
 "Hewlett-Packard", "HP d530 SFF*", "", "", 0, /* Ryan Bair <ryandbair@gmail.com> */
-"Hewlett-Packard", "HP EliteBook 8530w", "F.0F", "68PDV Ver. F.0F", 0, /* Works with -a 1, -a 2 and -a 3 too. Jirí Novácek <jnovacek69@gmail.com> 26/12/2009 */
+"Hewlett-Packard", "HP EliteBook 8530w", "F.0F", "68PDV Ver. F.0F", 0, /* Works with -a 1, -a 2 and -a 3 too. Jirï¿½ Novï¿½cek <jnovacek69@gmail.com> 26/12/2009 */
 "Hewlett-Packard", "HP G60 Notebook PC", "F.54", "F.54", 0, /* Jan 5, 2010 - Tom Petit <hrothgar1@gmail.com> */
 "Hewlett-Packard", "HP OmniBook PC         ", "HP OmniBook 500 FA     ", "FA.M2.71", 0, /* HP OmniBook 500, Oliver Redner <oliver.redner@arcor.de> */
 "Hewlett Packard", "", "HP OmniBook XE3 GC *", "", VBE_POST|VBE_SAVE, /* Frederic Mothe <mothe@nancy.inra.fr> */
@@ -499,6 +513,7 @@
 "Hewlett-Packard", "Pavilion zd8000 (EL030EA#*", "", "", VBE_POST, /* Etienne URBAH <etienne.urbah@free.fr> */
 "Hewlett-Packard ", "Pavilion zt3300 *", "", "68BAL*", S3_BIOS, /* Karthik <molecularbiophysics@gmail.com> */
 "Hewlett-Packard ", "Pavilion zt3300 (PF083UA#*", "", "", 0, /* Frank SchrÃ¶der <frank.schroeder@gmail.com>, zt3380us */
+"Hewlett-Packard", "Pavilion ZV6100 (EK848EA#*", "F.1B", "F.1B", 0, /* Pierre Hilson <zorglups.mailing@gmail.com> */
 "Hewlett-Packard*", "Presario 2100 (DP835E)*", "", "", 0, /* Jari Turkia <jmjt@lut.fi> */
 "Hewlett-Packard*", "Presario 2200 (PR309UA#*", "", "", 0, /* Frederic Koehler <fkfire@gmail.com> */
 "Hewlett-Packard", "Presario C500 (RZ341UA#*", "", "", 0, /* Matto Marjanovic <maddog@mir.com> */
@@ -550,7 +565,7 @@
 "IBM", "2369*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* X40 imported from acpi-support 0.59 "half known". */
 "IBM", "2370*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* X40 imported from acpi-support 0.59 "half known". */
 "IBM", "2371*", "ThinkPad X40", "", S3_BIOS|S3_MODE, /* X40 confirmed by Christian Deckelmann */
-"IBM", "2372*", "ThinkPad X40", "", S3_BIOS, /* X40, Confirmed by Ville Kovács (From X and console) */
+"IBM", "2372*", "ThinkPad X40", "", S3_BIOS, /* X40, Confirmed by Ville Kovï¿½cs (From X and console) */
 "IBM", "2373*", "", "", S3_BIOS|S3_MODE, /* T42p confirmed by Joe Shaw, T41p by Christoph Thiel (both 2373) */
 "IBM", "2374*", "", "", S3_BIOS|S3_MODE, /* T41p, Stefan Gerber */
 "IBM", "2375*", "", "", VBE_POST|VBE_SAVE|UNSURE, /* T40/T41/T42/p imported from acpi-support 0.59 "half known". */
@@ -622,12 +637,13 @@
 "LENOVO", "0769B9G", "3000 N200 *", "", 0, /* Hans Gunnarsson <hans.gunnarsson@gmail.com> */
 "LENOVO", "0769BBG", "3000 N200 *", "", S3_BIOS|S3_MODE, /* Stojan Jakotic <stojanjakotic@centrum.cz> */
 "LENOVO", "0769BEG", "3000 N200 *", "", 0, /* ozon <rootdesign@gmail.com> */
-"LENOVO", "0769ESG", "3000 N200 *", "", 0, /* Jesús Malo Poyatos <jesusmalo@gmail.com> */
+"LENOVO", "0769ESG", "3000 N200 *", "", 0, /* Jesï¿½s Malo Poyatos <jesusmalo@gmail.com> */
 "LENOVO", "1702*", "", "", S3_BIOS|S3_MODE, /* X60 / X60s */
 "LENOVO", "1704*", "", "", S3_BIOS|S3_MODE, /* X60 / X60s */
 "LENOVO", "1706*", "", "", S3_BIOS|S3_MODE, /* X60 / X60s */
 "LENOVO", "2007*", "", "", S3_BIOS|S3_MODE, /* T60p, Stephane Liardet <sliardet@gmail.com> */
 "LENOVO", "20828WG", "ThinkPad T500", "7VET81WW (3.11 )", 0, /* Apr 12, 2010 - Johannes Engel <jcnengel@go...> */
+"LENOVO", "20828WG", "ThinkPad T500", "7VET86WW (3.16 )", 0, /* Tanuva <tanuva@googlemail.com> */
 "LENOVO", "2242CTO", "ThinkPad T500", "6FET79WW (3.09 )", 0, /* Lenovo ThinkPad T500, Maciej Piechotka <uzytkownik2@gmail.com> */
 "LENOVO", "2478*", "", "", S3_BIOS|S3_MODE, /* LENOVO X300, 2008-04-03 https://bugzilla.novell.com/show_bug.cgi?id=370690 */
 "LENOVO", "2479*", "", "", S3_BIOS|S3_MODE, /* LENOVO X300, 2008-04-03 https://bugzilla.novell.com/show_bug.cgi?id=370690 */
@@ -635,10 +651,12 @@
 "LENOVO", "2764CTO", "ThinkPad T400", "*", VBE_POST|VBE_MODE, /* Lenovo T400, Chris Cain <zshazz@gmail.com>; Whitelist all bioses Arkadiusz Miskiewicz  */
 "LENOVO", "2768EB7", "ThinkPad T400", "7UET71WW (3.01 )", VBE_SAVE|VBE_MODE|PCI_SAVE, /* IBM T400, Erez Zarum <erez@erezzarum.com> */
 "LENOVO", "28477MG", "ThinkPad SL510", "6JET73WW (1.31 )", S3_BIOS|S3_MODE, /* Jul 18, 2010 - Mathias Lorenz <mathias@lo...> */
+"LENOVO", "2985ETG", "ThinkPad X201 Tablet", "6QET61WW (1.31 )", 0, /* Moritz Augsburger <moritz@augsburger.name> */
 "LENOVO", "3241                            ", "Lenovo IdeaPad Y550P            ", "1ECN33WW(V5.07)", 0, /* Jun 10, 2010 - Kevin Brosnan <kbrosnan@gm...> */
 "LENOVO", "4108*", "", "", S3_BIOS|S3_MODE, /* T61 / R61 2008-01-29, bug https://bugzilla.novell.com/show_bug.cgi?id=334522#c10 */
 "LENOVO", "4141*", "", "", S3_BIOS|S3_MODE, /* T61 / R61 2008-01-29, bug https://bugzilla.novell.com/show_bug.cgi?id=334522#c10 */
 "LENOVO", "4143*", "", "", S3_BIOS|S3_MODE, /* T61 / R61 2008-01-29, bug https://bugzilla.novell.com/show_bug.cgi?id=334522#c10 */
+"LENOVO", "4391B76", "ThinkPad W510", "6LET63WW (1.26 )", 0, /* Vladimir Zapolskiy <vzapolskiy@gmail.com> */
 "LENOVO", "6088*", "", "", 0, /* ThinkCentre M57p, <Joerg.Breuninger@de.bosch.com>, intel gfx, kernel 2.6.25.5 */
 "LENOVO", "6363*", "", "", S3_BIOS|S3_MODE, /* X60 Tablet, Carlos Lange, https://bugzilla.novell.com/show_bug.cgi?id=265613#c12 */
 "LENOVO", "6364*", "", "", S3_BIOS|S3_MODE, /* X60 Tablet, Gary Ekker, https://bugzilla.novell.com/show_bug.cgi?id=265613 */
@@ -663,6 +681,7 @@
 "LENOVO", "6480*", "", "", S3_BIOS|S3_MODE, /* T61 */
 "LENOVO", "7439W8A", "ThinkPad R400", "7UET79WW (3.09 )", 0, /* Mar 5, 2010 - Max Zimmermann <maxzimmermann@go...> */
 "LENOVO", "7458*", "", "", 0, /* "Lenovo X200", "7458AD9", "ThinkPad X200", "6DET30WW (1.07 )", penma@penma.de */
+"LENOVO", "7459W37", "ThinkPad X200", "6DET63WW (3.13 )", 0, /* Nine Cholas <nine.cholas@gmail.com> */
 "LENOVO", "74665EG", "ThinkPad X200s", "6DET60WW (3.10 )", 0, /* Dec 27, 2009 - Lars Stoltenow <penma@penma.de> */
 "LENOVO", "7642*", "", "", S3_BIOS|S3_MODE, /*ThinkPad R61 https://bugzilla.novell.com/show_bug.cgi?id=353896 */
 "LENOVO", "7643*", "", "", S3_BIOS|S3_MODE, /*ThinkPad R61 https://bugzilla.novell.com/show_bug.cgi?id=353896 */
@@ -679,6 +698,7 @@
 "LENOVO", "7660*", "", "", S3_BIOS|S3_MODE, /* T61 */
 "LENOVO", "7661*", "", "", S3_BIOS|S3_MODE, /* T61 */
 "LENOVO", "7663*", "", "", S3_MODE, /* T61 with NVidia card, https://bugzilla.novell.com/show_bug.cgi?id=290618 */
+"LENOVO", "76641KU", "ThinkPad T61", "7LETC4WW (2.24 )", 0, /* Jeremiah Mahler <jmmahler@gmail.com> */
 "LENOVO", "7664*", "", "", 0, /* T61, Aku Pietikainen <aku.pietikainen@ee.oulu.fi>, works with console and X */
 "LENOVO", "7666*", "", "", S3_BIOS|S3_MODE, /* Rasmus Borup Hansen <rbh@math.ku.dk>, X61s reported 7666 w. S3_BIOS  Anders Engstrom <ankaan@gmail.com> reported 7666 w. S3_BIOS|S3_MODE */
 "LENOVO", "7667*", "", "", S3_BIOS|S3_MODE, /* X61s */
@@ -806,7 +826,7 @@
 "SAMSUNG ELECTRONICS CO., LTD.", "R55S *", "", "", 0, /* Daniel Koester <koester@math.uni-augsburg.de> does not yet work from text mode */
 "SAMSUNG ELECTRONICS CO., LTD.", "SQ1US", "01ME", "", VBE_SAVE, /* Pavel Machek, Samsung UMPC */
 "SAMSUNG ELECTRONICS CO., LTD.", "SQ35S", "", "", VBE_POST, /* Maximilian Mehnert <maximilian.mehnert@googlemail.com> */
-"SAMSUNG ELECTRONICS CO., LTD.", "SQ45S70S", "", "", S3_BIOS|S3_MODE, /* Frank Ruell <frank@ruell.com> or Jérémie <jeremie@lamah.info> no flags */
+"SAMSUNG ELECTRONICS CO., LTD.", "SQ45S70S", "", "", S3_BIOS|S3_MODE, /* Frank Ruell <frank@ruell.com> or Jï¿½rï¿½mie <jeremie@lamah.info> no flags */
 "SAMSUNG ELECTRONICS CO., LTD.", "SR700", "", "", 0, /* Jens Ott <jo@opteamax.de> */
 "SAMSUNG ELECTRONICS CO., LTD.", "SX22S", "07AJ", "", VBE_SAVE, /* Konstantin Krasnov <krkhome@gmail.com>, only with kernel 2.6.24++ */
 "Samsung Electronics", "NX05S*", "", "", VBE_POST|VBE_MODE, /* Arnim Laeuger <arnim.laeuger@gmx.net> */
@@ -929,13 +949,17 @@
 "TOSHIBA", "Satellite A45", "PSA40U-000HNV", "Version 1.30", 0, /* TOSHIBA Satellite A45, Shawn A. Wilson <shawn@lannocc.com> */
 "TOSHIBA", "Satellite A80", "", "", 0, /* Diego Ocampo <diegoocampo8@gmail.com> */
 "TOSHIBA", "Satellite L10", "", "", VBE_POST|VBE_MODE, /* Christian Schneeman <cschneemann@suse.de> */
+"TOSHIBA", "Satellite L300", "PSLB8U-0NQ069", "1.80", 0, /* Jesse Taylor <jtayloriit@gmail.com> */
 "TOSHIBA", "Satellite L305", "PSLB8U-13T038", "1.80", VBE_POST|VBE_MODE, /* Toshiba Satellite L305-S5955, Dan <daniel.kneezel@gmail.com> */
 "TOSHIBA", "Satellite L30", "", "", S3_BIOS|S3_MODE, /* Gijs van Gemert <g.v.gemert@inter.nl.net> */
-"TOSHIBA", "SATELLITE M100", "PSMA0E-030014CZ", "V1.60", 0, /* Toshiba Satellite M100, Ji.í Appl <j.appl@seznam.cz> */
+"TOSHIBA", "Satellite L655D", "PSK2LU-00G001", "1.70", 0, /* Andrey Petrov <apetrov87@gmail.com> */
+"TOSHIBA", "SATELLITE M100", "PSMA0E-030014CZ", "V1.60", 0, /* Toshiba Satellite M100, Ji.ï¿½ Appl <j.appl@seznam.cz> */
 "TOSHIBA", "Satellite M105", "", "", S3_BIOS|S3_MODE, /* Krzysztof Lubanski <luban@nerdshack.com>, sys_version = "PSMA0U-0F301U" */
 "TOSHIBA", "Satellite M30X", "", "", S3_BIOS, /* tnt.rocket@freenet.de, need to verify if S3_MODE is needed too */
 "TOSHIBA", "Satellite M35X", "", "", S3_BIOS|S3_MODE, /* Michaell Gurski */
+"TOSHIBA", "Satellite M40", "PSM43U-*", "Version 1.50", 0, /* Feng.Charles@inventec.com */
 "TOSHIBA", "Satellite M55", "", "", VBE_POST|VBE_MODE, /* Mike Gilliam <mike.tx@suddenlink.net> */
+"TOSHIBA", "Satellite M60", "PSM60E-0C801GGR", "V1.40", VBE_POST|VBE_MODE, /* Peter Ingold <webmaster@peter-ingold.de> */
 "TOSHIBA", "Satellite M70", "", "", 0, /* (BAD: clist@uah.es S3_BIOS|S3_MODE) */
 "TOSHIBA", "Satellite P100", "", "", 0, /* zu@ten.ch sys_version  = "PSPAGE-00H00RS4" */
 "TOSHIBA", "Satellite P10", "", "", S3_BIOS|S3_MODE, /* Antonis Tsolomitis <atsol@aegean.gr> */
@@ -947,6 +971,7 @@
 "TOSHIBA", "Satellite Pro M15", "PS630U-G205HV", "Version 1.50", 0, /* Toshiba Satellite Pro M15, Mark Chace <markcha@chacefamily.org> */
 "TOSHIBA", "Satellite Pro M70", "", "", S3_BIOS|S3_MODE, /* Francisco Palomo Lozano <francisco.palomo@uca.es> sys_version="PSM75E-00G00TSP" */
 "TOSHIBA", "Satellite Pro U300", "", "", 0, /* Neil Symington, https://bugzilla.novell.com/show_bug.cgi?id=386505, kernel 2.6.25-x86_64 */
+"TOSHIBA", "Satellite R630", "PT31LE_00V006CE", "Version1.60  ", 0, /* Luis Nieto PiÃ±a <freieschaf@gmail.com> */
 "TOSHIBA", "SATELLITE U200", "", "", 0, /* Jean-Pierre Bergamin <james@ractive.ch>, kernel 2.6.25.3, sys_version "PLUA0E-01C007S4" */
 "TOSHIBA", "SATELLITE U300", "", "", 0, /* Robin James, <robin.james@gmail.com> sys_version="PSU30E-04L02QKS" */
 "TOSHIBA", "Satellite U305", "", "", VBE_POST|VBE_MODE, /* Romano Giannetti <romanol@upcomillas.es> sys_version "PSU34U-00L003" */
