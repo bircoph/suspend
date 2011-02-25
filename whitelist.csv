@@ -632,7 +632,7 @@
 "LENOVO", "2478*", "", "", S3_BIOS|S3_MODE, /* LENOVO X300, 2008-04-03 https://bugzilla.novell.com/show_bug.cgi?id=370690 */
 "LENOVO", "2479*", "", "", S3_BIOS|S3_MODE, /* LENOVO X300, 2008-04-03 https://bugzilla.novell.com/show_bug.cgi?id=370690 */
 "LENOVO", "273232G", "ThinkPad R500", "7YET70WW (3.00 )", VBE_POST|VBE_MODE, /* Dec 29, 2009 - Slawek Gocan <alkor@eranet.pl> */
-"LENOVO", "2764CTO", "ThinkPad T400", "7UET43WW (1.13 )", VBE_POST|VBE_MODE, /* Lenovo T400, Chris Cain <zshazz@gmail.com> */
+"LENOVO", "2764CTO", "ThinkPad T400", "*", VBE_POST|VBE_MODE, /* Lenovo T400, Chris Cain <zshazz@gmail.com>; Whitelist all bioses Arkadiusz Miskiewicz  */
 "LENOVO", "2768EB7", "ThinkPad T400", "7UET71WW (3.01 )", VBE_SAVE|VBE_MODE|PCI_SAVE, /* IBM T400, Erez Zarum <erez@erezzarum.com> */
 "LENOVO", "28477MG", "ThinkPad SL510", "6JET73WW (1.31 )", S3_BIOS|S3_MODE, /* Jul 18, 2010 - Mathias Lorenz <mathias@lo...> */
 "LENOVO", "3241                            ", "Lenovo IdeaPad Y550P            ", "1ECN33WW(V5.07)", 0, /* Jun 10, 2010 - Kevin Brosnan <kbrosnan@gm...> */
