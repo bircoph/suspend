@@ -741,6 +741,7 @@
 "LENOVO", "", "ThinkPad X60", "", S3_BIOS|S3_MODE, /* At least 1709 series thinkpads can be whitelisted by name, and we can probably delete entries above, too.... */
 "LENOVO", "", "ThinkPad Z61m", "", S3_BIOS|S3_MODE, /* Z61m From: Roderick Schertler <roderick@argon.org> */
 "LENOVO", "", "ThinkPad Z61p", "", S3_BIOS|S3_MODE, /* Paul Wilkinson <pwilko@gmail.com> */
+"LENOVO", "", "ThinkPad X201", "", S3_BIOS|S3_MODE, /* Daniel Corson <danl@alum.mit.edu> */
 "LG Electronics", "LM50-DGHE", "", "", S3_BIOS|S3_MODE, /* merkur@users.sourceforge.net LM50a */
 "LG Electronics", "LW75-SGGV1", "", "", S3_BIOS|S3_MODE, /* jsusiluo@mappi.helsinki.fi */
 "LG Electronics", "M1-3DGBG", "", "", S3_BIOS|S3_MODE, /* jsusiluo@mappi.helsinki.fi */
