@@ -54,11 +54,6 @@ void identify_machine(void)
 	       "    sys_version  = \"%s\"\n"
 	       "    bios_version = \"%s\"\n",
 	       sys_vendor, sys_product, sys_version, bios_version);
-	printf("See http://suspend.sf.net/s2ram-support.html for details.\n"
-	       "\n"
-	       "If you report a problem, please include the complete output above.\n"
-	       "If you report success, please make sure you tested it from both X and\n"
-	       "the text console and preferably without proprietary drivers.\n");
 }
 
 static int set_acpi_video_mode(int mode)
@@ -174,9 +169,8 @@ int s2ram_check(int id)
 		if (flags & UNSURE)
 			printf("ATTENTION:\nYour machine is in the whitelist "
 			       " but the entry has not been confirmed.\n"
-			       "Please try to find the best options and "
-			       "report them as explained on\n"
-			       "http://suspend.sf.net/s2ram-support.html.\n\n");
+			       "You may try to find better options "
+			       "than previously reported.\n\n");
 	}
 
 	return ret;
