@@ -285,6 +285,7 @@
 "Dell Inc.", "Precision M6300 *", "", "", VBE_POST|VBE_MODE, /* Chris Debrunner <chd@evcohs.com> */
 "Dell Inc.", "Precision M65 *", "", "", VBE_POST|VBE_MODE, /* gaofi@gaofi.com */
 "Dell Inc.", "Precision M90 *", "", "", 0, /* Manoj Srivastava <srivasta@debian.org> */
+"Dell Inc.", "Studio 1555", "A08", "A08", S3_MODE, /* Orel Weinstock <orelweinstock@gmail.com> */
 "Dell Inc.", "Studio XPS 1640", "A113", "A11", 0, /* JackDesBwa <jackdesbwa@gmail.com> */
 "Dell Inc.", "Studio XPS 1645", "A08 ", "A08", 0, /* Apr 6, 2010 - Jon Arne Jørgensen <jonjon.arnearne@gm...> Not minimal mode */
 "Dell Inc.", "Vostro   1000 ", "", "", S3_BIOS|S3_MODE, /* Florian Buether <fbuether@jasminefields.net> */
@@ -763,6 +764,7 @@
 "LENOVO", "", "ThinkPad Z61p", "", S3_BIOS|S3_MODE, /* Paul Wilkinson <pwilko@gmail.com> */
 "LENOVO", "", "ThinkPad X201", "", S3_BIOS|S3_MODE, /* Daniel Corson <danl@alum.mit.edu> */
 "LG Electronics", "LM50-DGHE", "", "", S3_BIOS|S3_MODE, /* merkur@users.sourceforge.net LM50a */
+"LG Electronics", "LW20-JNMV", "", "WINRSF03", S3_BIOS|S3_MODE, /* Ragnar Seton <ragnar@dm9.se> */
 "LG Electronics", "LW75-SGGV1", "", "", S3_BIOS|S3_MODE, /* jsusiluo@mappi.helsinki.fi */
 "LG Electronics", "M1-3DGBG", "", "", S3_BIOS|S3_MODE, /* jsusiluo@mappi.helsinki.fi */
 "LG Electronics", "R500-U.CPCBG", "", "", 0, /* Neysan Schaefer <mail@neysan.de> */
