@@ -3,6 +3,7 @@
  *
  * Copyright 2006 Pavel Machek <pavel@suse.cz>
  * Copyright 2009 Rodolfo Garcia <kix@kix.es>
+ * Copyright 2011 Rafael J. Wysocki <rjw@sisk.pl>, Novell Inc.
  * Distribute under GPLv2.
  */
 
@@ -20,6 +21,7 @@
 #include "whitelist.h"
 #include "s2ram.h"
 #include "config_parser.h"
+
 
 int main(int argc, char *argv[])
 {
@@ -69,6 +71,12 @@ int main(int argc, char *argv[])
 			s2ram_add_flag(i,optarg);
 			break;
 		}
+	}
+
+	ret = s2ram_check_kms();
+	if (!ret) {
+		printf("KMS graphics driver is in use, skipping quirks.\n");
+		return s2ram_generic_do();
 	}
 
 	ret = s2ram_is_supported();

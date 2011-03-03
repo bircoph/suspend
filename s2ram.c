@@ -6,6 +6,8 @@
  */
 
 #include "config.h"
+#include <sys/types.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -18,6 +20,29 @@
 #include "vt.h"
 #include "s2ram.h"
 #include "config_parser.h"
+
+
+int s2ram_check_kms(void)
+{
+	DIR *sysfs_dir;
+	struct dirent *dentry;
+	int ret = -ENOENT;
+
+	sysfs_dir = opendir("/sys/class/drm");
+	if (!sysfs_dir)
+		return errno;
+
+	while ((dentry = readdir(sysfs_dir))) {
+		if (!strncmp(dentry->d_name, "card0-", 6)) {
+			ret = 0;
+			break;
+		}
+	}
+
+	closedir(sysfs_dir);
+
+	return ret;
+}
 
 
 /* Actually enter the suspend. May be ran on frozen system. */
@@ -42,4 +67,3 @@ int s2ram_generic_do(void)
 	}
 	return ret;
 } 
-

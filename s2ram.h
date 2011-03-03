@@ -28,6 +28,7 @@ int s2ram_is_supported(void);
 void identify_machine(void);
 int machine_known(void);
 int s2ram_do(void);
+int s2ram_check_kms(void);
 int s2ram_generic_do(void);
 void s2ram_resume(void);
 void s2ram_add_flag(int opt, const char *arg);

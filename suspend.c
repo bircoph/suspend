@@ -81,6 +81,7 @@ static unsigned long encrypt_buf_size;
 #endif
 #ifdef CONFIG_BOTH
 static char s2ram;
+static char s2ram_kms;
 #endif
 static char early_writeout;
 static char splash_param;
@@ -1764,7 +1765,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 		} else {
 			splash.progress(100);
 #ifdef CONFIG_BOTH
-			if (s2ram) {
+			if (s2ram_kms || s2ram) {
 				/* If we die (and allow system to continue)
 				 * between now and reset_signature(), very bad
 				 * things will happen. */
@@ -1774,7 +1775,8 @@ int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 				reset_signature(resume_fd);
 				free_swap_pages(snapshot_fd);
 				free_snapshot(snapshot_fd);
-				s2ram_resume();
+				if (!s2ram_kms)
+					s2ram_resume();
 				goto Unfreeze;
 			}
 Shutdown:
@@ -2243,6 +2245,10 @@ static inline int get_config(int argc, char *argv[])
 		strncpy(resume_dev_name, argv[optind], MAX_STR_LEN - 1);
 
 #ifdef CONFIG_BOTH
+	s2ram_kms = !s2ram_check_kms();
+	if (s2ram_kms)
+		return 0;
+
 	s2ram = s2ram_is_supported();
 	/* s2ram_is_supported returns EINVAL if there was something wrong
 	 * with the options that where added with s2ram_add_flag.
