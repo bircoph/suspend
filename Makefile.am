@@ -49,7 +49,6 @@ endif
 initramfs_PROGRAMS=\
 	resume
 dist_doc_DATA=\
-	TODO \
 	HOWTO \
 	$(srcdir)/README* \
 	$(srcdir)/COPYING*
