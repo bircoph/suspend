@@ -1,7 +1,7 @@
 Suspend to disk HOWTO
 ~~~~~~~~~~~~~~~~~~~~~
 Copyright (C) 2006 Pavel Machek <pavel@suse.cz>
-Copyright (C) 2006 Rafael J. Wysocki <rjw@sisk.pl>
+Copyright (C) 2006-2011 Rafael J. Wysocki <rjw@sisk.pl>
 
 
 I. Quick start
@@ -118,6 +118,12 @@ The following major options are available:
                           udev, this option should not be needed)
   --enable-splashy        Enable splashy support
   --enable-fbsplash       Enable fbsplash support
+  --enable-threads        Enable multithreaded image saving (helps with image
+                          compression and encryption enabled at the same time
+                          if you have 2 or more CPUs)
+  --disable-resume-static Do not link the resume tool statically (this should
+                          be used on openSUSE and other distros putting the
+                          requisite libraries into their initramfs images)
 
 If you want to generate an initramfs image using the provided script, the
 following options are available:
@@ -301,6 +307,7 @@ RSA key file = <path>
 max loglevel = <ignored>
 early writeout = <y/n>
 splash = <y/n>
+threads = <y/n>
 
 The "resume offset" parameter is necessary if a swap file is used for
 suspending.  In such a case the device identified by the "resume device"
@@ -354,6 +361,12 @@ The "splash" parameter is used to make s2disk and/or resume use a splash system
 systems are supported. Note that for both systems your initrd or initramfs will
 need additional files. See the documentation of your splash system for
 more information.
+
+The "threads" parameter, if set to 'y', causes s2disk to use 3 threads for
+saving the image, which generally reduces the time necessary to save it
+if both image compression and encryption are used at the same time (one
+thread compresses the image, one thread encrypts it and one writes the
+data to the storage).
 
 The resume tool can use the same configuration file that is used by the
 s2disk tool, but it will ignore most of the above parameters.  It will use the
@@ -607,3 +620,4 @@ as (RSA-encrypted) (k, i) from the image header.  Then it will ask the user
 for the passphrase needed to decrypt (d, p, q, u).  Next, if the user provides
 the right passphrase, the resume tool will decrypt (k, i) needed for decrypting
 the image.
+
