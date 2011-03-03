@@ -60,7 +60,7 @@ do { \
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static loff_t resume_offset;
-static unsigned long pref_image_size = IMAGE_SIZE;
+static loff_t pref_image_size = IMAGE_SIZE;
 static int suspend_loglevel = SUSPEND_LOGLEVEL;
 static char compute_checksum;
 #ifdef CONFIG_COMPRESS
@@ -309,7 +309,7 @@ static inline int free_snapshot(int dev)
 	return ioctl(dev, SNAPSHOT_FREE, 0);
 }
 
-static int set_image_size(int dev, unsigned int size)
+static int set_image_size(int dev, loff_t size)
 {
 	int error;
 
@@ -1688,7 +1688,7 @@ static void suspend_shutdown(int snapshot_fd)
 int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 {
 	loff_t avail_swap;
-	unsigned long image_size;
+	loff_t image_size;
 	int attempts, in_suspend, error = 0;
 	char message[SPLASH_GENERIC_MESSAGE_SIZE];
 
