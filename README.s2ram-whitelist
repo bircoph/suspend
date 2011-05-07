@@ -60,104 +60,17 @@ Why s2ram?
 
 How to use it?
 -------------- 
-Install it, then just call s2ram. If your machine is in the whitelist, it
-should suspend to RAM. Be careful though, some broken drivers need to be
-unloaded before suspend and reloaded after resume. If you just want to know
-if your machine is known and which workarounds (if any) will be used, call
-s2ram -n.
+Install it, then just call s2ram. If your machine is in the whitelist or
+if the kenel supports KMS (Kernel Mode Switch), it should suspend to RAM.
+Be careful though, some broken drivers need to be unloaded before suspend
+and reloaded after resume. If you just want to know if your machine is
+known and which workarounds (if any) will be used, call s2ram -n.
 
 My machine is not in the whitelist, what can i do?
 --------------------------------------------------
-Just find out which workaround is needed for your machine (if any), then
-get this knowledge to us, together with the output of "s2ram -i".
-The workarounds can be activated from the s2ram commandline:
-
-seife@susi:~> s2ram -h
-Usage: s2ram [-nhi] [-fspmrav]
-
-Options:
-    -h, --help:       this text.
-    -n, --test:       test if the machine is in the database.
-                      returns 0 if known and supported
-    -i, --identify:   prints a string that identifies the machine.
-    -f, --force:      force suspending, even on unknown machines.
-
-the following options are only available with --force:
-    -s, --vbe_save:   save VBE state before suspending and restore after resume.
-    -p, --vbe_post:   VBE POST the graphics card after resume
-    -m, --vbe_mode:   get VBE mode before suspend and set it after resume
-    -r, --radeontool: turn off the backlight on radeons before suspending.
-    -a, --acpi_sleep: set the acpi_sleep parameter before suspend
-                      1=s3_bios, 2=s3_mode, 3=both
-    -v, --pci_save:   save the PCI config space for the VGA card.
-
-The options should be mostly self-explaining. Note that you need to use the
--f option on all unknown machines, then add the proper workarounds.
-Option -a needs an additional numeric argument from 1 to 3, specifying
-s3_bios, s3_mode or both.
-The best way to start investigating an unknown machine is probably to
-boot with init=/bin/bash at the boot prompt into a minimal environment,
-then do:
-   mount /proc
-   mount /sys
-   s2ram -f
-
-if the first try already succeeds, everything is fine. Send us the output of
-"s2ram -i". If it doesn't, try the following variations:
-   s2ram -f -a 1
-   s2ram -f -a 2
-   s2ram -f -a 3
-   s2ram -f -p -m
-   s2ram -f -p -s
-   s2ram -f -m
-   s2ram -f -s
-   s2ram -f -p
-   s2ram -f -a 1 -m
-   s2ram -f -a 1 -s
-
-If none of those combination works, start again but add the "-v" switch.
-
-Note: mixing up the "-a" options and the vbetool options ("-p", "-m", "-s")
-is normally only a measure of last resort, it usually does not make much
-sense.
-
-One of those combinations should hopefully get your machine back to life
-(and the backlight back on).
-Once you have found a combination that works, send us that information
-together with the output of "s2ram -i". If you find several combinations
-that work (e.g. "s2ram -f -a 3" and "s2ram -f -p -m" both work on your
-machine), the in-kernel method ("-a") should be preferred over the userspace
-methods ("-p", "-m" and "-s").
-
-Verify all combinations in both cases when reporting success to the s2ram
-developers:
-- when issuing s2ram from console
-- when issuing s2ram from X itself
-
-It is normal that the contents of the text console are gone after using
-"-p" and "-m", on the framebuffer console this can easily be solved by
-switching consoles once. Although this might be better with "-s", still
-"-m" should be the preferred option if it works.  Note that you really
-should try this from a minimal text mode console. Reports that it works
-there are much more useful than those done only from within X. You also do
-not get adverse side effects like shutting down immediately after resume
-from running powermanagement daemons. 
-
-Note that there are some issues that might make suspend fail regardless of
-video, such as IDE drives not properly waking up (using the latest -mm
-kernel sometimes helps here) and APIC issues (booting with "noapic" to
-verify those is sometimes useful).
-
-My machine is in the whitelist but it does not work, what can i do?
--------------------------------------------------------------------
-
-There are some wildcard matches in the whitelist, and it is possible that
-they might match on machines that are different than the originally tested
-ones. The procedure is about the same as with "My machine is not in the
-whitelist": find out which options your particular machine needs and send
-us this information together with the output of "s2ram -n" (better than
-"s2ram -i", because we can see what entry actually matched your machine),
-so we can update the whitelist accordingly. 
+After the suspend version 1.0, with KMS support, no new machines will be
+added to the whitelist. You don't need to do nothing, the new kernels
+support KMS.
 
 How to contact the authors of s2ram?
 ------------------------------------
