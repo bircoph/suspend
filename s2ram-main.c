@@ -63,10 +63,6 @@ int main(int argc, char *argv[])
 		case 'n':
 			ret = machine_known();
 			exit(ret);
-		case '?':
-			usage("s2ram", options, optstring);
-			exit(1);
-			break;
 		default:
 			s2ram_add_flag(i,optarg);
 			break;
