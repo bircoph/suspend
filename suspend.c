@@ -1786,13 +1786,11 @@ Shutdown:
 		}
 	} while (--attempts);
 
-	/* We get here during the resume or when we failed to suspend.
+Unfreeze:
+	/*
+	 * We get here during the resume or when we failed to suspend.
 	 * Remember, suspend_shutdown() never returns!
 	 */
-	if (shutdown_method == SHUTDOWN_METHOD_PLATFORM)
-		platform_finish(snapshot_fd);
-
-Unfreeze:
 	unfreeze(snapshot_fd);
 	return error;
 }

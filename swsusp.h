@@ -110,11 +110,6 @@ static inline int platform_prepare(int dev)
 	return error;
 }
 
-static inline int platform_finish(int dev)
-{
-	return ioctl(dev, SNAPSHOT_PMOPS, PMOPS_FINISH);
-}
-
 static inline void reboot(void)
 {
 	syscall(SYS_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
