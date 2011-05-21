@@ -546,9 +546,6 @@ int main(int argc, char *argv[])
 	}
 	atomic_restore(dev);
 	/* We only get here if the atomic restore fails.  Clean up. */
-	if (use_platform_suspend)
-		platform_finish(dev);
-
 	unfreeze(dev);
 
 Close_splash:
