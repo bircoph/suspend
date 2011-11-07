@@ -100,12 +100,12 @@ libsuspend_common_a_SOURCES=\
 	splashy_funcs.h splashy_funcs.c \
 	fbsplash_funcs.h fbsplash_funcs.c \
 	bootsplash.h bootsplash.c \
-	memalloc.h memalloc.c load.c \
-	whitelist.h whitelist.csv whitelist.c \
-	s2ram.h s2ram.c
+	memalloc.h memalloc.c load.c
 
 if ARCH_X86
 libsuspend_common_a_SOURCES+=\
+	s2ram.h s2ram.c \
+	whitelist.h whitelist.csv whitelist.c \
 	s2ram-x86.h s2ram-x86.c \
 	dmidecode.c \
 	radeontool.c \
@@ -119,6 +119,8 @@ common_s2ram_libs+=\
 endif
 if ARCH_PPC
 libsuspend_common_a_SOURCES+=\
+	s2ram.h s2ram.c \
+	whitelist.h whitelist.csv whitelist.c \
 	s2ram-ppc.h s2ram-ppc.c
 endif
 

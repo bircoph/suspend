@@ -11,6 +11,7 @@ AC_INIT([suspend-utils], [1.0])
 AM_INIT_AUTOMAKE([${PACKAGE_NAME}], [${PACKAGE_VERSION}])
 AM_CONFIG_HEADER([config.h])
 AC_CONFIG_SRCDIR([suspend.c])
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_CANONICAL_HOST
 
@@ -136,6 +137,7 @@ case "${host}" in
 	x86_*-*)		ARCH="x86";;
 	ppc-*|powerpc-*)	ARCH="ppc";;
 	ppc64-*|powerpc64-*)	ARCH="ppc";;
+	s390*-*)		ARCH="s390";;
 esac
 
 CONFIG_FEATURES=""
@@ -180,13 +182,15 @@ if test "${ARCH}" = "x86"; then
 	fi
 elif test "${ARCH}" = "ppc"; then
 	AC_DEFINE([CONFIG_ARCH_PPC], [1], [Define if ppc arch])
+elif test "${ARCH}" = "s390"; then
+	AC_DEFINE([CONFIG_ARCH_S390], [1], [Define if s390 arch])
 else
 	AC_MSG_ERROR([Unsupported architecture ${host}])
 fi
 
 if test "${enable_compress}" = "yes"; then
 	CONFIG_FEATURES="${CONFIG_FEATURES} compress"
-	AC_DEFINE([CONFIG_COMPRESS], [1], [Define if x86 arch])
+	AC_DEFINE([CONFIG_COMPRESS], [1], [Define if compression enabled])
 	if test -z "${LZO_LIBS}"; then
 		AC_ARG_VAR([LZO_CFLAGS], [C compiler flags for lzo])
 		AC_ARG_VAR([LZO_LIBS], [linker flags for lzo])
