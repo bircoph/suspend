@@ -57,6 +57,15 @@ do { \
 	fprintf(stderr, "%s: " msg " Reason: %m\n", my_name, ## args); \
 } while (0)
 
+#ifdef CONFIG_ARCH_S390
+#define suspend_warning(msg)
+#else
+#define suspend_warning(msg) \
+do { \
+	fprintf(stderr, "%s: " msg "\n", my_name); \
+} while (0)
+#endif
+
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static loff_t resume_offset;
@@ -2480,21 +2489,24 @@ int main(int argc, char *argv[])
 
 	vt_fd = prepare_console(&orig_vc, &suspend_vc);
 	if (vt_fd < 0) {
-		ret = errno;
-		if (vt_fd == -ENOTTY)
-			suspend_error("No local tty. Remember to specify local " \
-					"console after the remote.");
-		else
+		if (vt_fd == -ENOTTY) {
+			suspend_warning("Unable to switch virtual terminals, "
+					"using the current console.");
+		} else {
 			suspend_error("Could not open a virtual terminal.");
-		goto Close_snapshot_fd;
+			ret = errno;
+			goto Close_snapshot_fd;
+		}
 	}
 
 	splash_prepare(&splash, splash_param);
 
-	if (lock_vt() < 0) {
-		ret = errno;
-		suspend_error("Could not lock the terminal.");
-		goto Restore_console;
+	if (vt_fd >= 0) {
+		if (lock_vt() < 0) {
+			ret = errno;
+			suspend_error("Could not lock the terminal.");
+			goto Restore_console;
+		}
 	}
 
 	splash.progress(5);
@@ -2538,10 +2550,12 @@ int main(int argc, char *argv[])
 		set_swappiness(orig_swappiness);
 	close_swappiness();
 
-	unlock_vt();
+	if (vt_fd >= 0)
+		unlock_vt();
 Restore_console:
 	splash.finish();
-	restore_console(vt_fd, orig_vc);
+	if (vt_fd >= 0)
+		restore_console(vt_fd, orig_vc);
 Close_snapshot_fd:
 	close(snapshot_fd);
 Close_resume_fd:
