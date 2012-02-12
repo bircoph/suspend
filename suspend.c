@@ -2492,6 +2492,7 @@ int main(int argc, char *argv[])
 		if (vt_fd == -ENOTTY) {
 			suspend_warning("Unable to switch virtual terminals, "
 					"using the current console.");
+			splash_param = 0;
 		} else {
 			suspend_error("Could not open a virtual terminal.");
 			ret = errno;
