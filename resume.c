@@ -35,6 +35,9 @@
 #include "splash.h"
 #include "loglevel.h"
 
+#define STAT_TIMEOUT_US 	1000000		// 1 tenth of a second
+#define STAT_LOOP_STEPS		300		// 30 seconds
+
 static char snapshot_dev_name[MAX_STR_LEN] = SNAPSHOT_DEVICE;
 static char resume_dev_name[MAX_STR_LEN] = RESUME_DEVICE;
 static loff_t resume_offset;
@@ -468,6 +471,17 @@ int main(int argc, char *argv[])
 	open_printk();
 	orig_loglevel = get_kernel_console_loglevel();
 	set_kernel_console_loglevel(suspend_loglevel);
+
+	/*
+	* 30 seconds grace period to allow resume device
+	* to come online (i.e. external USB drive)
+	*/
+	for (n = 0; n < STAT_LOOP_STEPS; n++) {
+	    if (!stat(resume_dev_name, &stat_buf))
+		break;
+	    usleep(STAT_TIMEOUT_US);
+	}
+
 
 	while (stat(resume_dev_name, &stat_buf)) {
 		fprintf(stderr, 
