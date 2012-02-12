@@ -11,8 +11,8 @@
 
 #include <stdint.h>
 #include <linux/fs.h>
+#include <linux/suspend_ioctls.h>
 
-#include "suspend_ioctls.h"
 #include "encrypt.h"
 
 #define	LINUX_REBOOT_MAGIC1	0xfee1dead

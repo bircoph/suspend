@@ -90,7 +90,7 @@ common_s2disk_libs+=\
 endif
 
 libsuspend_common_a_SOURCES=\
-	swsusp.h suspend_ioctls.h \
+	swsusp.h \
 	vt.h vt.c \
 	config_parser.h config_parser.c \
 	md5.h md5.c \
