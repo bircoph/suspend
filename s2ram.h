@@ -32,4 +32,5 @@ int s2ram_check_kms(void);
 int s2ram_generic_do(void);
 void s2ram_resume(void);
 void s2ram_add_flag(int opt, const char *arg);
-
+void s2ram_add_quirks(char*);
+int get_s2ram_config(void);

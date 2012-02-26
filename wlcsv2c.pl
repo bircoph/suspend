@@ -63,6 +63,7 @@ sub print_c_header
   printf OUF "\#include \"config.h\"\n";
   printf OUF "\#include \<stdlib.h\>\n";
   printf OUF "\#include \"whitelist.h\"\n";
+  printf OUF "\#include \"s2ram.h\"\n";
   printf OUF "\n";
 
   printf OUF "char *whitelist_version = \"\$Id: whitelist.c ver. ";

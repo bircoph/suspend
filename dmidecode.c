@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
-#include <whitelist.h>
+#include <s2ram.h>
 
 typedef unsigned char u8;
 typedef unsigned short u16;

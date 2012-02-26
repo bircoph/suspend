@@ -30,10 +30,7 @@ static void *vbe_buffer;
 static unsigned char vga_pci_state[256];
 static struct pci_dev vga_dev;
 static struct pci_access *pacc;
-/* Flags set from whitelist */
-static int flags, vbe_mode = -1, dmi_scanned;
-static int force;
-static int fb_nosuspend;
+static int vbe_mode = -1, dmi_scanned;
 
 /* return codes for s2ram_is_supported */
 #define S2RAM_OK	0
@@ -306,7 +303,7 @@ int s2ram_is_supported(void)
 
 		id = machine_match();
 		ret = s2ram_check(id);
-	} 
+	}
 
 	return ret;
 }
@@ -315,7 +312,7 @@ int s2ram_is_supported(void)
 int s2ram_do(void)
 {
 	return s2ram_generic_do();
-} 
+}
 
 void s2ram_resume(void)
 {
@@ -385,6 +382,10 @@ void s2ram_add_flag(int opt, const char *opt_arg)
 			break;
 		case 8:
 			fb_nosuspend = 1;
+			break;
+		case 9:
+		case 'k':
+			no_kms_flag = 1;
 			break;
 	}
 }

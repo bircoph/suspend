@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 		HACKS_LONG_OPTS
 	    	{   NULL,   0,	    NULL,   0	}
 	};
-	const char *optstring = "hVni" "fspmrva:";
+	const char *optstring = "hVni" "fspmrva:k";
 
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
@@ -64,30 +64,44 @@ int main(int argc, char *argv[])
 			ret = machine_known();
 			exit(ret);
 		default:
-			s2ram_add_flag(i,optarg);
+			s2ram_add_flag(i, optarg);
 			break;
 		}
 	}
 
-	ret = s2ram_check_kms();
-	if (!ret) {
-		printf("KMS graphics driver is in use, skipping quirks.\n");
-		return s2ram_generic_do();
+	/* Check if the KMS support is disabled by user */
+	if (!no_kms_flag) {
+		/* KMS */
+		ret = s2ram_check_kms();
+		if (!ret) {
+			printf("KMS graphics driver is in use, skipping quirks.\n");
+			return s2ram_generic_do();
+		}
+	} else {
+		printf("KMS disabled by user.\n");
 	}
 
-	ret = s2ram_is_supported();
+	/* Test if s2ram will use quirks from the configuration file */
+	ret = get_s2ram_config();
 
-	if (ret == S2RAM_UNKNOWN) {
-		printf("Machine is unknown.\n");
-		identify_machine();
-		goto out;
+	if (ret) {
+		/* No configuration file, using quirks form database */
+		ret = s2ram_is_supported();
+
+		if (ret == S2RAM_UNKNOWN) {
+			printf("Machine is unknown.\n");
+			identify_machine();
+			goto out;
+		}
+
+		if (ret == S2RAM_NOFB)
+			printf("This machine can only suspend without framebuffer.\n");
+
+		if (ret)
+			goto out;
+	} else {
+		printf("Using quirks from the configuration file.\n");
 	}
-
-	if (ret == S2RAM_NOFB)
-		printf("This machine can only suspend without framebuffer.\n");
-
-	if (ret)
-		goto out;
 
 	/* switch to console 1 first, since we might be in X */
 	active_console = fgconsole();
