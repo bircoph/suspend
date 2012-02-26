@@ -235,10 +235,8 @@ static loff_t check_free_swap(int dev)
 	loff_t free_swap;
 
 	error = ioctl(dev, SNAPSHOT_AVAIL_SWAP_SIZE, &free_swap);
-	if (error && errno == ENOTTY) {
-		report_unsupported_ioctl("SNAPSHOT_AVAIL_SWAP_SIZE");
+	if (error && errno == ENOTTY)
 		error = ioctl(dev, SNAPSHOT_AVAIL_SWAP, &free_swap);
-	}
 	if (!error)
 		return free_swap;
 
@@ -255,31 +253,21 @@ static loff_t get_image_size(int dev)
 	if (!error)
 		return image_size;
 
-	if (errno == ENOTTY)
-		report_unsupported_ioctl("SNAPSHOT_GET_IMAGE_SIZE");
 	suspend_error("get_image_size failed.");
-	return 0;
-}
-
-static loff_t alloc_swap_page(int dev, int verbose)
-{
-	int error;
-	loff_t offset;
-
-	error = ioctl(dev, SNAPSHOT_ALLOC_SWAP_PAGE, &offset);
-	if (error && errno == ENOTTY) {
-		if (verbose)
-			report_unsupported_ioctl("SNAPSHOT_ALLOC_SWAP_PAGE");
-		error = ioctl(dev, SNAPSHOT_GET_SWAP_PAGE, &offset);
-	}
-	if (!error)
-		return offset;
 	return 0;
 }
 
 static inline loff_t get_swap_page(int dev)
 {
-	return alloc_swap_page(dev, 0);
+	int error;
+	loff_t offset;
+
+	error = ioctl(dev, SNAPSHOT_ALLOC_SWAP_PAGE, &offset);
+	if (error && errno == ENOTTY)
+		error = ioctl(dev, SNAPSHOT_GET_SWAP_PAGE, &offset);
+	if (!error)
+		return offset;
+	return 0;
 }
 
 static inline int free_swap_pages(int dev)
@@ -297,7 +285,6 @@ static int set_swap_file(int dev, u_int32_t blkdev, loff_t offset)
 	error = ioctl(dev, SNAPSHOT_SET_SWAP_AREA, &swap);
 	if (error && !offset)
 		error = ioctl(dev, SNAPSHOT_SET_SWAP_FILE, blkdev);
-
 	return error;
 }
 
@@ -306,10 +293,8 @@ static int atomic_snapshot(int dev, int *in_suspend)
 	int error;
 
 	error = ioctl(dev, SNAPSHOT_CREATE_IMAGE, in_suspend);
-	if (error && errno == ENOTTY) {
-		report_unsupported_ioctl("SNAPSHOT_CREATE_IMAGE");
+	if (error && errno == ENOTTY)
 		error = ioctl(dev, SNAPSHOT_ATOMIC_SNAPSHOT, in_suspend);
-	}
 	return error;
 }
 
@@ -323,10 +308,8 @@ static int set_image_size(int dev, loff_t size)
 	int error;
 
 	error = ioctl(dev, SNAPSHOT_PREF_IMAGE_SIZE, size);
-	if (error && errno == ENOTTY) {
-		report_unsupported_ioctl("SNAPSHOT_PREF_IMAGE_SIZE");
+	if (error && errno == ENOTTY)
 		error = ioctl(dev, SNAPSHOT_SET_IMAGE_SIZE, size);
-	}
 	return error;
 }
 
@@ -340,10 +323,8 @@ static int platform_enter(int dev)
 	int error;
 
 	error = ioctl(dev, SNAPSHOT_POWER_OFF, 0);
-	if (error  && errno == ENOTTY) {
-		report_unsupported_ioctl("SNAPSHOT_POWER_OFF");
+	if (error  && errno == ENOTTY)
 		error = ioctl(dev, SNAPSHOT_PMOPS, PMOPS_ENTER);
-	}
 	return error;
 }
 
@@ -1443,7 +1424,7 @@ static int write_image(int snapshot_fd, int resume_fd, int test_fd)
 
 	printf("%s: System snapshot ready. Preparing to write\n", my_name);
 	/* Allocate a swap page for the additional "userland" header */
-	start = alloc_swap_page(snapshot_fd, 1);
+	start = get_swap_page(snapshot_fd);
 	if (!start)
 		return -ENOSPC;
 
