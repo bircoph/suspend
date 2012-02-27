@@ -312,7 +312,9 @@ static ssize_t load_buffer(struct swap_reader *handle)
 		dst += page_size;
 	}
 
+#ifdef CONFIG_COMPRESS
  Checksum:
+#endif
 	if (verify_checksum)
 		md5_process_block(handle->buffer, size, &handle->ctx);
 
