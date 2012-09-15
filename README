@@ -24,11 +24,34 @@ these utilities and installation instructions.
 The s2ram tool allows you to suspend the system to RAM and restore the state
 of the graphics adapter after the resume automatically.  For this purpose it
 uses the code out of vbetool and radeontool utilities, needed for handling
-quite a lot of graphics cards after the resume from RAM.  It also contains a
-whitelist of machines that are known to work with it.  Please refer to the
-document README.s2ram-whitelist in this package for more information about the
-s2ram whitelist. You need libx86 installed to build s2ram, the HOWTO document
-explains how to install it.
+quite a lot of graphics cards after the resume from RAM. The s2ram tool uses
+three different methods to suspend the machine:
+
+- KMS: s2ram try first suspend the machine using KMS (Kernel Mode Set) if the
+  kernel supports it. With this method s2ram don't need extra parameters
+  (quirks).
+- Whitelist: s2ram has a whitelist of machines that are known to work with it.
+  This whitelist includes the quirks to suspend known machines. The whitelist
+  was used prior to suspend-utils version 1.0, and now the whitelist is not
+  updated. The database is used because has a lot of machines included and
+  many users are using it. Please refer to the document README.s2ram-whitelist
+  in this package for more information about the s2ram whitelist.
+- Configuration file: s2ram can use the configuration file to read the extra
+  parameters (quirks). This option is useful if the kernel don't support KMS
+  (for example, kernel compiled without support), if the machine is not
+  included in the whitelist (for example, new machines) or if the user wants
+  to override the quirks of the whitelist file.
+
+The flow of options is:
+
+1. If the kernel supports KMS, then use it. This option can be overriding
+   using the argument "-k" in s2ram (s2ram -k).
+2. If the kernel don't support KMS, or the user override it, then s2ram
+   checks if the configuration file has the parameters. If the parameters
+   are included, s2ram use them, else, the whitelist is used.
+
+You need libx86 installed to build s2ram, the HOWTO document explains how to
+install it.
 
 The s2both tool combines the functionalities of s2disk and s2ram.  With the
 help of it the system may be suspended to RAM after the suspend-to-disk
