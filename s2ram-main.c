@@ -41,13 +41,17 @@ int main(int argc, char *argv[])
 			no_argument,	NULL, 'n'
 		},
 		{
+			"kmstest\0\ttest if the kernel has KMS support.",
+			no_argument,	NULL, 'K'
+		},
+		{
 			"identify\0prints a string that identifies the machine.",
 			no_argument,	NULL, 'i'
 		},
 		HACKS_LONG_OPTS
 		{	NULL, 0,	NULL, 0	}
 	};
-	const char *optstring = "hVni" "fspmrva:k";
+	const char *optstring = "hVnKi" "fspmrva:k";
 
 	while ((i = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
 		switch (i) {
@@ -62,6 +66,13 @@ int main(int argc, char *argv[])
 			exit(0);
 		case 'n':
 			ret = machine_known();
+			exit(ret);
+		case 'K':
+			ret = s2ram_check_kms();
+			if (!ret)
+				printf("This kernel has KMS support.\n");
+			else
+				printf("This kernel doesn't have KMS support.\n");
 			exit(ret);
 		default:
 			s2ram_add_flag(i, optarg);
