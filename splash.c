@@ -53,7 +53,7 @@ static void splash_dummy_readpass(char *a, int b) { }
 
 static int splash_dialog(const char *prompt) 
 {
-	printf(prompt);
+	printf("%s", prompt);
 	return getchar();
 }
 

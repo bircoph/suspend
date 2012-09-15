@@ -118,7 +118,7 @@ int bootsplash_dialog(const char *prompt)
 {
 	int ret;
 	bootsplash_to_verbose();
-	printf(prompt);
+	printf("%s", prompt);
 	ret = getchar();
 	bootsplash_to_silent();
 
