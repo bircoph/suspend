@@ -71,10 +71,6 @@ int parse_line(char *str, struct config_par *parv)
 		}
 	}
 
-	if (!parv[i].name) {
-		error = -EINVAL;
-	}
-
 cleanup:
 	return error;
 }
