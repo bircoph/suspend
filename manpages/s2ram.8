@@ -1,0 +1,118 @@
+'\" t
+.\"     Title: s2ram
+.\"    Author: Tim Dijkstra <tim@famdijkstra.org>
+.\"   Updated: Rodolfo García Peñas (kix) <kix@kix.es>
+.\"      Date: Feb 29, 2012
+.\"    Manual: s2ram
+.\"    Source: suspend-utils
+.\"  Language: English
+.\"
+.TH "S2RAM" "8" "Feb 29, 2012" "suspend-utils" "s2ram"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+s2ram \- program to suspend to ram (suspend)
+.SH "SYNOPSIS"
+.HP \w'\fBs2ram\fR\ 'u \fBs2ram\fR [\-h,\ \-\-help] [\-V,\ \-\-version] [\-n,\ \-\-test] [\-i,\ \-\-identify] [\-\-nofbsuspend] [\-\-force] [\-\-vbe_save] [\-\-vbe_mode] [\-\-radeontool] [\-\-acpi_sleep\ \fInr\fR] [\-\-pci_save]
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the \fBs2ram\fR command\&.
+.PP
+\fBs2ram\fR is a program that will suspend your system to ram (put it in S3 mode)\&. Which means that the system is in a lower power mode\&. It asked to do so it will wake up farely quickly\&. However, if the system will run out of energy entirely you will lose data\&. That is why it is recommended to use \fBs2both\fR(8) \fBs2ram\fR is only provided to find out any work around needed to make suspend to both work\&. See README\&.s2ram\-whitelist and README\&.Debian for more information\&.
+.SH "OPTIONS"
+.PP
+\fB\-V, \-\-version\fR
+.RS 4
+Version information\&.
+.RE
+.PP
+\fB\-a, \-\-acpi_sleep \fR\fB\fInr\fR\fR
+.RS 4
+set the acpi_sleep parameter before suspend\&. 1=s3_bios, 2=s3_mode, 3=both\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.PP
+\fB\-f, \-\-force\fR
+.RS 4
+force suspending, even on unknown machines\&. the following options are only available with \-\-force\&.
+.RE
+.PP
+\fB\-h, \-\-help\fR
+.RS 4
+Short help text\&.
+.RE
+.PP
+\fB\-i, \-\-identify\fR
+.RS 4
+prints a string that identifies the machine\&.
+.RE
+.PP
+\fB\-k, \-\-kmstest\fR
+.RS 4
+test if the kernel supports KMS (Kernel Mode Set)\&. Returns 0 if KMS is supported\&.
+.RE
+.PP
+\fB\-m, \-\-vbe_mode\fR
+.RS 4
+get VBE mode before suspend and set it after resume\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.PP
+\fB\-n, \-\-test\fR
+.RS 4
+test if the machine is in the database\&. Returns 0 if known and supported\&.
+.RE
+.PP
+\fB\-p, \-\-vbe_post\fR
+.RS 4
+VBE POST the graphics card after resume\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.PP
+\fB\-r, \-\-radeontool\fR
+.RS 4
+turn off the backlight on radeons before suspending\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.PP
+\fB\-s, \-\-vbe_save\fR
+.RS 4
+save VBE state before suspending and restore after resume\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.PP
+\fB\-v, \-\-pci_save\fR
+.RS 4
+Save the PCI config space of the VGA card before suspend and restore it after resume\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.PP
+\fB\-\-nofbsuspend\fR
+.RS 4
+do not suspend the framebuffer (for debugging purposes)\&. Only for Intel platform (x86/amd64)\&.
+.RE
+.SH "SEE ALSO"
+.PP
+s2both (8)\&.
+.PP
+For more information see the README\&.s2ram\-whitelist.
+.SH "AUTHOR"
+.PP
+This manual page was written by Tim Dijkstra <tim@famdijkstra>\&.org for the Debian(TM) system (but may be used by others)\&. Was updated by Rodolfo García <kix@kix.es>. Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 any later version published by the Free Software Foundation\&.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2006 Tim Dijkstra
+Copyright \(co 2012 Rodolfo García (kix)
+.br

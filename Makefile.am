@@ -17,6 +17,7 @@ MAINTAINERCLEANFILES = \
 
 SUBDIRS=\
 	doc \
+	manpages \
 	scripts
 
 sysconf_DATA=#required in order to create dir

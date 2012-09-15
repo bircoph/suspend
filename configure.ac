@@ -308,6 +308,7 @@ AM_CONDITIONAL([ENABLE_FBSPLASH], [test "${enable_fbsplash}" = "yes"])
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
+	manpages/Makefile
 	scripts/Makefile
 	scripts/suse-10.1/Makefile
 ])

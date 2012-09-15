@@ -1,0 +1,125 @@
+'\" t
+.\"     Title: suspend.conf
+.\"    Author: Tim Dijkstra <tim@famdijkstra.org>
+.\"   Updated: Rodolfo García Peñas (kix) <kix@kix.es>
+.\"      Date: Feb 29, 2012
+.\"    Manual: suspend.conf
+.\"    Source: suspend-utils
+.\"  Language: English
+.\"
+.TH "SUSPEND\&.CONF" "5" "Feb 29, 2012" "suspend-utils" "suspend.conf"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+suspend.conf \- Config file for the s2disk program
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the \fBsuspend\&.conf\fR file used by the \fBs2disk\fR, \fBs2both\fR and \fBresume\fR commands\&.
+.PP
+\fBs2disk\fR is a program that will save the the state of the whole system to disk and power off your system\&. After restarting your system it will be put back in the exact system state you left it (this is sometimes called hibernation)\&.
+.SH "S2RAM / S2BOTH OPTIONS"
+.PP
+\fBs2ram_force\fR
+.RS 4
+If the "s2ram_force" parameter is set to \*(Aqy\*(Aq, the \fBs2ram\fR tool will force the suspend process, even the machine is not known, parameters (quirks) are not set nor KMS is not supported\&.
+.RE
+.PP
+\fBs2ram_quirks\fR
+.RS 4
+Specifies the options (quirks) to suspend the machine. Possible options are \fBvbe_post\fR, \fBvbe_save\fR, \fBvbe_mode\fR, \fBradeon_off\fR, \fBpci_save\fR, \fBs3_bios\fR, \fBs3_mode\fR and \fBfb_nosuspend\fR\&. More information about these options are included in s2ram(8) manpage and the README.s2ram-whitelist file.
+.RE
+.PP
+.SH "S2DISK / S2BOTH OPTIONS"
+.PP
+\fBsnapshot device [=/dev/snapshot]\fR
+.RS 4
+Device via which \fBs2disk\fR should talk to the kernel\&.
+.RE
+.PP
+\fBresume device\fR
+.RS 4
+Specifies the device to write the image to\&. This is a swap partition or the partition that contains the swap file (see next parameter)\&.
+.RE
+.PP
+\fBresume offset\fR
+.RS 4
+Necessary if a swap file is used for suspending\&. In such a case the device identified by the "resume device" parameter is regarded as the partition that contains the swap file, and "resume offset" must be equal to the offset from the beginning of this partition at which the swap file\*(Aqs header is located, in <PAGE_SIZE> units\&. The value of this parameter for given swap file can be determined by the swap\-offset program (has to be run as root) included in this package\&. [For this feature to work, you will need an \e\-mm kernel, 2\&.6\&.18\-mm3 or newer\&.]
+.RE
+.PP
+\fBimage size\fR
+.RS 4
+Limit the size of the system snapshot image created by the \fBs2disk\fR tool, but it\*(Aqs not mandatory\&. Namely, the \fBs2disk\fR tool will do its best to limit the image size as required by this parameter, but if that\*(Aqs not possible, it will suspend the system anyway, with a bigger image\&. If "image size" is set to 0, the snapshot image will be as small as possible\&.
+.RE
+.PP
+\fBsuspend loglevel\fR
+.RS 4
+You can specify the kernel console loglevel which the \fBs2disk\fR/\fBs2both\fR and \fBresume\fR utilities will use to report progress\&. On a stock kernel messages with level higher then 7 are usually not shown\&.
+.RE
+.PP
+\fBshutdown method\fR
+.RS 4
+This parameter defines the operation that will be carried out after the suspend image has been created and the machine is ready to be powered off\&. If it is set to "reboot", the machine will be rebooted immediately\&. If it is set to "platform", the machine will be shut down using special power management operations available from the kernel that may be necessary for the hardware to be properly reinitialized after the resume, and may cause the system to resume faster (this is the recommended shutdown method on the majority of systems and hence the defaul)\&. If set to "shutdown" the machine will be powered off\&.
+.RE
+.PP
+\fBcompute checksum\fR
+.RS 4
+If the "compute checksum" parameter is set to \*(Aqy\*(Aq, the \fBs2disk\fR and \fBresume\fR tools will use the MD5 algorithm to verify the image integrity\&.
+.RE
+.PP
+\fBcompress\fR
+.RS 4
+If the "compress" parameter is set to \*(Aqy\*(Aq, the \fBs2disk\fR and \fBresume\fR tools will use the LZF compression algorithm to compress/decompress the image\&.
+.RE
+.PP
+\fBencrypt\fR
+.RS 4
+If the "encrypt" parameter is set to \*(Aqy\*(Aq, the \fBs2disk\fR and \fBresume\fR tools will use the Blowfish encryption algorithm to encrypt/decrypt the image\&. On resume and suspend you will have to supply a passphrase\&. By using a pregenerated RSA key, you can avoid having to type a passphrase on suspend\&. See the "RSA key file" option for more information\&.
+.RE
+.PP
+\fBRSA key file\fR
+.RS 4
+If this option points to a valid RSA key, which can be created with \fBsuspend\-keygen\fR, the \fBs2disk\fR tool will generate a random key for the Blowfish encryption that will be passed to the \fBresume\fR tool within the image header with the help of the RSA cipher\&. Consequently you only need to type a passphrase on resume\&.
+.RE
+.PP
+\fBearly writeout\fR
+.RS 4
+If the "early writeout" parameter is set to \*(Aqy\*(Aq, the \fBs2disk\fR utility will start syncing the resume device early in the process of writing the image to it\&. [This has been reported to speed up the \fBs2disk\fR on some boxes and eliminates the "fast progress meter and long fsync wait" effect\&.]
+.RE
+.PP
+\fBsplash\fR
+.RS 4
+The "splash" parameter is used to make \fBs2disk\fR and/or \fBresume\fR use a splash system (when set to \*(Aqy\*(Aq)\&. Currently the bootsplash\&.org and splashy systems are supported\&. For the former you need a kernel patch, the latter is a userspace solution, but you\*(Aqll need to install a splashy theme\&.
+.sp
+If you use initramfs\-tools on your favorite Linux distribution to generate your initramfs, usually the necessary files will be copied to it\&.
+.RE
+.SH "SEE ALSO"
+.PP
+s2disk (8)\&. suspend\-keygen(8)
+.PP
+For more information see the README file.
+.SH "AUTHOR"
+.PP
+This manual page was written by Tim Dijkstra <tim@famdijkstra>\&.org for the Debian(TM) system (but may be used by others)\&. Was updated by Rodolfo García <kix@kix.es>. Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 any later version published by the Free Software Foundation\&.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2006 Tim Dijkstra
+Copyright \(co 2012 Rodolfo García (kix)
+.br

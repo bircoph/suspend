@@ -1,0 +1,93 @@
+'\" t
+.\"     Title: s2disk
+.\"    Author: Tim Dijkstra <tim@famdijkstra.org>
+.\"   Updated: Rodolfo García Peñas (kix) <kix@kix.es>
+.\"      Date: Feb 29, 2012
+.\"    Manual: s2disk
+.\"    Source: suspend-utils
+.\"  Language: English
+.\"
+.TH "S2DISK" "8" "Feb 29, 2012" "suspend-utils" "s2disk"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+s2disk \- program to suspend to disk (hibernate)
+.SH "SYNOPSIS"
+.HP \w'\fBs2disk\fR\ 'u
+\fBs2disk\fR [\-h,\ \-\-help] [\-V,\ \-\-version] [\-f,\ \-\-config\ \fIconfig_file\fR] [\-r,\ \-\-resume_device\ \fIdevice\fR] [\-o,\ \-\-resume_offset\ \fIoffset\fR] [\-s,\ \-\-image_size\ \fIsize\fR] [\-P,\ \-\-parameter\ \fIparameter\fR]
+.HP \w'\fBresume\fR\ 'u \fBresume\fR
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the \fBs2disk\fR, \fBs2both\fR and \fBresume\fR commands\&.
+.PP
+\fBs2disk\fR is a program that will save the state of the whole system to disk and power off your system\&. After restarting your system it will be put back in the exact system state you left it (this is sometimes called hibernation)\&.
+.PP
+\fBs2both\fR will do precisly the same as \fBs2disk\fR except that it will not power off the system, but will suspend it to ram (put the system in S3 mode)\&. This has the advantage that resume will be faster, with the disadvantage that you still use batteries\&. If they batteries do deplete, you still have the system state saved to disk and can resume without data loss\&. The \fBs2both\fR command also inherits all command line arguments from \fBs2ram\fR\&.
+.PP
+You will need to set up an initramfs which calls the \fBresume\fR program for this to work\&. If you use a package distributed with your Linux distribution, the kernel package which was made with the \-\-initrd option and you use mkinitramfs\-tools, this package should include the necessary parts on your initramfs\&.
+.PP
+The suspend-utils system supports encrypting the image written to disk and features a splash system, see suspend\&.conf(8) for more information\&.
+.SH "OPTIONS"
+.PP
+\fB\-f, \-\-config [file]\fR
+.RS 4
+Specify alternate configuration file\&.
+.RE
+.PP
+\fB\-h, \-\-help\fR
+.RS 4
+Display help\&.
+.RE
+.PP
+\fB\-r, \-\-resume_device [device]\fR
+.RS 4
+Device that contains swap area\&.
+.RE
+.PP
+\fB\-o, \-\-resume_offset [offset]\fR
+.RS 4
+Offset of swap file in resume device\&.
+.RE
+.PP
+\fB\-s, \-\-image_size [size]\fR
+.RS 4
+Desired size of the image\&.
+.RE
+.PP
+\fB\-P, \-\-parameter [key=value]\fR
+.RS 4
+Override any config file parameter (see suspend\&.conf(8))\&.
+.RE
+.PP
+For the meaning and use of the resume_size, resume_offset and image_size options see suspend\&.conf(8)\&.
+.SH "SEE ALSO"
+.PP
+suspend\&.conf(8), suspend\-keygen(8), s2ram(8)
+.PP
+For more information see the README file.
+.SH "AUTHOR"
+.PP
+This manual page was written by Tim Dijkstra <tim@famdijkstra>\&.org for the Debian(TM) system (but may be used by others)\&. Was updated by Rodolfo García <kix@kix.es>. Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 any later version published by the Free Software Foundation\&.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2006 Tim Dijkstra
+Copyright \(co 2012 Rodolfo García (kix)
+.br

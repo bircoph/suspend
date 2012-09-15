@@ -1,0 +1,54 @@
+'\" t
+.\"     Title: swap-offset
+.\"    Author: Tim Dijkstra <tim@famdijkstra.org>
+.\"   Updated: Rodolfo García Peñas (kix) <kix@kix.es>
+.\"      Date: Feb 29, 2012
+.\"    Manual: swap-offset
+.\"    Source: suspend-utils
+.\"  Language: English
+.\"
+.TH "SWAP\-OFFSET" "8" "Feb 29, 2012" "suspend-utils" "swap-offset"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+swap-offset \- program to calculate the offset of a swap file in a partition
+.SH "SYNOPSIS"
+.HP \w'\fBswap\-offset\fR\ 'u \fBswap\-offset\fR [<swap_file>]
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the \fBswap\-offset\fR\&.
+.PP
+The programs \fBs2disk\fR and \fBs2both\fR can be used to save the state of the whole system to a swap partition or file and power off or suspend your system\&. After restarting your system it will be put back in the exact system state you left it (this is sometimes called hibernation)\&.
+.PP
+In the case of using a swap file you will have to specify the location of the swap file\*(Aqs header as the offset from the beginning of the partition that contains the swap file\&. The \fBswap\-offset\fR utility can be used to determine this value\&.
+.SH "SEE ALSO"
+.PP
+suspend\&.conf(8), s2disk(8)
+.PP
+For more information see the README file.
+.SH "AUTHOR"
+.PP
+This manual page was written by Tim Dijkstra <tim@famdijkstra>\&.org for the Debian(TM) system (but may be used by others)\&. Was updated by Rodolfo García <kix@kix.es>. Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 any later version published by the Free Software Foundation\&.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2006 Tim Dijkstra
+Copyright \(co 2012 Rodolfo García (kix)
+.br
