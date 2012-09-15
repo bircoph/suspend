@@ -28,24 +28,24 @@ int main(int argc, char *argv[])
 	int i, ret = 0;
 	int active_console = -1;
 	struct option options[] = {
-	    	{ 
-		    "help\0\tthis text.",	
-		    no_argument,    NULL,   'h'
+		{
+			"help\0\tthis text.",
+			no_argument,	NULL, 'h'
 		},
 		{
-		    "version\0\t\t\tversion information",
-		    no_argument,		NULL, 'V'
+			"version\0\t\t\tversion information",
+			no_argument,	NULL, 'V'
 		},
-	    	{ 
-		    "test\0\ttest if the machine is in the database.", 
-		    no_argument,    NULL,   'n'
+		{
+			"test\0\ttest if the machine is in the database.",
+			no_argument,	NULL, 'n'
 		},
-	    	{ 
-		    "identify\0prints a string that identifies the machine.",
-		    no_argument,    NULL,   'i'
+		{
+			"identify\0prints a string that identifies the machine.",
+			no_argument,	NULL, 'i'
 		},
 		HACKS_LONG_OPTS
-	    	{   NULL,   0,	    NULL,   0	}
+		{	NULL, 0,	NULL, 0	}
 	};
 	const char *optstring = "hVni" "fspmrva:k";
 
