@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <linux/fs.h>
 #include <linux/suspend_ioctls.h>
+#include <errno.h>
 
 #include "encrypt.h"
 
