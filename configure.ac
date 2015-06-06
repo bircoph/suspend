@@ -9,7 +9,7 @@
 AC_PREREQ([2.59])
 AC_INIT([suspend-utils], [1.0])
 AM_INIT_AUTOMAKE([${PACKAGE_NAME}], [${PACKAGE_VERSION}])
-AM_CONFIG_HEADER([config.h])
+AM_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([suspend.c])
 AC_CONFIG_MACRO_DIR([m4])
 
