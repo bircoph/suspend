@@ -429,6 +429,8 @@ int main(int argc, char *argv[])
 	int n, error, orig_loglevel;
 	static struct swsusp_header swsusp_header;
 
+	char mess_buf[SPLASH_GENERIC_MESSAGE_SIZE];
+
 	my_name = basename(argv[0]);
 
 	error = get_config(argc, argv);
@@ -534,8 +536,10 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s: Could not read the image\n", my_name);
 	} else if (freeze(dev)) {
 		error = errno;
-		reboot_question("Processes could not be frozen, "
-				"cannot continue resuming.\n");
+		snprintf(mess_buf, SPLASH_GENERIC_MESSAGE_SIZE, 
+		"Processes could not be frozen, cannot continue resuming.\n"
+		"Error %i: %s\n", error, strerror(error));
+		reboot_question(mess_buf);
 	}
 
 	if (reset_signature(resume_dev, &swsusp_header))
