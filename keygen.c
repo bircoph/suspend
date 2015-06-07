@@ -36,7 +36,7 @@ static unsigned char encrypt_buffer[RSA_DATA_SIZE];
 
 int main(int argc, char *argv[])
 {
-	gcry_sexp_t rsa_pair, rsa_spec, rsa_priv, rsa_list;
+	gcry_sexp_t rsa_pair, rsa_spec, rsa_priv;
 	int len = MIN_KEY_BITS, ret = EXIT_SUCCESS;
 	struct termios termios;
 	char *vrfy_buf;
@@ -85,14 +85,6 @@ Retry:
 		gcry_sexp_release(rsa_priv);
 		gcry_sexp_release(rsa_pair);
 		goto Retry;
-	}
-
-	// enlist "rsa" S-token
-	rsa_list = gcry_sexp_find_token(rsa_priv, "rsa", 0);
-	if (!rsa_list) {
-		fputs("Key generation failed: RSA token not found in private key\n", stderr);
-		ret = EXIT_FAILURE;
-		goto Free_RSA_priv;
 	}
 
 	// read password
@@ -172,7 +164,7 @@ Retry:
 		rsa.field[j][1] = '\0';
 
 		// now get S-expression for each parameter...
-		token = gcry_sexp_find_token(rsa_list, rsa.field[j], 0);
+		token = gcry_sexp_find_token(rsa_priv, rsa.field[j], 0);
 		if (!token) {
 			fprintf(stderr, "Can't find RSA parameter %s\n", rsa.field[j]);
 			ret = -EINVAL;
@@ -232,8 +224,6 @@ Retry:
 Free_sym:
 	gcry_cipher_close(sym_hd);
 Free_RSA:
-	gcry_sexp_release(rsa_list);
-Free_RSA_priv:
 	gcry_sexp_release(rsa_priv);
 Free_RSA_pair:
 	gcry_sexp_release(rsa_pair);
