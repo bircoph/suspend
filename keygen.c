@@ -36,12 +36,7 @@ static unsigned char encrypt_buffer[RSA_DATA_SIZE];
 
 int main(int argc, char *argv[])
 {
-	gcry_ac_data_t rsa_data_set;
-	gcry_ac_handle_t rsa_hd;
-	gcry_ac_key_t rsa_priv;
-	gcry_ac_key_pair_t rsa_key_pair;
-	gcry_mpi_t mpi;
-	size_t offset;
+	gcry_sexp_t rsa_pair, rsa_spec, rsa_priv, rsa_list;
 	int len = MIN_KEY_BITS, ret = EXIT_SUCCESS;
 	struct termios termios;
 	char *vrfy_buf;
@@ -51,67 +46,63 @@ int main(int argc, char *argv[])
 	unsigned char ivec[PK_CIPHER_BLOCK];
 	unsigned short size;
 	int j, fd;
+	const char *rsa_keys="nedpqu";
 
 	printf("libgcrypt version: %s\n", gcry_check_version(NULL));
 	gcry_control(GCRYCTL_INIT_SECMEM, 4096, 0);
-	ret = gcry_ac_open(&rsa_hd, GCRY_AC_RSA, 0);
-	if (ret)
-		return ret;
 
 	do {
-		printf("Key bits (between %d and %d inclusive) [%d]: ",
+		printf("Key bits (between %d and %d inclusive, must be multiple of 8) [%d]: ",
 			MIN_KEY_BITS, MAX_KEY_BITS, len);
 		fgets(in_buffer, MAX_STR_LEN, stdin);
 		if (strlen(in_buffer) && *in_buffer != '\n')
 			sscanf(in_buffer, "%d", &len);
-	} while (len < MIN_KEY_BITS || len > MAX_KEY_BITS);
+	} while (len < MIN_KEY_BITS || len > MAX_KEY_BITS || len % 8);
+
+	ret = gcry_sexp_build(&rsa_spec, NULL, "(genkey (rsa (nbits %u)))", len);
+	if (ret) {
+		fprintf(stderr, "Key parameters generation failed: %s\n", gcry_strerror(ret));
+		return ret;
+	}
 
 Retry:
 	printf("Generating %d-bit RSA keys.  Please wait.\n", len);
-	ret = gcry_ac_key_pair_generate(rsa_hd, len, NULL, &rsa_key_pair, NULL);
+	ret = gcry_pk_genkey(&rsa_pair, rsa_spec);
 	if (ret) {
 		fprintf(stderr, "Key generation failed: %s\n", gcry_strerror(ret));
+		goto Free_RSA_spec;
+	}
+	rsa_priv = gcry_sexp_find_token(rsa_pair, "private-key", 0);
+	if (!rsa_priv) {
+		fputs("Key generation failed: private key not found\n", stderr);
 		ret = EXIT_FAILURE;
-		goto Close_RSA;
+		goto Free_RSA_pair;
 	}
 	printf("Testing the private key.  Please wait.\n");
-	rsa_priv = gcry_ac_key_pair_extract(rsa_key_pair, GCRY_AC_KEY_SECRET);
-	ret = gcry_ac_key_test(rsa_hd, rsa_priv);
+	ret = gcry_pk_testkey(rsa_priv);
 	if (ret) {
-		printf("RSA key test failed.  Retrying.\n");
+		fprintf(stderr, "RSA key test failed: %s. Retrying.\n", gcry_strerror(ret));
+		gcry_sexp_release(rsa_priv);
+		gcry_sexp_release(rsa_pair);
 		goto Retry;
 	}
 
-	rsa_data_set = gcry_ac_key_data_get(rsa_priv);
-	if (gcry_ac_data_length(rsa_data_set) != RSA_FIELDS) {
-		fprintf(stderr, "Wrong number of key fields\n");
+	// enlist "rsa" S-token
+	rsa_list = gcry_sexp_find_token(rsa_priv, "rsa", 0);
+	if (!rsa_list) {
+		fputs("Key generation failed: RSA token not found in private key\n", stderr);
+		ret = EXIT_FAILURE;
+		goto Free_RSA_priv;
+	}
+	j = gcry_sexp_length(rsa_list);
+	if (j != RSA_FIELDS) {
+		fprintf(stderr, "Wrong number of RSA key fields: %i present while %i needed\n",
+			j, RSA_FIELDS);
 		ret = -EINVAL;
 		goto Free_RSA;
 	}
 
-	/* Copy the public key components to struct RSA_data */
-	offset = 0;
-	for (j = 0; j < RSA_FIELDS_PUB; j++) {
-		char *str;
-		size_t s;
-
-		gcry_ac_data_get_index(rsa_data_set, GCRY_AC_FLAG_COPY, j,
-					(const char **)&str, &mpi);
-		ret = gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
-					RSA_DATA_SIZE - offset, &s, mpi);
-		if (ret) {
-			fprintf(stderr, "RSA key components too big\n");
-			goto Free_RSA;
-		}
-
-		rsa.field[j][0] = str[0];
-		rsa.field[j][1] = '\0';
-		rsa.size[j] = s;
-		offset += s;
-		gcry_mpi_release(mpi);
-		gcry_free(str);
-	}
-
+	// read password
 	tcgetattr(0, &termios);
 	termios.c_lflag &= ~ECHO;
 	termios.c_lflag |= ICANON | ECHONL;
@@ -142,8 +133,10 @@ Retry:
 	/* First, we encrypt the key test */
 	ret = gcry_cipher_open(&sym_hd, PK_CIPHER, GCRY_CIPHER_MODE_CFB,
 				GCRY_CIPHER_SECURE);
-	if (ret)
+	if (ret) {
+		fprintf(stderr, "Failed to open cipher: %s\n", gcry_strerror(ret));
 		goto Free_RSA;
+	}
 
 	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
 	if (!ret)
@@ -154,48 +147,78 @@ Retry:
 					KEY_TEST_DATA, KEY_TEST_SIZE);
 
 	gcry_cipher_close(sym_hd);
-	if (ret)
+	if (ret) {
+		fprintf(stderr, "Failed to init cipher: %s\n", gcry_strerror(ret));
 		goto Free_RSA;
+	}
 
 	/* Now, we can encrypt the private RSA key */
 	ret = gcry_cipher_open(&sym_hd, PK_CIPHER, GCRY_CIPHER_MODE_CFB,
 				GCRY_CIPHER_SECURE);
-	if (ret)
+	if (ret) {
+		fprintf(stderr, "Failed to open cipher: %s\n", gcry_strerror(ret));
 		goto Free_RSA;
+	}
 
 	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
 	if (!ret)
 		ret = gcry_cipher_setiv(sym_hd, ivec, PK_CIPHER_BLOCK);
 
-	if (ret)
+	if (ret) {
+		fprintf(stderr, "Failed to init cipher: %s\n", gcry_strerror(ret));
 		goto Free_sym;
+	}
 
-	/* Copy the private key components (encrypted) to struct RSA_data */
-	for (j = RSA_FIELDS_PUB; j < RSA_FIELDS; j++) {
-		char *str;
-		size_t s;
+	/* Copy the key components to struct RSA_data */
+	size_t s, offset = 0;
+	gcry_sexp_t token;
+	gcry_mpi_t mpi;
+	for (j = 0; j < RSA_FIELDS && !ret; j++) {
 
-		gcry_ac_data_get_index(rsa_data_set, GCRY_AC_FLAG_COPY, j,
-					(const char **)&str, &mpi);
+		rsa.field[j][0] = rsa_keys[j];
+		rsa.field[j][1] = '\0';
+
+		// now get S-expression for each parameter...
+		token = gcry_sexp_find_token(rsa_list, rsa.field[j], 0);
+		if (!token) {
+			fprintf(stderr, "Can't find RSA parameter %s\n", rsa.field[j]);
+			ret = -EINVAL;
+			break;
+		}
+		// read RSA parameter
+		mpi = gcry_sexp_nth_mpi(token, 1, GCRYMPI_FMT_USG);
+		if (!mpi) {
+			fprintf(stderr, "Can't parse RSA parameter %s, idx %i\n", rsa.field[j], j);
+			ret = -EINVAL;
+			goto Release_token;
+		}
+		// write parameter to RSA buffer
 		ret = gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
 					RSA_DATA_SIZE - offset, &s, mpi);
 		if (ret) {
-			fprintf(stderr, "RSA key components too big\n");
-			goto Free_sym;
+			fprintf(stderr, "RSA key components too big: %s\n", gcry_strerror(ret));
+			goto Release_mpi;
 		}
 
-		/* We encrypt the data in place */
-		ret = gcry_cipher_encrypt(sym_hd, rsa.data + offset, s, NULL, 0);
-		if (ret)
-			goto Free_sym;
+		/* Encrypt private RSA components in place */
+		if (j >= RSA_FIELDS_PUB) {
+			ret = gcry_cipher_encrypt(sym_hd, rsa.data + offset, s, NULL, 0);
+			if (ret) {
+				fprintf(stderr, "Failed to encrypt RSA key: %s\n", gcry_strerror(ret));
+				goto Release_mpi;
+			}
+		}
 
-		rsa.field[j][0] = str[0];
-		rsa.field[j][1] = '\0';
 		rsa.size[j] = s;
 		offset += s;
+
+	Release_mpi:
 		gcry_mpi_release(mpi);
-		gcry_free(str);
+	Release_token:
+		gcry_sexp_release(token);
 	}
+	if (ret)
+		goto Free_sym;
 
 	size = offset + sizeof(struct RSA_data) - RSA_DATA_SIZE;
 
@@ -216,9 +239,13 @@ Retry:
 Free_sym:
 	gcry_cipher_close(sym_hd);
 Free_RSA:
-	gcry_ac_data_destroy(rsa_data_set);
-Close_RSA:
-	gcry_ac_close(rsa_hd);
+	gcry_sexp_release(rsa_list);
+Free_RSA_priv:
+	gcry_sexp_release(rsa_priv);
+Free_RSA_pair:
+	gcry_sexp_release(rsa_pair);
+Free_RSA_spec:
+	gcry_sexp_release(rsa_spec);
 
 	return ret;
 }
