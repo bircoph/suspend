@@ -94,13 +94,6 @@ Retry:
 		ret = EXIT_FAILURE;
 		goto Free_RSA_priv;
 	}
-	j = gcry_sexp_length(rsa_list);
-	if (j != RSA_FIELDS) {
-		fprintf(stderr, "Wrong number of RSA key fields: %i present while %i needed\n",
-			j, RSA_FIELDS);
-		ret = -EINVAL;
-		goto Free_RSA;
-	}
 
 	// read password
 	tcgetattr(0, &termios);
