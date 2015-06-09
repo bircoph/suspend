@@ -168,7 +168,7 @@ static void free_swap_reader(struct swap_reader *handle)
  *	array of extents.
  */
 static int init_swap_reader(struct swap_reader *handle, int fd, loff_t start,
-                            loff_t image_size)
+							loff_t image_size)
 {
 	int error;
 
@@ -328,7 +328,7 @@ static ssize_t load_buffer(struct swap_reader *handle)
  *	@nr_pages:	Number of image data pages.
  */
 static int load_image(struct swap_reader *handle, int dev,
-                      unsigned int nr_pages, int verify_only)
+					  unsigned int nr_pages, int verify_only)
 {
 	unsigned int m, n;
 	ssize_t buf_size;
@@ -339,7 +339,7 @@ static int load_image(struct swap_reader *handle, int dev,
 
 	sprintf(message, "Loading image data pages (%u pages)...", nr_pages);
 	splash.set_caption(message);
-	printf("%s     ", message);
+	printf("%s	 ", message);
 
 	m = nr_pages / 100;
 	if (!m)
@@ -392,26 +392,22 @@ static char *print_checksum(char * buf, unsigned char *checksum)
 static int decrypt_key(struct image_header_info *header, unsigned char *key,
 			unsigned char *ivec)
 {
-	gcry_ac_handle_t rsa_hd;
-	gcry_ac_data_t rsa_data_set, key_set;
-	gcry_ac_key_t rsa_priv;
-	gcry_mpi_t mpi;
+	gcry_sexp_t rsa_priv, rsa_ciph, rsa_plain;
+	gcry_mpi_t mpi[RSA_FIELDS];
 	unsigned char *buf, *out, *key_buf, *ivec_buf;
 	struct md5_ctx ctx;
 	struct RSA_data *rsa;
 	gcry_cipher_hd_t sym_hd;
-	int j, ret;
+	int j, mi, ret;
 
 	rsa = &header->rsa;
 
-	ret = gcry_ac_open(&rsa_hd, GCRY_AC_RSA, 0);
-	if (ret)
-		return ret;
-
 	ret = gcry_cipher_open(&sym_hd, PK_CIPHER, GCRY_CIPHER_MODE_CFB,
 					GCRY_CIPHER_SECURE);
-	if (ret)
-		goto Free_rsa;
+	if (ret) {
+		fprintf(stderr, "Failed to init cipher: %s\n",  gcry_strerror(ret));
+		return ret;
+	}
 
 	key_buf = getmem(PK_KEY_SIZE);
 	ivec_buf = getmem(PK_CIPHER_BLOCK);
@@ -433,11 +429,8 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 						out, KEY_TEST_SIZE,
 						KEY_TEST_DATA, KEY_TEST_SIZE);
 
-		if (ret) {
-			fprintf(stderr, "%s: libgcrypt error: %s\n", my_name,
-					gcry_strerror(ret));
+		if (ret)
 			break;
-		}
 
 		ret = memcmp(out, rsa->key_test, KEY_TEST_SIZE);
 
@@ -449,90 +442,130 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 	if (!ret)
 		ret = gcry_cipher_open(&sym_hd, PK_CIPHER,
 				GCRY_CIPHER_MODE_CFB, GCRY_CIPHER_SECURE);
-	if (ret)
+	if (ret) {
+		fprintf(stderr, "%s: libgcrypt error: %s\n", my_name, gcry_strerror(ret));
 		goto Free_buffers;
+	}
 
 	ret = gcry_cipher_setkey(sym_hd, key_buf, PK_KEY_SIZE);
-	if (!ret)
-		ret = gcry_cipher_setiv(sym_hd, ivec_buf, PK_CIPHER_BLOCK);
-	if (!ret)
-		ret = gcry_ac_data_new(&rsa_data_set);
-	if (ret)
+	if (ret) {
+		fprintf(stderr, "Can't set cipher key: %s\n", gcry_strerror(ret));
 		goto Close_cypher;
+	}
+	ret = gcry_cipher_setiv(sym_hd, ivec_buf, PK_CIPHER_BLOCK);
+	if (ret) {
+		fprintf(stderr, "Can't set cipher iv: %s\n", gcry_strerror(ret));
+		goto Close_cypher;
+	}
 
+	// Retrieve RSA parameters
 	buf = rsa->data;
-	for (j = 0; j < RSA_FIELDS; j++) {
-		size_t s = rsa->size[j];
+	for (mi = 0; mi < RSA_FIELDS && !ret; mi++) {
+		size_t s = rsa->size[mi];
 
 		/* We need to decrypt some components */
-		if (j >= RSA_FIELDS_PUB) {
+		if (mi >= RSA_FIELDS_PUB) {
 			/* We use the in-place decryption */
 			ret = gcry_cipher_decrypt(sym_hd, buf, s, NULL, 0);
-			if (ret)
+			if (ret) {
+				fprintf(stderr, "Can't decrypt RSA parameters: %s\n", gcry_strerror(ret));
 				break;
+			}
 		}
 
-		gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, buf, s, NULL);
-		ret = gcry_ac_data_set(rsa_data_set, GCRY_AC_FLAG_COPY,
-					rsa->field[j], mpi);
-		gcry_mpi_release(mpi);
-		if (ret)
+		ret = gcry_mpi_scan(&mpi[mi], GCRYMPI_FMT_USG, buf, s, NULL);
+		if (ret) {
+			fprintf(stderr, "Can't parse RSA parameter %s: %s\n",
+					rsa->field[mi], gcry_strerror(ret));
 			break;
+		}
 
 		buf += s;
 	}
-	if (!ret)
-		ret = gcry_ac_key_init(&rsa_priv, rsa_hd,
-					GCRY_AC_KEY_SECRET, rsa_data_set);
-	if (ret)
-		goto Destroy_data_set;
 
-	ret = gcry_ac_data_new(&key_set);
-	if (ret)
-		goto Destroy_key;
-
-	gcry_mpi_scan(&mpi, GCRYMPI_FMT_USG, header->key.data,
-			header->key.size, NULL);
-	ret = gcry_ac_data_set(key_set, GCRY_AC_FLAG_COPY, "a", mpi);
-	if (ret)
-		goto Destroy_key_set;
-
-	gcry_mpi_release(mpi);
-	ret = gcry_ac_data_decrypt(rsa_hd, 0, rsa_priv, &mpi, key_set);
+	/* setup private key */
 	if (!ret) {
-		unsigned char *res;
-		size_t s;
-
-		gcry_mpi_aprint(GCRYMPI_FMT_USG, &res, &s, mpi);
-		if (s == KEY_SIZE + CIPHER_BLOCK) {
-			memcpy(key, res, KEY_SIZE);
-			memcpy(ivec, res + KEY_SIZE, CIPHER_BLOCK);
-		} else {
-			ret = -ENODATA;
+		ret = gcry_sexp_build(&rsa_priv, NULL,
+			"(private-key (rsa "
+			"(%s %m) (%s %m) (%s %m) (%s %m) (%s %m) (%s %m)"
+			"))",
+			rsa->field[0], mpi[0],
+			rsa->field[1], mpi[1],
+			rsa->field[2], mpi[2],
+			rsa->field[3], mpi[3],
+			rsa->field[4], mpi[4],
+			rsa->field[5], mpi[5]
+		);
+		if (ret) {
+			fprintf(stderr, "Failed to setup private key: %s\n", gcry_strerror(ret));
 		}
-		gcry_free(res);
+	}
+	// Cleanup mpi's
+	// mi=RSA_FIELDS on normal exit, idx_broken on failure
+	for (j = mi-1; j >= 0; j--)
+		gcry_mpi_release(mpi[j]);
+	if (ret) {
+		fprintf(stderr, "Failed to setup private key: %s\n", gcry_strerror(ret));
+		goto Close_cypher;
 	}
 
-Destroy_key_set:
-	gcry_mpi_release(mpi);
-	gcry_ac_data_destroy(key_set);
+	ret = gcry_mpi_scan(&mpi[0], GCRYMPI_FMT_USG, header->key.data,
+			header->key.size, NULL);
+	if (ret) {
+		fprintf(stderr, "Failed to read encrypted header: %s\n", gcry_strerror(ret));
+		goto Destroy_priv;
+	}
 
-Destroy_key:
-	gcry_ac_key_destroy(rsa_priv);
+	/* setup cipher S-expr */
+	ret = gcry_sexp_build(&rsa_ciph, NULL,
+		"(enc-val (flags) (rsa (a %m)))", mpi[0]);
+	gcry_mpi_release(mpi[0]);
+	if (ret) {
+		fprintf(stderr, "Failed to setup cipher: %s\n", gcry_strerror(ret));
+		goto Destroy_priv;
+	}
 
-Destroy_data_set:
-	gcry_ac_data_destroy(rsa_data_set);
+	/* decrypt the main key */
+	ret = gcry_pk_decrypt(&rsa_plain, rsa_ciph, rsa_priv);
+	if (ret) {
+		fprintf(stderr, "Can't decrypt the main key: %s\n", gcry_strerror(ret));
+		goto Destroy_ciph;
+	}
+	// retrieve decrypted mpi (value %m)
+	mpi[0] = gcry_sexp_nth_mpi(rsa_plain, 1, GCRYMPI_FMT_USG);
+	if (!mpi) {
+		fputs("Can't parse the main key", stderr);
+		ret = -EINVAL;
+		goto Destroy_plain;
+	}
 
+	unsigned char *res;
+	size_t s;
+
+	gcry_mpi_aprint(GCRYMPI_FMT_USG, &res, &s, mpi[0]);
+	gcry_mpi_release(mpi[0]);
+
+	if (s == KEY_SIZE + CIPHER_BLOCK) {
+		memcpy(key, res, KEY_SIZE);
+		memcpy(ivec, res + KEY_SIZE, CIPHER_BLOCK);
+	} else {
+		fprintf(stderr,"The main key has invalid length %i, need %i\n", s, KEY_SIZE + CIPHER_BLOCK);
+		ret = -ENODATA;
+	}
+	gcry_free(res);
+
+Destroy_plain:
+	gcry_sexp_release(rsa_plain);
+Destroy_ciph:
+	gcry_sexp_release(rsa_ciph);
+Destroy_priv:
+	gcry_sexp_release(rsa_priv);
 Close_cypher:
 	gcry_cipher_close(sym_hd);
-
 Free_buffers:
 	freemem(out);
 	freemem(ivec_buf);
 	freemem(key_buf);
-
-Free_rsa:
-	gcry_ac_close(rsa_hd);
 
 	return ret;
 }
@@ -540,7 +573,7 @@ Free_rsa:
 static int restore_key(struct image_header_info *header)
 {
 	static unsigned char key[KEY_SIZE], ivec[CIPHER_BLOCK];
-	int error;
+	int error = 0;
 
 	if (header->flags & IMAGE_USE_RSA) {
 		error = decrypt_key(header, key, ivec);
@@ -569,7 +602,7 @@ static int restore_key(struct image_header_info *header)
 #endif
 
 int read_or_verify(int dev, int fd, struct image_header_info *header,
-                   loff_t start, int verify, int test)
+				   loff_t start, int verify, int test)
 {
 	static struct swap_reader handle;
 	static unsigned char orig_checksum[16], checksum[16];
