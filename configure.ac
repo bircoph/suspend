@@ -211,15 +211,7 @@ fi
 if test "${enable_encrypt}" = "yes"; then
 	CONFIG_FEATURES="${CONFIG_FEATURES} encrypt"
 	AC_DEFINE([CONFIG_ENCRYPT], [1], [Define if encryption enabled])
-
-	AC_MSG_CHECKING([for libgcrypt])
-	if ! test -x "${with_libgcrypt_prefix}/bin/libgcrypt-config"; then
-		AC_MSG_ERROR([Cannot locate libgcrypt])
-	else
-		AC_MSG_RESULT([found])
-		LIBGCRYPT_CFLAGS=`"${with_libgcrypt_prefix}/bin/libgcrypt-config" --cflags`
-		LIBGCRYPT_LIBS=`"${with_libgcrypt_prefix}/bin/libgcrypt-config" --libs`
-	fi
+	AM_PATH_LIBGCRYPT([1:1.6.3], [], [AC_MSG_ERROR([Cannot locate >=libgcrypt-1.6.3])])
 fi
 
 if test "${enable_splashy}" = "yes"; then
