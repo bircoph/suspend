@@ -5,7 +5,7 @@
 #
 # This file is released under the GPLv2.
 #
-AUTOMAKE_OPTIONS=foreign dist-bzip2
+AUTOMAKE_OPTIONS=foreign dist-bzip2 subdir-objects
 
 MAINTAINERCLEANFILES = \
 	config.log config.status \
