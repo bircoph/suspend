@@ -267,6 +267,7 @@ AC_CHECK_HEADERS([ \
 	stdint.h \
 ])
 
+CFLAGS="${CFLAGS} -std=gnu90"
 if test "${enable_pedantic}" = "yes"; then
 	enable_strict="yes";
 	CFLAGS="${CFLAGS} -pedantic"
