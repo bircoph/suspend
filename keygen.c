@@ -157,7 +157,7 @@ Retry:
 	/* Copy the key components to struct RSA_data */
 	size_t s, offset = 0;
 	gcry_sexp_t token;
-	const unsigned char *rsa_buf;
+	gcry_mpi_t mpi;
 	for (j = 0; j < RSA_FIELDS && !ret; j++) {
 
 		rsa.field[j][0] = rsa_keys[j];
@@ -170,27 +170,35 @@ Retry:
 			ret = -EINVAL;
 			break;
 		}
-		// copy RSA parameter from S-expr to cipher buffer
-		rsa_buf = gcry_sexp_nth_data(token, 1, &s);
-		if (!rsa_buf) {
+		// read RSA parameter
+		mpi = gcry_sexp_nth_mpi(token, 1, GCRYMPI_FMT_USG);
+		if (!mpi) {
 			fprintf(stderr, "Can't parse RSA parameter %s, idx %i\n", rsa.field[j], j);
 			ret = -EINVAL;
 			goto Release_token;
 		}
-		memcpy(rsa.data + offset, rsa_buf, s);
+		// write parameter to RSA buffer
+		ret = gcry_mpi_print(GCRYMPI_FMT_USG, rsa.data + offset,
+					RSA_DATA_SIZE - offset, &s, mpi);
+		if (ret) {
+			fprintf(stderr, "RSA key components too big: %s\n", gcry_strerror(ret));
+			goto Release_mpi;
+		}
 
 		/* Encrypt private RSA components in place */
 		if (j >= RSA_FIELDS_PUB) {
 			ret = gcry_cipher_encrypt(sym_hd, rsa.data + offset, s, NULL, 0);
 			if (ret) {
 				fprintf(stderr, "Failed to encrypt RSA key: %s\n", gcry_strerror(ret));
-				goto Release_token;
+				goto Release_mpi;
 			}
 		}
 
 		rsa.size[j] = s;
 		offset += s;
 
+	Release_mpi:
+		gcry_mpi_release(mpi);
 	Release_token:
 		gcry_sexp_release(token);
 	}
