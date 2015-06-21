@@ -17,9 +17,11 @@ m4/
 missing
 stamp-h1
 whitelist.c
+vbetool/.dirstamp
 
 resume
 s2both
 s2disk
 s2ram
+suspend-keygen
 swap-offset
