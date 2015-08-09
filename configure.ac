@@ -237,12 +237,14 @@ if test "${enable_fbsplash}" = "yes"; then
 	CONFIG_FEATURES="${CONFIG_FEATURES} fbsplash"
 	AC_DEFINE([CONFIG_FBSPLASH], [1], [Define if fbsplash enabled])
 
+    PKG_CONFIG="pkg-config --static"
 	PKG_CHECK_MODULES(
 		[FBSPLASH],
 		[libfbsplashrender >= 0.1],
 		,
 		[AC_MSG_ERROR([Required libfbsplashrender was not found])]
 	)
+    unset PKG_CONFIG
 fi
 
 if test "${enable_threads}" = "yes"; then
