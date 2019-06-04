@@ -606,7 +606,7 @@ int read_or_verify(int dev, int fd, struct image_header_info *header,
 {
 	static struct swap_reader handle;
 	static unsigned char orig_checksum[16], checksum[16];
-	static char csum_buf[48];
+	static char csum_buf[49];
 	int error = 0, test_mode = (verify || test);
 
 	error = read_page(fd, header, start);
