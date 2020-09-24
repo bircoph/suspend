@@ -320,7 +320,7 @@ char *__save_state(int *psize)
 
 	memset(&r, 0, sizeof(r));
 
-	fprintf(stderr, "Allocated buffer at %p (base is 0x%x)\n", buffer,
+	fprintf(stderr, "Allocated buffer at %p (base is 0x%zx)\n", buffer,
 			LRMI_base_addr());
 
 	r.eax = 0x4f04;

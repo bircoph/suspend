@@ -549,7 +549,7 @@ static int decrypt_key(struct image_header_info *header, unsigned char *key,
 		memcpy(key, res, KEY_SIZE);
 		memcpy(ivec, res + KEY_SIZE, CIPHER_BLOCK);
 	} else {
-		fprintf(stderr,"The main key has invalid length %i, need %i\n", s, KEY_SIZE + CIPHER_BLOCK);
+		fprintf(stderr,"The main key has invalid length %zi, need %zi\n", s, KEY_SIZE + CIPHER_BLOCK);
 		ret = -ENODATA;
 	}
 	gcry_free(res);
