@@ -18,9 +18,9 @@
 /* Item size */
 #define ITEMSZ  1024
 
-char bios_version[ITEMSZ], sys_vendor[ITEMSZ], sys_product[ITEMSZ], sys_version[ITEMSZ];
+extern char bios_version[ITEMSZ], sys_vendor[ITEMSZ], sys_product[ITEMSZ], sys_version[ITEMSZ];
 
-int flags, force, fb_nosuspend, no_kms_flag;
+extern int flags, force, fb_nosuspend, no_kms_flag;
 
 #define HACKS_LONG_OPTS \
 	{\

@@ -38,6 +38,10 @@ static int vbe_mode = -1, dmi_scanned;
 #define S2RAM_NOFB	126
 #define S2RAM_UNKNOWN	127
 
+/* From s2ram-x86.h to avoid double definitions with no common block */
+char bios_version[ITEMSZ], sys_vendor[ITEMSZ], sys_product[ITEMSZ], sys_version[ITEMSZ];
+int flags, force, fb_nosuspend, no_kms_flag;
+
 void identify_machine(void)
 {
 	if (!dmi_scanned) {
